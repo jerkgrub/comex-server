@@ -7,10 +7,7 @@ const MONGODB_URI =
   "mongodb://127.0.0.1:27017/comexconnect"
 
 mongoose
-  .connect(MONGODB_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
+  .connect(MONGODB_URI)
   .then(() => console.log("Established a connection to the database"))
   .catch((err) =>
     console.log("Something went wrong when connecting to the database", err)
