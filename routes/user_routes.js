@@ -2,23 +2,21 @@ const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/user_controller');
 
-// insert routes here
-
 // Auth
-router.post('/api/login', userController.login);
+router.post('/login', userController.login);  // Removed '/api' prefix
 
 // 1. Create
-router.post('/api/users/new', userController.newAcc);
+router.post('/users/new', userController.newAcc);  // Removed '/api' prefix
 
 // 2. Read
-router.get('/api/users/all', userController.findAllUser);
-router.get('/api/users/:id', userController.findOneUser);
-router.get('/api/users/email/:email', userController.findOneUserByEmail);
+router.get('/users/all', userController.findAllUser);  // Removed '/api' prefix
+router.get('/users/:id', userController.findOneUser);  // Removed '/api' prefix
+router.get('/users/email/:email', userController.findOneUserByEmail);  // Removed '/api' prefix
 
 // 3. Update
-router.put('/api/users/update/:id', userController.updateUser);
+router.put('/users/update/:id', userController.updateUser);  // Removed '/api' prefix
 
 // 4. Delete
-router.delete('/api/users/delete/:id', userController.deleteUser); //DELETE
+router.delete('/users/delete/:id', userController.deleteUser);  // Removed '/api' prefix
 
 module.exports = router;

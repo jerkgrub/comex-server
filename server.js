@@ -24,7 +24,7 @@ app.use(async (req, res, next) => {
 });
 
 // Mount the routes
-app.use("/api/users", UserRoute);
+app.use("/api", UserRoute);
 app.use("/api/activity", ActivityRoute);
 app.use("/api/credit", CreditRoute);
 
