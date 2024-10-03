@@ -1,4 +1,4 @@
-const Activity = require("../models/Activity_model");
+const Activity = require("../models/activity_model");
 
 // 1. Create new activity
 const newActivity = (req, res) => {
