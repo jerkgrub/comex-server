@@ -17,7 +17,6 @@ const connectToDatabase = async () => {
       useNewUrlParser: true,
       useUnifiedTopology: true,
       serverSelectionTimeoutMS: 5000,
-      poolSize: 20,
     });
     isConnected = connection.connections[0].readyState;
     console.log("New connection to MongoDB established");
