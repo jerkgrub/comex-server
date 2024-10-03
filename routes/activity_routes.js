@@ -5,27 +5,27 @@ const activityController = require('../controllers/activity_controller');
 // Activity routes
 
 // 1. Create
-router.post('/api/activity/new', activityController.newActivity);
+router.post('/new', activityController.newActivity);  // Removed "/api/activity" prefix
 
 // 2. Read
-router.get('/api/activity/all', activityController.findAllActivity);
-router.get('/api/activity/:id', activityController.findOneActivity);
+router.get('/all', activityController.findAllActivity);  // "/all" for all activities
+router.get('/:id', activityController.findOneActivity);  // Removed "/api/activity" prefix
 
 // 3. Update
-router.put('/api/activity/update/:id', activityController.updateActivity);
+router.put('/update/:id', activityController.updateActivity);  // Removed "/api/activity" prefix
 
 // 4. Delete
-router.delete('/api/activity/delete/:id', activityController.deleteActivity);
+router.delete('/delete/:id', activityController.deleteActivity);  // Removed "/api/activity" prefix
 
 // Respondents section
 
 // Add respondent
-router.post('/api/activity/add/respondent/:id', activityController.addRespondent);
+router.post('/add/respondent/:id', activityController.addRespondent);  // Removed "/api/activity" prefix
 
 // Get all respondents
-router.get('/api/activity/get/respondents/:id', activityController.getAllRespondents);
+router.get('/get/respondents/:id', activityController.getAllRespondents);  // Removed "/api/activity" prefix
 
 // Remove respondent
-router.delete('/api/activity/respondent/:activityId/:userId', activityController.removeRespondent);
+router.delete('/respondent/:activityId/:userId', activityController.removeRespondent);  // Removed "/api/activity" prefix
 
 module.exports = router;
