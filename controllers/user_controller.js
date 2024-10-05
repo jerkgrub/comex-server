@@ -1,110 +1,96 @@
 const User = require("../models/user_model");
 const bcrypt = require("bcryptjs");
 
-// 1. Create
-const newAcc = (req, res) => {
+// 1. Create a New Account
+const newAcc = async (req, res) => {
   const { email } = req.body;
 
-  // Check if the email already exists
-  User.findOne({ email })
-    .then((existingUser) => {
-      if (existingUser) {
-        // If the email is already registered
-        return res.status(400).json({
-          message:
-            "The email you have provided is already associated with an account.",
-        });
-      }
-
-      // If email is not used, create the new user
-      User.create(req.body)
-        .then((newAcc) => {
-          res.json({ newAcc: newAcc, status: "successfully inserted" });
-        })
-        .catch((err) => {
-          res.status(500).json({ message: "Something went wrong", error: err });
-        });
-    })
-    .catch((err) => {
-      res.status(500).json({ message: "Something went wrong", error: err });
-    });
-};
-
-// 2. Read
-const findAllUser = (req, res) => {
-  User.find()
-    .then((allDaUser) => {
-      res.json({ Users: allDaUser });
-    })
-    .catch((err) => {
-      res.json({ message: "Something went wrong", error: err });
-    });
-};
-// FIND BY ID
-const findOneUser = (req, res) => {
-  User.findById(req.params.id)
-    .then((user) => {
-      if (user) {
-        res.json({ User: user });
-      } else {
-        res.status(404).json({ message: "User not found" });
-      }
-    })
-    .catch((err) => {
-      res.status(500).json({ message: "Something went wrong", error: err });
-    });
-};
-// FIND BY EMAIL
-const findOneUserByEmail = (req, res) => {
-  User.findOne({ email: req.params.email })
-    .then((user) => {
-      if (user) {
-        res.json({ User: user });
-      } else {
-        res.status(404).json({ message: "User not found" });
-      }
-    })
-    .catch((err) => {
-      res.status(500).json({ message: "Something went wrong", error: err });
-    });
-};
-
-// 3. Update
-const updateUser = (req, res) => {
-  User.findOneAndUpdate({ _id: req.params.id }, req.body, {
-    new: true,
-    runValidators: true,
-  })
-    .then((updatedUser) => {
-      res.json({
-        updatedUser: updatedUser,
-        status: "successfully Updated the User",
+  try {
+    // Check if the email already exists
+    const existingUser = await User.findOne({ email }).lean();
+    if (existingUser) {
+      return res.status(400).json({
+        message: "The email you have provided is already associated with an account.",
       });
-    })
-    .catch((err) => {
-      res.json({ message: "Something went wrong", error: err });
-    });
+    }
+
+    // Create the new user
+    const newUser = await User.create(req.body);
+    res.json({ newUser, status: "Successfully inserted" });
+  } catch (error) {
+    res.status(500).json({ message: "Something went wrong", error });
+  }
 };
 
-// 4. Delete
-const deleteUser = (req, res) => {
-  User.findOneAndDelete({ _id: req.params.id })
-    .then((deletedUser) => {
-      if (deletedUser) {
-        res.json({ message: "User successfully deleted", deletedUser });
-      } else {
-        res.status(404).json({ message: "User not found" });
-      }
-    })
-    .catch((err) => {
-      res.status(500).json({ message: "Something went wrong", error: err });
-    });
+// 2. Find All Users
+const findAllUser = async (req, res) => {
+  try {
+    const users = await User.find({}, 'firstName lastName email').lean(); // Projections to limit data
+    res.json({ Users: users });
+  } catch (error) {
+    res.status(500).json({ message: "Something went wrong", error });
+  }
 };
 
-// auth
+// 3. Find User by ID
+const findOneUser = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).lean();
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    res.json({ User: user });
+  } catch (error) {
+    res.status(500).json({ message: "Something went wrong", error });
+  }
+};
+
+// 4. Find User by Email
+const findOneUserByEmail = async (req, res) => {
+  try {
+    const user = await User.findOne({ email: req.params.email }).lean();
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    res.json({ User: user });
+  } catch (error) {
+    res.status(500).json({ message: "Something went wrong", error });
+  }
+};
+
+// 5. Update User
+const updateUser = async (req, res) => {
+  try {
+    const updatedUser = await User.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true,
+    }).lean();
+    if (!updatedUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    res.json({ updatedUser, status: "Successfully Updated the User" });
+  } catch (error) {
+    res.status(500).json({ message: "Something went wrong", error });
+  }
+};
+
+// 6. Delete User
+const deleteUser = async (req, res) => {
+  try {
+    const deletedUser = await User.findByIdAndDelete(req.params.id).lean();
+    if (!deletedUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    res.json({ message: "User successfully deleted", deletedUser });
+  } catch (error) {
+    res.status(500).json({ message: "Something went wrong", error });
+  }
+};
+
+// Authentication
 const login = async (req, res) => {
   try {
-    const user = await User.findOne({ email: req.body.email });
+    const user = await User.findOne({ email: req.body.email }).lean();
 
     // Check if user exists
     if (!user) {
@@ -112,10 +98,7 @@ const login = async (req, res) => {
     }
 
     // Check if the password is correct
-    const isPasswordCorrect = bcrypt.compareSync(
-      req.body.password,
-      user.password
-    );
+    const isPasswordCorrect = bcrypt.compareSync(req.body.password, user.password);
     if (!isPasswordCorrect) {
       return res.status(401).json({ message: "Incorrect password" });
     }
@@ -142,7 +125,7 @@ const login = async (req, res) => {
       student: "Successfully logged in as Student",
     };
 
-    const userType = user.usertype.toLowerCase(); // Normalizing usertype to lowercase
+    const userType = user.usertype.toLowerCase(); // Normalize usertype to lowercase
     const message = userTypeMessages[userType] || "Role not recognized";
 
     res.status(200).json({
@@ -151,25 +134,16 @@ const login = async (req, res) => {
       user: userInfo,
     });
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Something went wrong", error: error.message });
+    res.status(500).json({ message: "Something went wrong", error: error.message });
   }
 };
 
 module.exports = {
-  // CRUD
-
-  newAcc, //create
-
-  findAllUser, //read
-  findOneUser, //read
-  findOneUserByEmail, //read
-
-  updateUser, //update
-
-  deleteUser, //delete
-
-  // AUTH
-  login,
+  newAcc,      // Create
+  findAllUser, // Read all users
+  findOneUser, // Read user by ID
+  findOneUserByEmail, // Read user by email
+  updateUser,  // Update user
+  deleteUser,  // Delete user
+  login,       // Auth login
 };
