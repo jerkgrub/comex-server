@@ -53,7 +53,7 @@ const findOneUser = (req, res) => {
       } else {
         res.status(404).json({ message: 'User not found' });
       }
-    })
+    }) 
     .catch((err) => {
       res.status(500).json({ message: 'Something went wrong', error: err });
     });
