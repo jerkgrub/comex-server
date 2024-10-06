@@ -76,9 +76,12 @@ const findOneUserByEmail = (req, res) => {
 
 // 3. Update user
 const updateUser = (req, res) => {
-  // Hash the password if it's being updated
-  if (req.body.password) {
+  // Check if password is being updated and is not an empty string
+  if (req.body.password && req.body.password.trim() !== '') {
     req.body.password = bcrypt.hashSync(req.body.password, 10);
+  } else {
+    // Remove the password from the update if it's not being changed
+    delete req.body.password;
   }
 
   User.findOneAndUpdate({ _id: req.params.id }, req.body, {
@@ -95,6 +98,7 @@ const updateUser = (req, res) => {
       res.status(500).json({ message: 'Something went wrong', error: err });
     });
 };
+
 
 // 4. Delete user
 const deleteUser = (req, res) => {
