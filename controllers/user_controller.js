@@ -100,6 +100,7 @@ const updateUser = (req, res) => {
 };
 
 
+
 // 4. Delete user
 const deleteUser = (req, res) => {
   User.findOneAndDelete({ _id: req.params.id })
