@@ -1,29 +1,49 @@
+// config/mongo_config.js
 const mongoose = require("mongoose");
+require("dotenv").config(); // Load environment variables
 
-let isConnected; // Track connection state
+const MONGODB_URI = process.env.MONGODB_URI;
 
-// Use environment variables for sensitive info like the connection string
-const MONGODB_URI = process.env.MONGODB_URI || "mongodb+srv://nucasajerick:5sAb73lTrLX0c6Fy@cluster0.khsbida.mongodb.net/comexconnect";
+if (!MONGODB_URI) {
+  throw new Error("Please define the MONGODB_URI environment variable in your .env file.");
+}
 
-const connectToDatabase = async () => {
-  if (isConnected) {
-    // If already connected, reuse the connection
-    console.log("Reusing existing database connection");
-    return;
+/** 
+ * In serverless environments, it's important to reuse the database connection across function invocations.
+ * We'll use a global variable to store the connection.
+ */
+let cached = global.mongoose;
+
+if (!cached) {
+  cached = global.mongoose = { conn: null, promise: null };
+}
+
+async function connectToDatabase() {
+  if (cached.conn) {
+    // If connection is already established, return it
+    return cached.conn;
   }
 
-  try {
-    const connection = await mongoose.connect(MONGODB_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-      serverSelectionTimeoutMS: 5000,
-    });
-    isConnected = connection.connections[0].readyState;
-    console.log("New connection to MongoDB established");
-  } catch (error) {
-    console.error("Error connecting to MongoDB:", error);
-    throw error; // Ensure that the error is handled in the calling function
+  if (!cached.promise) {
+    // If no connection promise exists, create one
+    cached.promise = mongoose
+      .connect(MONGODB_URI, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+        serverSelectionTimeoutMS: 5000,
+      })
+      .then((mongoose) => {
+        console.log("New connection to MongoDB established");
+        return mongoose;
+      })
+      .catch((error) => {
+        console.error("Error connecting to MongoDB:", error);
+        throw error; // Ensure that the error is handled in the calling function
+      });
   }
-};
+
+  cached.conn = await cached.promise;
+  return cached.conn;
+}
 
 module.exports = connectToDatabase;

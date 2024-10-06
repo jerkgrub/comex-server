@@ -1,22 +1,18 @@
+// routes/user_routes.js
 const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/user_controller');
+const auth = require('../middlewares/auth'); // Import the authentication middleware
 
-// Auth
-router.post('/login', userController.login);  // Removed '/api' prefix
+// Public Routes (No Authentication Required)
+router.post('/login', userController.login);
+router.post('/users/new', userController.newAcc);
 
-// 1. Create
-router.post('/users/new', userController.newAcc);  // Removed '/api' prefix
-
-// 2. Read
-router.get('/users/all', userController.findAllUser);  // Removed '/api' prefix
-router.get('/users/:id', userController.findOneUser);  // Removed '/api' prefix
-router.get('/users/email/:email', userController.findOneUserByEmail);  // Removed '/api' prefix
-
-// 3. Update
-router.put('/users/update/:id', userController.updateUser);  // Removed '/api' prefix
-
-// 4. Delete
-router.delete('/users/delete/:id', userController.deleteUser);  // Removed '/api' prefix
+// Protected Routes (Authentication Required)
+router.get('/users/all', auth, userController.findAllUser);
+router.get('/users/:id', auth, userController.findOneUser);
+router.get('/users/email/:email', auth, userController.findOneUserByEmail);
+router.put('/users/update/:id', auth, userController.updateUser);
+router.delete('/users/delete/:id', auth, userController.deleteUser);
 
 module.exports = router;
