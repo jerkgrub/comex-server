@@ -76,15 +76,32 @@ const findOneUserByEmail = (req, res) => {
 
 // 3. Update user
 const updateUser = (req, res) => {
-  // Check if password is being updated and is not an empty string
-  if (req.body.password && req.body.password.trim() !== '') {
-    req.body.password = bcrypt.hashSync(req.body.password, 10);
-  } else {
-    // Remove the password from the update if it's not being changed
-    delete req.body.password;
+  // Create an object to hold the fields to update
+  const updateData = {};
+
+  // Update firstName if provided
+  if (req.body.firstName) {
+    updateData.firstName = req.body.firstName;
   }
 
-  User.findOneAndUpdate({ _id: req.params.id }, req.body, {
+  // Update lastName if provided
+  if (req.body.lastName) {
+    updateData.lastName = req.body.lastName;
+  }
+
+  // Update email if provided
+  if (req.body.email) {
+    updateData.email = req.body.email;
+  }
+
+  // Update password if provided and not empty
+  if (typeof req.body.password === 'string' && req.body.password.trim() !== '') {
+    updateData.password = bcrypt.hashSync(req.body.password, 10);
+  }
+
+  // Add any other fields you want to update in a similar manner
+
+  User.findOneAndUpdate({ _id: req.params.id }, updateData, {
     new: true,
     runValidators: true,
   })
@@ -98,6 +115,7 @@ const updateUser = (req, res) => {
       res.status(500).json({ message: 'Something went wrong', error: err });
     });
 };
+
 
 
 
