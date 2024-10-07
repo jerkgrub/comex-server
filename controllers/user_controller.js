@@ -89,9 +89,29 @@ const updateUser = (req, res) => {
     updateData.firstName = req.body.firstName;
   }
 
+  // Update middleName if provided
+  if (req.body.middleName) {
+    updateData.middleName = req.body.middleName;
+  }
+
   // Update lastName if provided
   if (req.body.lastName) {
     updateData.lastName = req.body.lastName;
+  }
+
+  // Update idNumber if provided
+  if (req.body.idNumber) {
+    updateData.idNumber = req.body.idNumber;
+  }
+
+  // Update mobileNumber if provided
+  if (req.body.mobileNumber) {
+    updateData.mobileNumber = req.body.mobileNumber;
+  }
+
+  // Update department if provided
+  if (req.body.department) {
+    updateData.department = req.body.department;
   }
 
   // Update email if provided
@@ -104,8 +124,7 @@ const updateUser = (req, res) => {
     updateData.password = bcrypt.hashSync(req.body.password, 10);
   }
 
-  // Add any other fields you want to update in a similar manner
-
+  // Find the user and update with the new data
   User.findOneAndUpdate({ _id: req.params.id }, updateData, {
     new: true,
     runValidators: true,
