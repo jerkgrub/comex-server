@@ -36,6 +36,7 @@ const newAcc = (req, res) => {
 // 2. Read all users
 const findAllUser = (req, res) => {
   User.find()
+    .select('-password') // Exclude password field
     .then((allDaUser) => {
       res.json({ Users: allDaUser });
     })
@@ -45,19 +46,23 @@ const findAllUser = (req, res) => {
 };
 
 // Find user by ID
+// controllers/user_controller.js
+
 const findOneUser = (req, res) => {
   User.findById(req.params.id)
+    .select('-password') // Exclude password field
     .then((user) => {
       if (user) {
         res.json({ User: user });
       } else {
         res.status(404).json({ message: 'User not found' });
       }
-    }) 
+    })
     .catch((err) => {
       res.status(500).json({ message: 'Something went wrong', error: err });
     });
 };
+
 
 // Find user by Email
 const findOneUserByEmail = (req, res) => {
