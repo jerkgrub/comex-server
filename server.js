@@ -32,7 +32,7 @@ app.use("/api/activity", activityRoutes);
 app.use("/api/credit", creditRoutes);
 
 // OTP Routes
-app.post('/auth/forgot-password', async (req, res) => {
+app.post('/api/auth/forgot-password', async (req, res) => {
   const { email } = req.body;
 
   try {
@@ -43,7 +43,7 @@ app.post('/auth/forgot-password', async (req, res) => {
   }
 });
 
-app.post('/auth/validate-otp', (req, res) => {
+app.post('/api/auth/validate-otp', (req, res) => {
   const { email, otp } = req.body;
 
   const isValid = Otp.validateOtp(email, otp);
