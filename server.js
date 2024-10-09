@@ -1,10 +1,9 @@
-// server.js
-require("dotenv").config(); // Load environment variables at the very top
+require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
-const connectToDatabase = require("./config/mongo_config"); // MongoDB config
+const connectToDatabase = require("./config/mongo_config");
+const Otp = require('./Otp'); // Import Otp
 
-// Initialize Express app
 const app = express();
 
 // Middleware
@@ -15,7 +14,6 @@ app.use(cors());
 // Database Connection Middleware
 app.use(async (req, res, next) => {
   try {
-    // Use cached connection if available
     await connectToDatabase();
     next();
   } catch (error) {
@@ -29,10 +27,32 @@ const userRoutes = require("./routes/user_routes");
 const activityRoutes = require("./routes/activity_routes");
 const creditRoutes = require("./routes/credit_routes");
 
-// Mount the routes
 app.use("/api", userRoutes);
 app.use("/api/activity", activityRoutes);
 app.use("/api/credit", creditRoutes);
+
+// OTP Routes
+app.post('/auth/forgot-password', async (req, res) => {
+  const { email } = req.body;
+
+  try {
+    await Otp.sendOtp(email);
+    res.status(200).json({ success: true });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error sending OTP' });
+  }
+});
+
+app.post('/auth/validate-otp', (req, res) => {
+  const { email, otp } = req.body;
+
+  const isValid = Otp.validateOtp(email, otp);
+  if (isValid) {
+    res.status(200).json({ success: true });
+  } else {
+    res.status(400).json({ success: false, message: 'Invalid or expired OTP' });
+  }
+});
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -40,5 +60,4 @@ app.use((err, req, res, next) => {
   res.status(500).json({ message: "An unexpected error occurred." });
 });
 
-// Export the Express app as a module for Vercel
 module.exports = app;

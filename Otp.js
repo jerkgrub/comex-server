@@ -19,7 +19,7 @@ class Otp {
         const { otp: storedOtp, expiresIn } = record;
 
         if (storedOtp === otp && Date.now() < expiresIn) {
-            delete otpStore[email];
+            delete otpStore[email]; // Invalidate OTP after use
             return true;
         }
 
@@ -32,17 +32,26 @@ class Otp {
         const transporter = nodemailer.createTransport({
             service: 'gmail',
             auth: {
-                user: 'your-email@gmail.com',
-                pass: 'your-email-password',
+                user: process.env.GMAIL_USER, // Use environment variables
+                pass: process.env.GMAIL_PASS,
             },
         });
 
         await transporter.sendMail({
-            from: 'your-email@gmail.com',
+            from: process.env.GMAIL_USER,
             to: email,
             subject: 'Your OTP Code',
             text: `Your OTP code is ${otp}. It will expire in 5 minutes.`,
         });
+    }
+
+    static checkOtpExpired(email) {
+        const record = otpStore[email];
+        if (!record || Date.now() > record.expiresIn) {
+            delete otpStore[email]; // Remove expired OTP
+            return false;
+        }
+        return true;
     }
 }
 
