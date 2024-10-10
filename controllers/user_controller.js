@@ -13,11 +13,8 @@ const resetPassword = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Hash the new password
-    const hashedPassword = bcrypt.hashSync(newPassword, 10);
-
-    // Update the user's password
-    user.password = hashedPassword;
+    // Update the user's password directly (hashing will be handled in the pre-save hook)
+    user.password = newPassword; 
     await user.save();
 
     return res.status(200).json({ message: 'Password reset successful' });
