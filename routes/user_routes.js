@@ -14,5 +14,7 @@ router.get('/users/:id', auth, userController.findOneUser);
 router.get('/users/email/:email', auth, userController.findOneUserByEmail);
 router.put('/users/update/:id', auth, userController.updateUser);
 router.delete('/users/delete/:id', auth, userController.deleteUser);
+router.post('/reset-password', userController.resetPassword);
+
 
 module.exports = router;
