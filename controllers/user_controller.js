@@ -1,6 +1,51 @@
 // controllers/user_controller.js
+const { put } = require('@vercel/blob');
+const multer = require('multer');
 const User = require('../models/user_model');
 const bcrypt = require('bcryptjs');
+
+// Set up Multer to store files in memory temporarily
+const storage = multer.memoryStorage();
+const upload = multer({ 
+  storage: storage,
+  limits: { fileSize: 5000000 }, // 5MB limit
+  fileFilter: (req, file, cb) => {
+    if (!file.originalname.match(/\.(jpg|jpeg|png)$/)) {
+      return cb(new Error('Only image files are allowed!'), false);
+    }
+    cb(null, true);
+  }
+});
+
+// Controller to handle avatar upload
+const uploadAvatar = async (req, res) => {
+  const avatarFile = req.file;  // Multer provides the file as req.file
+  const userId = req.params.id; // Assuming avatar is tied to the user ID
+
+  if (!avatarFile) {
+    return res.status(400).json({ message: 'No file uploaded' });
+  }
+
+  try {
+    // Upload the image to Vercel Blob
+    const { url } = await put(`avatars/${userId}-${Date.now()}.png`, avatarFile.buffer, { access: 'public' });
+
+    // Update MongoDB with the new avatar URL
+    const user = await User.findByIdAndUpdate(
+      userId, 
+      { avatar: url }, 
+      { new: true }
+    );
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.status(200).json({ message: 'Avatar uploaded successfully', avatarUrl: url, user });
+  } catch (error) {
+    res.status(500).json({ message: 'Error uploading avatar', error });
+  }
+};
 
 const resetPassword = async (req, res) => {
   const { email, newPassword } = req.body;
@@ -244,4 +289,6 @@ module.exports = {
   updateUser, // Update
   deleteUser, // Delete
   login, // Authentication
+  uploadAvatar, // Upload avatar
+  upload // multer
 };

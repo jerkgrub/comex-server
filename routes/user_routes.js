@@ -15,6 +15,7 @@ router.get('/users/email/:email', auth, userController.findOneUserByEmail);
 router.put('/users/update/:id', auth, userController.updateUser);
 router.delete('/users/delete/:id', auth, userController.deleteUser);
 router.post('/reset-password', userController.resetPassword);
+router.put('/users/upload-avatar/:id', userController.upload.single('avatar'), userController.uploadAvatar);
 
 
 module.exports = router;
