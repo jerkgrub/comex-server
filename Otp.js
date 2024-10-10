@@ -37,11 +37,29 @@ class Otp {
             },
         });
 
+        // HTML formatted email content
+        const htmlContent = `
+          <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #ddd; border-radius: 10px; width: 400px; margin: 20px auto;">
+            <h2 style="text-align: center; color: #333;">Your OTP Code</h2>
+            <p style="font-size: 16px; color: #555; text-align: center;">
+              Use the code below to complete your verification. This code is valid for 5 minutes.
+            </p>
+            <div style="text-align: center; padding: 20px;">
+              <span style="display: inline-block; background-color: #007BFF; color: #fff; font-size: 24px; font-weight: bold; padding: 15px 30px; border-radius: 5px;">
+                ${otp}
+              </span>
+            </div>
+            <p style="font-size: 14px; color: #999; text-align: center;">
+              If you didn’t request this email, please ignore it.
+            </p>
+          </div>
+        `;
+
         await transporter.sendMail({
             from: process.env.GMAIL_USER,
             to: email,
             subject: 'Your OTP Code',
-            text: `Your OTP code is ${otp}. It will expire in 5 minutes.`,
+            html: htmlContent, // Send HTML email
         });
     }
 
