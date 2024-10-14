@@ -180,6 +180,11 @@ const updateUser = (req, res) => {
     updateData.department = req.body.department;
   }
 
+  // Update dateHired if provided
+  if (req.body.department) {
+    updateData.dateHired = req.body.dateHired;
+  }
+
   // Update email if provided
   if (req.body.email) {
     updateData.email = req.body.email;
