@@ -1,137 +1,118 @@
-const Credit = require("../models/credit_model");
+const { put } = require('@vercel/blob');
+const Credit = require('../models/credit_model');
+const multer = require('multer');
+
+// Set up Multer to store files in memory temporarily
+const storage = multer.memoryStorage();
+const upload = multer({ 
+  storage: storage,
+  limits: { fileSize: 10000000 }, // 10MB limit
+  fileFilter: (req, file, cb) => {
+    if (!file.originalname.match(/\.(pdf|jpg|jpeg|png)$/)) {
+      return cb(new Error('Only PDF and image files are allowed!'), false);
+    }
+    cb(null, true);
+  }
+});
 
 // 1. Create new crediting form
-const newCredit = (req, res) => {
-  const { activityId, userId, totalHoursRendered, supportingDocuments, facultyReflection } = req.body;
-
-  if (!activityId || !userId || !totalHoursRendered || !facultyReflection) {
-    return res.status(400).json({ message: "All fields are required except supporting documents" });
-  }
-
-  Credit.create({
+const newCredit = async (req, res) => {
+  const {
+    isRegisteredEvent,
     activityId,
     userId,
+    type, // Added type field
+    title,
+    isVoluntary,
+    beneficiaries,
+    startDate,
+    endDate,
     totalHoursRendered,
-    supportingDocuments: supportingDocuments || '', // Set supportingDocuments as optional
     facultyReflection,
-  })
-    .then((newCredit) => {
-      res.status(201).json({ credit: newCredit, status: "Successfully submitted the crediting form" });
-    })
-    .catch((err) => {
-      res.status(500).json({ message: "Failed to create the credit form", error: err.message });
-    });
-};
+  } = req.body;
+  const supportingDocumentFile = req.file;
 
-// 2. Fetch all credits for a specific activity
-const findCreditsByActivity = (req, res) => {
-  const { activityId } = req.params;
-
-  if (!activityId) {
-    return res.status(400).json({ message: "Activity ID is required" });
+  if (!userId || !totalHoursRendered || !facultyReflection || !type) {
+    return res.status(400).json({ message: "Missing required fields" });
   }
 
-  Credit.find({ activityId })
-    .then((credits) => {
-      if (credits.length === 0) {
-        return res.status(404).json({ message: "No credits found for this activity" });
-      }
-      res.json({ credits });
-    })
-    .catch((err) => {
-      res.status(500).json({ message: "Failed to fetch credits for activity", error: err.message });
-    });
-};
+  try {
+    let supportingDocumentUrl = '';
 
-// 3. Fetch all credits for a specific user
-const findCreditsByUser = (req, res) => {
-  const { userId } = req.params;
+    if (supportingDocumentFile) {
+      // Upload the file to Vercel Blob
+      const { url } = await put(`supporting-documents/${userId}-${Date.now()}.${supportingDocumentFile.mimetype.split('/')[1]}`, supportingDocumentFile.buffer, { access: 'public' });
+      supportingDocumentUrl = url;
+    }
 
-  if (!userId) {
-    return res.status(400).json({ message: "User ID is required" });
-  }
-
-  Credit.find({ userId })
-    .then((credits) => {
-      if (credits.length === 0) {
-        return res.status(404).json({ message: "No credits found for this user" });
-      }
-      res.json({ credits });
-    })
-    .catch((err) => {
-      res.status(500).json({ message: "Failed to fetch credits for user", error: err.message });
-    });
-};
-
-// 4. Update credit by ID
-const updateCredit = (req, res) => {
-  const { creditId } = req.params;
-  const { totalHoursRendered, supportingDocuments, facultyReflection } = req.body;
-
-  if (!creditId) {
-    return res.status(400).json({ message: "Credit ID is required" });
-  }
-
-  Credit.findByIdAndUpdate(
-    creditId,
-    {
+    // Create the credit document in MongoDB
+    const newCredit = await Credit.create({
+      isRegisteredEvent,
+      activityId: isRegisteredEvent ? activityId : undefined, // Only include if event is registered
+      userId,
+      type, // Store type
+      title: isRegisteredEvent ? undefined : title, // Title is required only for non-registered events
+      isVoluntary: isRegisteredEvent ? undefined : isVoluntary,
+      beneficiaries: isRegisteredEvent ? undefined : beneficiaries,
+      startDate: isRegisteredEvent ? undefined : startDate,
+      endDate: isRegisteredEvent ? undefined : endDate,
       totalHoursRendered,
-      supportingDocuments: supportingDocuments || '', // Ensure empty string if no file
+      supportingDocuments: supportingDocumentUrl,
       facultyReflection,
-    },
-    { new: true, runValidators: true }
-  )
-    .then((updatedCredit) => {
-      if (!updatedCredit) {
-        return res.status(404).json({ message: "Credit form not found" });
-      }
-      res.json({ updatedCredit, status: "Successfully updated the crediting form" });
-    })
-    .catch((err) => {
-      res.status(500).json({ message: "Failed to update the credit form", error: err.message });
     });
+
+    res.status(201).json({ credit: newCredit, status: "Successfully submitted the crediting form" });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to create the credit form", error: err.message });
+  }
 };
 
-// 5. Delete credit by ID
-const deleteCredit = (req, res) => {
+// 2. Update credit by ID
+const updateCredit = async (req, res) => {
   const { creditId } = req.params;
+  const {
+    type, // Added type field
+    totalHoursRendered,
+    facultyReflection,
+  } = req.body;
+  const supportingDocumentFile = req.file;
 
   if (!creditId) {
     return res.status(400).json({ message: "Credit ID is required" });
   }
 
-  Credit.findByIdAndDelete(creditId)
-    .then((deletedCredit) => {
-      if (!deletedCredit) {
-        return res.status(404).json({ message: "Credit form not found" });
-      }
-      res.json({ message: "Successfully deleted the credit form", deletedCredit });
-    })
-    .catch((err) => {
-      res.status(500).json({ message: "Failed to delete the credit form", error: err.message });
-    });
-};
+  try {
+    let supportingDocumentUrl = '';
 
-const findOneCredit = (req, res) => {
-  const { creditId } = req.params;
+    if (supportingDocumentFile) {
+      // Upload the updated file to Vercel Blob
+      const { url } = await put(`supporting-documents/${req.userId}-${Date.now()}.${supportingDocumentFile.mimetype.split('/')[1]}`, supportingDocumentFile.buffer, { access: 'public' });
+      supportingDocumentUrl = url;
+    }
 
-  Credit.findById(creditId)
-    .then((credit) => {
-      if (!credit) {
-        return res.status(404).json({ message: 'Credit not found' });
-      }
-      res.json({ credit });
-    })
-    .catch((err) => {
-      res.status(500).json({ message: 'Error fetching credit', error: err.message });
-    });
+    const updatedCredit = await Credit.findByIdAndUpdate(
+      creditId,
+      {
+        type, // Store type
+        totalHoursRendered,
+        supportingDocuments: supportingDocumentUrl || req.body.supportingDocuments, // Keep the old URL if no new file uploaded
+        facultyReflection,
+      },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedCredit) {
+      return res.status(404).json({ message: "Credit form not found" });
+    }
+
+    res.json({ updatedCredit, status: "Successfully updated the crediting form" });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to update the credit form", error: err.message });
+  }
 };
 
 module.exports = {
   newCredit,
-  findCreditsByActivity,
-  findCreditsByUser,
   updateCredit,
-  deleteCredit,
-  findOneCredit
+  upload, // Multer middleware for file uploads
 };
