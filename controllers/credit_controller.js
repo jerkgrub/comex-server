@@ -1,3 +1,5 @@
+// controllers/credit_controller.js
+
 const { put } = require('@vercel/blob');
 const Credit = require('../models/credit_model');
 const multer = require('multer');
@@ -12,6 +14,47 @@ const upload = multer({
     cb(null, true);
   }
 });
+
+// Generic function to fetch credits by type
+const getCreditsByType = async (req, res, type) => {
+  const validTypes = ["Institutional", "College Driven", "Extension Services", "Capacity Building"];
+  
+  if (!validTypes.includes(type)) {
+    return res.status(400).json({ message: "Invalid credit type" });
+  }
+  
+  try {
+    const credits = await Credit.find({ type })
+      .populate('userId', '-password') // Populate user details excluding password
+      .populate('activityId') // Populate activity details if applicable
+      .sort({ createdAt: -1 }); // Sort by most recent
+    res.status(200).json({ credits });
+  } catch (err) {
+    console.error("Error fetching credits:", err);
+    res.status(500).json({ message: "Failed to retrieve credits", error: err.message });
+  }
+};
+
+// Specific functions for each credit type
+const getInstitutionalCredits = async (req, res) => {
+  const type = "Institutional";
+  return getCreditsByType(req, res, type);
+};
+
+const getCollegeDrivenCredits = async (req, res) => {
+  const type = "College Driven";
+  return getCreditsByType(req, res, type);
+};
+
+const getExtensionServicesCredits = async (req, res) => {
+  const type = "Extension Services";
+  return getCreditsByType(req, res, type);
+};
+
+const getCapacityBuildingCredits = async (req, res) => {
+  const type = "Capacity Building";
+  return getCreditsByType(req, res, type);
+};
 
 // Create new crediting form
 const newCredit = async (req, res) => {
@@ -32,6 +75,7 @@ const newCredit = async (req, res) => {
   } = req.body;
   const supportingDocumentFile = req.file;
 
+  // Basic validation
   if (!userId || !totalHoursRendered || !facultyReflection || !type) {
     return res.status(400).json({ message: "Missing required fields" });
   }
@@ -75,6 +119,7 @@ const newCredit = async (req, res) => {
 
     res.status(201).json({ credit: newCreditEntry, status: "Successfully submitted the crediting form" });
   } catch (err) {
+    console.error("Error creating credit form:", err);
     res.status(500).json({ message: "Failed to create the credit form", error: err.message });
   }
 };
@@ -136,7 +181,7 @@ const updateCredit = async (req, res) => {
       creditId,
       creditData,
       { new: true, runValidators: true }
-    );
+    ).populate('userId', '-password').populate('activityId');
 
     if (!updatedCredit) {
       return res.status(404).json({ message: "Credit form not found" });
@@ -144,6 +189,7 @@ const updateCredit = async (req, res) => {
 
     res.json({ updatedCredit, status: "Successfully updated the crediting form" });
   } catch (err) {
+    console.error("Error updating credit form:", err);
     res.status(500).json({ message: "Failed to update the credit form", error: err.message });
   }
 };
@@ -152,4 +198,8 @@ module.exports = {
   newCredit,
   updateCredit,
   upload, // Export Multer middleware for file uploads
+  getInstitutionalCredits,
+  getCollegeDrivenCredits,
+  getExtensionServicesCredits,
+  getCapacityBuildingCredits
 };
