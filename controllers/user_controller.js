@@ -189,8 +189,16 @@ const updateUser = (req, res) => {
     updateData.dateHired = req.body.dateHired;
   }
 
-  if (req.body.isActivated) {
-    updateData.isActivated = req.body.isActivated;
+  // Handle `isActivated` separately to ensure it's a Boolean
+  if (req.body.hasOwnProperty('isActivated')) {
+    const isActivatedValue = req.body.isActivated;
+    console.log("isActivatedValue before conversion:", isActivatedValue);
+    if (typeof isActivatedValue === 'string') {
+      updateData.isActivated = isActivatedValue.toLowerCase() === 'true';
+    } else {
+      updateData.isActivated = Boolean(isActivatedValue);
+    }
+    console.log("isActivatedValue after conversion:", updateData.isActivated);
   }
 
   // Update email if provided
