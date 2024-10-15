@@ -8,9 +8,7 @@ const upload = multer({
   storage: storage,
   limits: { fileSize: 10000000 }, // 10MB limit
   fileFilter: (req, file, cb) => {
-    if (!file.originalname.match(/\.(pdf|jpg|jpeg|png)$/)) {
-      return cb(new Error('Only PDF and image files are allowed!'), false);
-    }
+    // Accept any file type by not checking the extension
     cb(null, true);
   }
 });
