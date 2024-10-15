@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const activityController = require('../controllers/activity_controller');
+const Activity = require('../models/activity_model');
 
 // Activity routes
 
