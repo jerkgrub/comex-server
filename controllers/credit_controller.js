@@ -15,13 +15,15 @@ const upload = multer({
 
 // Create new crediting form
 const newCredit = async (req, res) => {
+  // Convert string booleans to actual booleans
+  const isRegisteredEvent = req.body.isRegisteredEvent === 'true';
+  const isVoluntary = req.body.isVoluntary === 'true';
+
   const {
-    isRegisteredEvent,
     activityId,
     userId,
     type,
     title,
-    isVoluntary,
     beneficiaries,
     startDate,
     endDate,
@@ -69,9 +71,9 @@ const newCredit = async (req, res) => {
     }
 
     // Create the credit document in MongoDB
-    const newCredit = await Credit.create(creditData);
+    const newCreditEntry = await Credit.create(creditData);
 
-    res.status(201).json({ credit: newCredit, status: "Successfully submitted the crediting form" });
+    res.status(201).json({ credit: newCreditEntry, status: "Successfully submitted the crediting form" });
   } catch (err) {
     res.status(500).json({ message: "Failed to create the credit form", error: err.message });
   }
