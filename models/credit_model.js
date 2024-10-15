@@ -14,30 +14,51 @@ const CreditSchema = new mongoose.Schema(
       ref: "User",
     },
     type: {
-      type: String, 
+      type: String,
     },
     title: {
       type: String,
+      // Conditional requirement based on isRegisteredEvent
     },
     isVoluntary: {
       type: Boolean,
+      // Conditional requirement based on isRegisteredEvent
     },
     beneficiaries: {
       type: String,
+      // Conditional requirement based on isRegisteredEvent
     },
     startDate: {
       type: Date,
+      // Conditional requirement based on isRegisteredEvent
     },
     endDate: {
       type: Date,
+      // Conditional requirement based on isRegisteredEvent
     },
     totalHoursRendered: {
       type: Number,
     },
     supportingDocuments: {
-      type: String, // Store URL or path to the uploaded file
+      type: String, // URL or path to the uploaded file
     },
     facultyReflection: {
+      type: String,
+    },
+    // New Fields for Approval/Rejection
+    status: {
+      type: String,
+      enum: ["Pending", "Approved", "Rejected"],
+      default: "Pending",
+    },
+    approvedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User", // Assuming approvers are also users
+    },
+    approvedAt: {
+      type: Date,
+    },
+    rejectionReason: {
       type: String,
     },
   },
