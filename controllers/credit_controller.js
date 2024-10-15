@@ -4,7 +4,7 @@ const multer = require('multer');
 
 // Set up Multer to store files in memory temporarily
 const storage = multer.memoryStorage();
-const upload = multer({ 
+const upload = multer({
   storage: storage,
   limits: { fileSize: 10000000 }, // 10MB limit
   fileFilter: (req, file, cb) => {
@@ -41,25 +41,37 @@ const newCredit = async (req, res) => {
 
     if (supportingDocumentFile) {
       // Upload the file to Vercel Blob
-      const { url } = await put(`supporting-documents/${userId}-${Date.now()}.${supportingDocumentFile.mimetype.split('/')[1]}`, supportingDocumentFile.buffer, { access: 'public' });
+      const { url } = await put(
+        `supporting-documents/${userId}-${Date.now()}.${supportingDocumentFile.mimetype.split('/')[1]}`,
+        supportingDocumentFile.buffer,
+        { access: 'public' }
+      );
       supportingDocumentUrl = url;
     }
 
-    // Create the credit document in MongoDB
-    const newCredit = await Credit.create({
+    // Build the object conditionally
+    const creditData = {
       isRegisteredEvent,
-      activityId: isRegisteredEvent ? activityId : undefined,
       userId,
       type,
-      title: isRegisteredEvent ? undefined : title,
-      isVoluntary: isRegisteredEvent ? undefined : isVoluntary,
-      beneficiaries: isRegisteredEvent ? undefined : beneficiaries,
-      startDate: isRegisteredEvent ? undefined : startDate,
-      endDate: isRegisteredEvent ? undefined : endDate,
       totalHoursRendered,
       supportingDocuments: supportingDocumentUrl,
       facultyReflection,
-    });
+    };
+
+    // Conditionally add fields only if the event is not registered
+    if (!isRegisteredEvent) {
+      creditData.title = title;
+      creditData.isVoluntary = isVoluntary;
+      creditData.beneficiaries = beneficiaries;
+      creditData.startDate = startDate;
+      creditData.endDate = endDate;
+    } else {
+      creditData.activityId = activityId; // Only include activityId for registered events
+    }
+
+    // Create the credit document in MongoDB
+    const newCredit = await Credit.create(creditData);
 
     res.status(201).json({ credit: newCredit, status: "Successfully submitted the crediting form" });
   } catch (err) {
@@ -71,7 +83,14 @@ const newCredit = async (req, res) => {
 const updateCredit = async (req, res) => {
   const { creditId } = req.params;
   const {
+    isRegisteredEvent,
+    activityId,
     type,
+    title,
+    isVoluntary,
+    beneficiaries,
+    startDate,
+    endDate,
     totalHoursRendered,
     facultyReflection,
   } = req.body;
@@ -86,18 +105,36 @@ const updateCredit = async (req, res) => {
 
     if (supportingDocumentFile) {
       // Upload the updated file to Vercel Blob
-      const { url } = await put(`supporting-documents/${req.userId}-${Date.now()}.${supportingDocumentFile.mimetype.split('/')[1]}`, supportingDocumentFile.buffer, { access: 'public' });
+      const { url } = await put(
+        `supporting-documents/${req.userId}-${Date.now()}.${supportingDocumentFile.mimetype.split('/')[1]}`,
+        supportingDocumentFile.buffer,
+        { access: 'public' }
+      );
       supportingDocumentUrl = url;
+    }
+
+    // Build the object conditionally
+    const creditData = {
+      type,
+      totalHoursRendered,
+      supportingDocuments: supportingDocumentUrl || req.body.supportingDocuments, // Keep the old URL if no new file is uploaded
+      facultyReflection,
+    };
+
+    // Conditionally add fields only if the event is not registered
+    if (!isRegisteredEvent) {
+      creditData.title = title;
+      creditData.isVoluntary = isVoluntary;
+      creditData.beneficiaries = beneficiaries;
+      creditData.startDate = startDate;
+      creditData.endDate = endDate;
+    } else {
+      creditData.activityId = activityId; // Only include activityId for registered events
     }
 
     const updatedCredit = await Credit.findByIdAndUpdate(
       creditId,
-      {
-        type,
-        totalHoursRendered,
-        supportingDocuments: supportingDocumentUrl || req.body.supportingDocuments,
-        facultyReflection,
-      },
+      creditData,
       { new: true, runValidators: true }
     );
 
