@@ -21,7 +21,7 @@ const newCredit = async (req, res) => {
     isRegisteredEvent,
     activityId,
     userId,
-    type, // Added type field
+    type,
     title,
     isVoluntary,
     beneficiaries,
@@ -48,10 +48,10 @@ const newCredit = async (req, res) => {
     // Create the credit document in MongoDB
     const newCredit = await Credit.create({
       isRegisteredEvent,
-      activityId: isRegisteredEvent ? activityId : undefined, // Only include if event is registered
+      activityId: isRegisteredEvent ? activityId : undefined,
       userId,
-      type, // Store type
-      title: isRegisteredEvent ? undefined : title, // Title is required only for non-registered events
+      type,
+      title: isRegisteredEvent ? undefined : title,
       isVoluntary: isRegisteredEvent ? undefined : isVoluntary,
       beneficiaries: isRegisteredEvent ? undefined : beneficiaries,
       startDate: isRegisteredEvent ? undefined : startDate,
@@ -71,7 +71,7 @@ const newCredit = async (req, res) => {
 const updateCredit = async (req, res) => {
   const { creditId } = req.params;
   const {
-    type, // Added type field
+    type,
     totalHoursRendered,
     facultyReflection,
   } = req.body;
@@ -93,9 +93,9 @@ const updateCredit = async (req, res) => {
     const updatedCredit = await Credit.findByIdAndUpdate(
       creditId,
       {
-        type, // Store type
+        type,
         totalHoursRendered,
-        supportingDocuments: supportingDocumentUrl || req.body.supportingDocuments, // Keep the old URL if no new file uploaded
+        supportingDocuments: supportingDocumentUrl || req.body.supportingDocuments,
         facultyReflection,
       },
       { new: true, runValidators: true }
@@ -114,5 +114,5 @@ const updateCredit = async (req, res) => {
 module.exports = {
   newCredit,
   updateCredit,
-  upload, // Multer middleware for file uploads
+  upload, // Export Multer middleware for file uploads
 };
