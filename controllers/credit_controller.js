@@ -114,5 +114,9 @@ const updateCredit = async (req, res) => {
 module.exports = {
   newCredit,
   updateCredit,
+  findCreditsByActivity, // Added function export
+  findCreditsByUser, // Added function export
+  deleteCredit, // Added function export
+  findOneCredit, // Added function export
   upload, // Export Multer middleware for file uploads
 };
