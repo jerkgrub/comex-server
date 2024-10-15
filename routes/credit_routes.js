@@ -13,10 +13,10 @@ router.post("/new", upload.single('supportingDocument'), creditController.newCre
 // Update credit by ID (with file upload support)
 router.put("/update/:creditId", upload.single('supportingDocument'), creditController.updateCredit);
 
-// Read operations - Fetch credits by type
-router.get("/institutional", creditController.getInstitutionalCredits);
-router.get("/collegedriven", creditController.getCollegeDrivenCredits);
-router.get("/extensionservices", creditController.getExtensionServicesCredits);
-router.get("/capacitybuilding", creditController.getCapacityBuildingCredits);
+// Read operations - Fetch credits by status and type
+router.get("/:status/:type", creditController.getCreditsByStatusAndType);
+
+// Read operations - Fetch count of credits by status and type
+router.get("/:status/:type/count", creditController.getCreditsCountByStatusAndType);
 
 module.exports = router;

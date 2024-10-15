@@ -15,19 +15,42 @@ const upload = multer({
   }
 });
 
-// Generic function to fetch credits by type
-const getCreditsByType = async (req, res, type) => {
-  const validTypes = ["Institutional", "College Driven", "Extension Services", "Capacity Building"];
-  
-  if (!validTypes.includes(type)) {
-    return res.status(400).json({ message: "Invalid credit type" });
+// Valid statuses and types for validation
+const VALID_STATUSES = ["Pending", "Approved", "Rejected"];
+const VALID_TYPES = ["Institutional", "College Driven", "Extension Services", "Capacity Building"];
+
+// Helper function to capitalize first letter of each word
+const capitalizeWords = (str) => {
+  return str.replace(/\b\w/g, char => char.toUpperCase());
+};
+
+// Generic function to fetch credits by status and type
+const getCreditsByStatusAndType = async (req, res) => {
+  let { status, type } = req.params;
+
+  // Normalize and capitalize the status and type
+  status = capitalizeWords(status.toLowerCase());
+  type = type
+    .toLowerCase()
+    .split('-')
+    .map(word => capitalizeWords(word))
+    .join(' ');
+
+  // Validate status and type
+  if (!VALID_STATUSES.includes(status)) {
+    return res.status(400).json({ message: `Invalid status: ${status}. Valid statuses are ${VALID_STATUSES.join(', ')}` });
   }
-  
+
+  if (!VALID_TYPES.includes(type)) {
+    return res.status(400).json({ message: `Invalid type: ${type}. Valid types are ${VALID_TYPES.join(', ')}` });
+  }
+
   try {
-    const credits = await Credit.find({ type })
+    const credits = await Credit.find({ status, type })
       .populate('userId', '-password') // Populate user details excluding password
       .populate('activityId') // Populate activity details if applicable
       .sort({ createdAt: -1 }); // Sort by most recent
+
     res.status(200).json({ credits });
   } catch (err) {
     console.error("Error fetching credits:", err);
@@ -35,25 +58,34 @@ const getCreditsByType = async (req, res, type) => {
   }
 };
 
-// Specific functions for each credit type
-const getInstitutionalCredits = async (req, res) => {
-  const type = "Institutional";
-  return getCreditsByType(req, res, type);
-};
+// Generic function to fetch count of credits by status and type
+const getCreditsCountByStatusAndType = async (req, res) => {
+  let { status, type } = req.params;
 
-const getCollegeDrivenCredits = async (req, res) => {
-  const type = "College Driven";
-  return getCreditsByType(req, res, type);
-};
+  // Normalize and capitalize the status and type
+  status = capitalizeWords(status.toLowerCase());
+  type = type
+    .toLowerCase()
+    .split('-')
+    .map(word => capitalizeWords(word))
+    .join(' ');
 
-const getExtensionServicesCredits = async (req, res) => {
-  const type = "Extension Services";
-  return getCreditsByType(req, res, type);
-};
+  // Validate status and type
+  if (!VALID_STATUSES.includes(status)) {
+    return res.status(400).json({ message: `Invalid status: ${status}. Valid statuses are ${VALID_STATUSES.join(', ')}` });
+  }
 
-const getCapacityBuildingCredits = async (req, res) => {
-  const type = "Capacity Building";
-  return getCreditsByType(req, res, type);
+  if (!VALID_TYPES.includes(type)) {
+    return res.status(400).json({ message: `Invalid type: ${type}. Valid types are ${VALID_TYPES.join(', ')}` });
+  }
+
+  try {
+    const count = await Credit.countDocuments({ status, type });
+    res.status(200).json({ count });
+  } catch (err) {
+    console.error("Error counting credits:", err);
+    res.status(500).json({ message: "Failed to retrieve credits count", error: err.message });
+  }
 };
 
 // Create new crediting form
@@ -80,6 +112,17 @@ const newCredit = async (req, res) => {
     return res.status(400).json({ message: "Missing required fields" });
   }
 
+  // Normalize and capitalize the type
+  const normalizedType = type
+    .toLowerCase()
+    .split(' ')
+    .map(word => capitalizeWords(word))
+    .join(' ');
+
+  if (!VALID_TYPES.includes(normalizedType)) {
+    return res.status(400).json({ message: `Invalid type: ${type}. Valid types are ${VALID_TYPES.join(', ')}` });
+  }
+
   try {
     let supportingDocumentUrl = '';
 
@@ -97,7 +140,7 @@ const newCredit = async (req, res) => {
     const creditData = {
       isRegisteredEvent,
       userId,
-      type,
+      type: normalizedType,
       totalHoursRendered,
       supportingDocuments: supportingDocumentUrl,
       facultyReflection,
@@ -145,6 +188,21 @@ const updateCredit = async (req, res) => {
     return res.status(400).json({ message: "Credit ID is required" });
   }
 
+  // Convert string booleans to actual booleans
+  const isRegisteredEventBool = isRegisteredEvent === 'true';
+  const isVoluntaryBool = isVoluntary === 'true';
+
+  // Normalize and capitalize the type
+  const normalizedType = type
+    .toLowerCase()
+    .split(' ')
+    .map(word => capitalizeWords(word))
+    .join(' ');
+
+  if (normalizedType && !VALID_TYPES.includes(normalizedType)) {
+    return res.status(400).json({ message: `Invalid type: ${type}. Valid types are ${VALID_TYPES.join(', ')}` });
+  }
+
   try {
     let supportingDocumentUrl = '';
 
@@ -159,29 +217,36 @@ const updateCredit = async (req, res) => {
     }
 
     // Build the object conditionally
-    const creditData = {
-      type,
-      totalHoursRendered,
-      supportingDocuments: supportingDocumentUrl || req.body.supportingDocuments, // Keep the old URL if no new file is uploaded
-      facultyReflection,
-    };
+    const creditData = {};
+
+    if (normalizedType) creditData.type = normalizedType;
+    if (totalHoursRendered !== undefined) creditData.totalHoursRendered = totalHoursRendered;
+    if (facultyReflection !== undefined) creditData.facultyReflection = facultyReflection;
+
+    if (supportingDocumentUrl) {
+      creditData.supportingDocuments = supportingDocumentUrl;
+    } else if (req.body.supportingDocuments) {
+      creditData.supportingDocuments = req.body.supportingDocuments; // Keep the old URL if no new file is uploaded
+    }
 
     // Conditionally add fields only if the event is not registered
-    if (!isRegisteredEvent) {
-      creditData.title = title;
-      creditData.isVoluntary = isVoluntary;
-      creditData.beneficiaries = beneficiaries;
-      creditData.startDate = startDate;
-      creditData.endDate = endDate;
+    if (!isRegisteredEventBool) {
+      if (title !== undefined) creditData.title = title;
+      if (isVoluntaryBool !== undefined) creditData.isVoluntary = isVoluntaryBool;
+      if (beneficiaries !== undefined) creditData.beneficiaries = beneficiaries;
+      if (startDate !== undefined) creditData.startDate = startDate;
+      if (endDate !== undefined) creditData.endDate = endDate;
     } else {
-      creditData.activityId = activityId; // Only include activityId for registered events
+      if (activityId !== undefined) creditData.activityId = activityId; // Only include activityId for registered events
     }
 
     const updatedCredit = await Credit.findByIdAndUpdate(
       creditId,
       creditData,
       { new: true, runValidators: true }
-    ).populate('userId', '-password').populate('activityId');
+    )
+      .populate('userId', '-password')
+      .populate('activityId');
 
     if (!updatedCredit) {
       return res.status(404).json({ message: "Credit form not found" });
@@ -194,12 +259,11 @@ const updateCredit = async (req, res) => {
   }
 };
 
+// Export Multer middleware for file uploads
 module.exports = {
   newCredit,
   updateCredit,
   upload, // Export Multer middleware for file uploads
-  getInstitutionalCredits,
-  getCollegeDrivenCredits,
-  getExtensionServicesCredits,
-  getCapacityBuildingCredits
+  getCreditsByStatusAndType,
+  getCreditsCountByStatusAndType
 };
