@@ -15,7 +15,7 @@ const upload = multer({
   }
 });
 
-// 1. Create new crediting form
+// Create new crediting form
 const newCredit = async (req, res) => {
   const {
     isRegisteredEvent,
@@ -67,7 +67,7 @@ const newCredit = async (req, res) => {
   }
 };
 
-// 2. Update credit by ID
+// Update credit by ID
 const updateCredit = async (req, res) => {
   const { creditId } = req.params;
   const {
@@ -114,9 +114,5 @@ const updateCredit = async (req, res) => {
 module.exports = {
   newCredit,
   updateCredit,
-  findCreditsByActivity, // Added function export
-  findCreditsByUser, // Added function export
-  deleteCredit, // Added function export
-  findOneCredit, // Added function export
   upload, // Export Multer middleware for file uploads
 };
