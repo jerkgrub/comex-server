@@ -16,7 +16,7 @@ const upload = multer({
 });
 
 // Valid statuses and types for validation
-const VALID_STATUSES = ["Pending", "Approved", "Rejected"];
+const VALID_STATUSES = ["Pending", "Approved", "Rejected", "pending", "approved", "rejected"];
 const VALID_TYPES = ["Institutional", "College Driven", "Extension Services", "Capacity Building"];
 
 // Helper function to capitalize first letter of each word
