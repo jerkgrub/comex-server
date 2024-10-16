@@ -283,6 +283,49 @@ const getCreditById = async (req, res) => {
   }
 };
 
+const approveCredit = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const updatedCredit = await Credit.findByIdAndUpdate(
+      id,
+      { status: 'Approved' },
+      { new: true }
+    );
+
+    if (!updatedCredit) {
+      return res.status(404).json({ message: 'Credit not found' });
+    }
+
+    res.status(200).json({ message: 'Credit approved successfully', credit: updatedCredit });
+  } catch (err) {
+    console.error("Error approving credit:", err);
+    res.status(500).json({ message: "Failed to approve credit", error: err.message });
+  }
+};
+
+// Reject Credit
+const rejectCredit = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const updatedCredit = await Credit.findByIdAndUpdate(
+      id,
+      { status: 'Rejected' },
+      { new: true }
+    );
+
+    if (!updatedCredit) {
+      return res.status(404).json({ message: 'Credit not found' });
+    }
+
+    res.status(200).json({ message: 'Credit rejected successfully', credit: updatedCredit });
+  } catch (err) {
+    console.error("Error rejecting credit:", err);
+    res.status(500).json({ message: "Failed to reject credit", error: err.message });
+  }
+};
+
 // Export Multer middleware for file uploads
 module.exports = {
   newCredit,
@@ -290,5 +333,7 @@ module.exports = {
   upload, // Export Multer middleware for file uploads
   getCreditsByStatusAndType,
   getCreditsCountByStatusAndType,
-  getCreditById
+  getCreditById,
+  approveCredit,
+  rejectCredit,
 };

@@ -7,6 +7,11 @@ const creditController = require("../controllers/credit_controller");
 // Use Multer for file upload in routes
 const upload = creditController.upload; // Multer middleware for handling file uploads
 // **New Route: Fetch a single credit by ID**
+
+// **New Routes: Approve and Reject Credits**
+router.put("/approve/:id", creditController.approveCredit);
+router.put("/reject/:id", creditController.rejectCredit);
+
 router.get("/id/:id", creditController.getCreditById);
 // Create a new crediting form (with file upload support)
 router.post("/new", upload.single('supportingDocument'), creditController.newCredit);
