@@ -259,11 +259,36 @@ const updateCredit = async (req, res) => {
   }
 };
 
+const getCreditById = async (req, res) => {
+  const { id } = req.params; // Extract the credit ID from the route parameters
+
+  // Validate the ID format (optional but recommended)
+  if (!id.match(/^[0-9a-fA-F]{24}$/)) { // Assuming MongoDB ObjectId
+    return res.status(400).json({ message: "Invalid credit ID format" });
+  }
+
+  try {
+    const credit = await Credit.findById(id)
+      .populate('userId', '-password') // Populate user details excluding password
+      .populate('activityId'); // Populate activity details if applicable
+
+    if (!credit) {
+      return res.status(404).json({ message: "Credit not found" });
+    }
+
+    res.status(200).json({ credit });
+  } catch (err) {
+    console.error("Error fetching credit by ID:", err);
+    res.status(500).json({ message: "Failed to retrieve credit", error: err.message });
+  }
+};
+
 // Export Multer middleware for file uploads
 module.exports = {
   newCredit,
   updateCredit,
   upload, // Export Multer middleware for file uploads
   getCreditsByStatusAndType,
-  getCreditsCountByStatusAndType
+  getCreditsCountByStatusAndType,
+  getCreditById
 };

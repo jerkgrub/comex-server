@@ -19,4 +19,7 @@ router.get("/:status/:type", creditController.getCreditsByStatusAndType);
 // Read operations - Fetch count of credits by status and type
 router.get("/:status/:type/count", creditController.getCreditsCountByStatusAndType);
 
+// **New Route: Fetch a single credit by ID**
+router.get("/id/:id", creditController.getCreditById);
+
 module.exports = router;
