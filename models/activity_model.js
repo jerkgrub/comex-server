@@ -12,7 +12,7 @@ const ActivitySchema = new mongoose.Schema(
 
     description: String, //
     image: String,
-
+    objectives: String,
     isVoluntaryAndUnpaid: Boolean,
     beneficiaries: String,
     startDate: String, //
