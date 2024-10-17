@@ -9,6 +9,7 @@ const upload = creditController.upload; // Multer middleware for handling file u
 // **New Route: Fetch a single credit by ID**
 
 // **New Routes: Approve and Reject Credits**
+router.get('/approved-credits/:id', creditController.getApprovedCreditsByUserId);
 router.put("/approve/:id", creditController.approveCredit);
 router.put("/reject/:id", creditController.rejectCredit);
 
@@ -26,6 +27,5 @@ router.get("/:status/:type", creditController.getCreditsByStatusAndType);
 router.get("/:status/:type/count", creditController.getCreditsCountByStatusAndType);
 
 // Read operations - Fetch approved credits by user
-router.get('/approved-credits/:id', creditController.getApprovedCreditsByUserId);
 
 module.exports = router;
