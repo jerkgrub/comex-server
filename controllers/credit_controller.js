@@ -326,6 +326,25 @@ const rejectCredit = async (req, res) => {
   }
 };
 
+const getApprovedCreditsByUserId = async (req, res) => {
+  const { id } = req.params; // Extract user ID from the request parameters
+
+  try {
+    const approvedCredits = await Credit.find({ userId: id, status: 'Approved' })
+      .populate('activityId') // Populate activity details if applicable
+      .sort({ createdAt: -1 }); // Sort by most recent
+
+    if (!approvedCredits || approvedCredits.length === 0) {
+      return res.status(404).json({ message: "No approved credits found for this user" });
+    }
+
+    res.status(200).json({ approvedCredits });
+  } catch (err) {
+    console.error("Error fetching approved credits by user ID:", err);
+    res.status(500).json({ message: "Failed to retrieve approved credits", error: err.message });
+  }
+};
+
 // Export Multer middleware for file uploads
 module.exports = {
   newCredit,
@@ -336,4 +355,5 @@ module.exports = {
   getCreditById,
   approveCredit,
   rejectCredit,
+  getApprovedCreditsByUserId,
 };

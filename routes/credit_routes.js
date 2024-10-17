@@ -25,6 +25,7 @@ router.get("/:status/:type", creditController.getCreditsByStatusAndType);
 // Read operations - Fetch count of credits by status and type
 router.get("/:status/:type/count", creditController.getCreditsCountByStatusAndType);
 
-
+// Read operations - Fetch approved credits by user
+router.get('/approved-credits/:id', creditController.getApprovedCreditsByUserId);
 
 module.exports = router;
