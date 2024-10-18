@@ -10,6 +10,7 @@ const ActivitySchema = new mongoose.Schema(
     organizer: String, //
     title: String,
 
+    location: String, //
     description: String, //
     image: String,
     objectives: String,
