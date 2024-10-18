@@ -2,6 +2,12 @@ const mongoose = require("mongoose");
 
 const CreditSchema = new mongoose.Schema(
   {
+    location: {
+      type: String,
+    },
+    organizer: {
+      type: String,
+    },
     activityId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Activity",
