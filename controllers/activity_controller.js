@@ -1,5 +1,27 @@
 const Activity = require("../models/activity_model");
 
+// Fetch approved activities
+const findApprovedActivities = (req, res) => {
+  Activity.find({ 'adminApproval.isApproved': true })
+    .then((approvedActivities) => {
+      res.json({ Activities: approvedActivities });
+    })
+    .catch((err) => {
+      res.status(500).json({ message: "Something went wrong", error: err });
+    });
+};
+
+// Fetch pending activities (not approved yet)
+const findPendingActivities = (req, res) => {
+  Activity.find({ 'adminApproval.isApproved': false })
+    .then((pendingActivities) => {
+      res.json({ Activities: pendingActivities });
+    })
+    .catch((err) => {
+      res.status(500).json({ message: "Something went wrong", error: err });
+    });
+};
+
 // 1. Create new activity
 const newActivity = (req, res) => {
   try {
@@ -166,4 +188,7 @@ module.exports = {
   addRespondent,
   getAllRespondents,
   removeRespondent,
+
+  findApprovedActivities,
+  findPendingActivities,
 };

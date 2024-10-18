@@ -10,7 +10,10 @@ router.post('/new', activityController.newActivity);  // Removed "/api/activity"
 
 // 2. Read
 router.get('/all', activityController.findAllActivity);  // "/all" for all activities
-router.get('/:id', activityController.findOneActivity);  // Removed "/api/activity" prefix
+router.get('/:id', activityController.findOneActivity); 
+// New routes for approved and pending activities
+router.get('/approved', activityController.findApprovedActivities);
+router.get('/pending', activityController.findPendingActivities);
 
 // 3. Update
 router.put('/update/:id', activityController.updateActivity);  // Removed "/api/activity" prefix
