@@ -24,6 +24,30 @@ const capitalizeWords = (str) => {
   return str.replace(/\b\w/g, char => char.toUpperCase());
 };
 
+// Fetch Approved Credits of Type "College Driven" or "Institutional" by User ID
+const getApprovedCollegeInstitutionalCredits = async (req, res) => {
+  const { id } = req.params; // Extract user ID from the request parameters
+
+  try {
+    const approvedCredits = await Credit.find({
+      userId: id,
+      status: 'Approved',
+      type: { $in: ['College Driven', 'Institutional'] }, // Filter by specific types
+    })
+      .populate('activityId') // Populate activity details if applicable
+      .sort({ createdAt: -1 }); // Sort by most recent
+
+    if (!approvedCredits || approvedCredits.length === 0) {
+      return res.status(404).json({ message: "No approved credits found for this user with the specified types" });
+    }
+
+    res.status(200).json({ approvedCredits });
+  } catch (err) {
+    console.error("Error fetching approved credits by user ID:", err);
+    res.status(500).json({ message: "Failed to retrieve approved credits", error: err.message });
+  }
+};
+
 // Generic function to fetch credits by status and type
 const getCreditsByStatusAndType = async (req, res) => {
   let { status, type } = req.params;
@@ -356,4 +380,5 @@ module.exports = {
   approveCredit,
   rejectCredit,
   getApprovedCreditsByUserId,
+  getApprovedCollegeInstitutionalCredits,
 };
