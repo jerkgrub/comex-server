@@ -3,7 +3,8 @@ const router = express.Router();
 const activityController = require('../controllers/activity_controller');
 const Activity = require('../models/activity_model');
 
-// Activity routes
+// Fetch activities with type: Institutional & College Driven
+router.get('/highlights', activityController.findHighlights);
 // New routes for approved and pending activities
 router.get('/approved', activityController.findApprovedActivities);
 router.get('/pending', activityController.findPendingActivities);
@@ -14,7 +15,7 @@ router.post('/new', activityController.newActivity);  // Removed "/api/activity"
 // 2. Read
 router.get('/all', activityController.findAllActivity);  // "/all" for all activities
 router.get('/:id', activityController.findOneActivity); 
-router.get('/highlights', activityController.findHighlights);
+
 
 // 3. Update
 router.put('/update/:id', activityController.updateActivity);  // Removed "/api/activity" prefix
