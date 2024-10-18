@@ -2,7 +2,8 @@ const Activity = require("../models/activity_model");
 
 const findHighlights = (req, res) => {
   Activity.find({
-    type: { $in: ['Institutional', 'College Driven'] }
+    type: { $in: ['Institutional', 'College Driven'] },
+    'adminApproval.isApproved': true
   })
     .then((highlightActivities) => {
       res.json({ Activities: highlightActivities });
