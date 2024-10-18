@@ -128,6 +128,8 @@ const newCredit = async (req, res) => {
     endDate,
     totalHoursRendered,
     facultyReflection,
+    location,    // Extracted
+    organizer,   // Extracted
   } = req.body;
   const supportingDocumentFile = req.file;
 
