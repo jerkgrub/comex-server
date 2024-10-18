@@ -16,6 +16,10 @@ const ActivitySchema = new mongoose.Schema(
     objectives: String,
     isVoluntaryAndUnpaid: Boolean,
     beneficiaries: String,
+
+    registrationStart: String, //
+    registrationEnd: String, //
+
     startDate: String, //
     endDate: String, //
     time: String, //
