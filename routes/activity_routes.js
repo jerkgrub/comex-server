@@ -14,7 +14,7 @@ router.post('/new', activityController.newActivity);  // Removed "/api/activity"
 // 2. Read
 router.get('/all', activityController.findAllActivity);  // "/all" for all activities
 router.get('/:id', activityController.findOneActivity); 
-
+router.get('/highlights', activityController.findHighlights);
 
 // 3. Update
 router.put('/update/:id', activityController.updateActivity);  // Removed "/api/activity" prefix

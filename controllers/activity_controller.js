@@ -1,5 +1,17 @@
 const Activity = require("../models/activity_model");
 
+const findHighlights = (req, res) => {
+  Activity.find({
+    type: { $in: ['Institutional', 'College Driven'] }
+  })
+    .then((highlightActivities) => {
+      res.json({ Activities: highlightActivities });
+    })
+    .catch((err) => {
+      res.status(500).json({ message: "Something went wrong", error: err });
+    });
+};
+
 // Fetch approved activities
 const findApprovedActivities = (req, res) => {
   Activity.find({ 'adminApproval.isApproved': true })
@@ -191,4 +203,5 @@ module.exports = {
 
   findApprovedActivities,
   findPendingActivities,
+  findHighlights,
 };
