@@ -1,5 +1,23 @@
 const Activity = require("../models/activity_model");
 
+// Fetch activities where the user is a respondent
+const findJoinedActivities = (req, res) => {
+  const userId = req.params.id; // Get the user ID from the request parameters
+
+  Activity.find({ 'respondents.userId': userId }) // Query activities where the user is a respondent
+    .then((joinedActivities) => {
+      if (joinedActivities.length > 0) {
+        res.json({ Activities: joinedActivities });
+      } else {
+        res.json({ message: "Haven't registered for any activities yet." });
+      }
+    })
+    .catch((err) => {
+      res.status(500).json({ message: "Something went wrong", error: err });
+    });
+};
+
+
 const findHighlights = (req, res) => {
   Activity.find({
     type: { $in: ['Institutional', 'College Driven'] },
@@ -205,4 +223,5 @@ module.exports = {
   findApprovedActivities,
   findPendingActivities,
   findHighlights,
+  findJoinedActivities,
 };

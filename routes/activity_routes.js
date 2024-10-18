@@ -3,6 +3,8 @@ const router = express.Router();
 const activityController = require('../controllers/activity_controller');
 const Activity = require('../models/activity_model');
 
+// Route to get activities where a user is a respondent
+router.get('/joined-activities/:id', activityController.findJoinedActivities);
 // Fetch activities with type: Institutional & College Driven
 router.get('/highlights', activityController.findHighlights);
 // New routes for approved and pending activities
