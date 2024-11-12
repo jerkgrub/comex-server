@@ -1,4 +1,5 @@
-const mongoose = require("mongoose");
+// /models/activity_model.js
+const mongoose = require('mongoose');
 
 const ActivitySchema = new mongoose.Schema(
   {
@@ -6,20 +7,18 @@ const ActivitySchema = new mongoose.Schema(
     isActivated: Boolean,
 
     type: String, //
-
+    programId: String,
+    projectId: String,
     organizer: String, //
     title: String,
-
     location: String, //
     description: String, //
     image: String,
     objectives: String,
     isVoluntaryAndUnpaid: Boolean,
     beneficiaries: String,
-
     registrationStart: String, //
     registrationEnd: String, //
-
     startDate: String, //
     endDate: String, //
     time: String, //
@@ -33,11 +32,11 @@ const ActivitySchema = new mongoose.Schema(
     adminApproval: {
       isApproved: Boolean,
       approvedBy: String,
-      approvalDate: Date,
-    },
+      approvalDate: Date
+    }
   },
   { timestamps: true }
 );
 
-const Activity = mongoose.model("Activity", ActivitySchema);
+const Activity = mongoose.model('Activity', ActivitySchema);
 module.exports = Activity;
