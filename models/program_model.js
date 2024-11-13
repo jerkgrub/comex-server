@@ -2,10 +2,10 @@ const mongoose = require("mongoose");
 
 const ProgramSchema = new mongoose.Schema(
   {
-    title: { type: String, required: true },
+    title: String,
     description: String,
-    isApproved: { type: Boolean, default: false },
-    createdBy: { type: String, required: true }, // Reference to the coordinator who created it
+    isApproved: Boolean,
+    createdBy: String,
   },
   { timestamps: true }
 );
