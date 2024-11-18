@@ -1,92 +1,85 @@
-    const Program = require('../models/program_model');
+const Program = require('../models/program_model');
 
-    // Create a new program
-    const createProgram = async (req, res) => {
-    try {
-        const { title, description, createdBy } = req.body;
+// 1. Create a new program
+const createProgram = async (req, res) => {
+  try {
+    const { title, description, createdBy } = req.body;
 
-        // Create a new Program instance
-        const newProgram = new Program({
-        title,
-        description,
-        isApproved,
-        createdBy
-        });
+    // Create a new Program instance
+    const newProgram = new Program({
+      title,
+      description,
+      isApproved: false, // Default to unapproved
+      createdBy,
+    });
 
-        // Save the program to the database
-        await newProgram.save();
-        res.status(201).json({ message: 'Program created successfully', program: newProgram });
-    } catch (error) {
-        res.status(500).json({ message: 'Error creating program', error });
+    // Save the program to the database
+    const savedProgram = await newProgram.save();
+    res.status(201).json({ success: true, message: 'Program created successfully', program: savedProgram });
+  } catch (error) {
+    console.error('Error creating program:', error);
+    res.status(500).json({ success: false, message: 'Error creating program', error });
+  }
+};
+
+// 2. Fetch all approved programs
+const getApprovedPrograms = async (req, res) => {
+  try {
+    const approvedPrograms = await Program.find({ isApproved: true });
+    res.status(200).json({ success: true, programs: approvedPrograms });
+  } catch (error) {
+    console.error('Error fetching approved programs:', error);
+    res.status(500).json({ success: false, message: 'Error fetching approved programs', error });
+  }
+};
+
+// 3. Fetch all unapproved programs
+const getUnapprovedPrograms = async (req, res) => {
+  try {
+    const unapprovedPrograms = await Program.find({ isApproved: false });
+    res.status(200).json({ success: true, programs: unapprovedPrograms });
+  } catch (error) {
+    console.error('Error fetching unapproved programs:', error);
+    res.status(500).json({ success: false, message: 'Error fetching unapproved programs', error });
+  }
+};
+
+// 4. Fetch all programs
+const getAllPrograms = async (req, res) => {
+  try {
+    const programs = await Program.find();
+    res.status(200).json({ success: true, programs });
+  } catch (error) {
+    console.error('Error fetching all programs:', error);
+    res.status(500).json({ success: false, message: 'Error fetching all programs', error });
+  }
+};
+
+// 5. Approve a program
+const approveProgram = async (req, res) => {
+  try {
+    const programId = req.params.id;
+    const updatedProgram = await Program.findByIdAndUpdate(
+      programId,
+      { isApproved: true },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedProgram) {
+      return res.status(404).json({ success: false, message: 'Program not found' });
     }
-    };
 
-    // Get all approved programs
-    const getApprovedPrograms = async (req, res) => {
-    try {
-        const approvedPrograms = await Program.find({ isApproved: true });
-        res.status(200).json(approvedPrograms);
-    } catch (error) {
-        res.status(500).json({ message: 'Error fetching approved programs', error });
-    }
-    };
+    res.status(200).json({ success: true, message: 'Program approved successfully', program: updatedProgram });
+  } catch (error) {
+    console.error('Error approving program:', error);
+    res.status(500).json({ success: false, message: 'Error approving program', error });
+  }
+};
 
-    // Get all unapproved programs
-    const getUnapprovedPrograms = async (req, res) => {
-    try {
-        const unapprovedPrograms = await Program.find({ isApproved: false });
-        res.status(200).json(unapprovedPrograms);
-    } catch (error) {
-        res.status(500).json({ message: 'Error fetching unapproved programs', error });
-    }
-    };
-
-    module.exports = {
-    createProgram,
-    getApprovedPrograms,
-    getUnapprovedPrograms
-    };
-    const Project = require('../models/project_model');
-
-    // Create a new project
-    exports.createProject = async (req, res) => {
-      const { title, programId, createdBy } = req.body;
-    
-      try {
-        const newProject = new Project({
-          title,
-          programId,
-          createdBy,
-          isApproved: false, // Default to unapproved
-        });
-    
-        await newProject.save();
-        res.status(201).json({ success: true, message: 'Project created successfully', data: newProject });
-      } catch (error) {
-        console.error('Error creating project:', error);
-        res.status(500).json({ success: false, message: 'Error creating project', error });
-      }
-    };
-    
-    // Get all approved projects
-    exports.getApprovedProjects = async (req, res) => {
-      try {
-        const approvedProjects = await Project.find({ isApproved: true });
-        res.status(200).json({ success: true, data: approvedProjects });
-      } catch (error) {
-        console.error('Error fetching approved projects:', error);
-        res.status(500).json({ success: false, message: 'Error fetching approved projects', error });
-      }
-    };
-    
-    // Get all unapproved projects
-    exports.getUnapprovedProjects = async (req, res) => {
-      try {
-        const unapprovedProjects = await Project.find({ isApproved: false });
-        res.status(200).json({ success: true, data: unapprovedProjects });
-      } catch (error) {
-        console.error('Error fetching unapproved projects:', error);
-        res.status(500).json({ success: false, message: 'Error fetching unapproved projects', error });
-      }
-    };
-    
+module.exports = {
+  createProgram,
+  getApprovedPrograms,
+  getUnapprovedPrograms,
+  getAllPrograms,
+  approveProgram,
+};

@@ -1,15 +1,20 @@
-//routes/program_routes.js
 const express = require('express');
 const router = express.Router();
-const { createProgram, getApprovedPrograms, getUnapprovedPrograms } = require('../controllers/program_controller');
+const programController = require('../controllers/programController');
 
-// Route to create a new program
-router.post('/new', createProgram);
+// 1. Create a new program
+router.post('/new', programController.createProgram);
 
-// Route to get all approved programs
-router.get('/approved/all', getApprovedPrograms);
+// 2. Fetch all approved programs
+router.get('/approved/all', programController.getApprovedPrograms);
 
-// Route to get all unapproved programs
-router.get('/unapproved/all', getUnapprovedPrograms);
+// 3. Fetch all unapproved programs
+router.get('/unapproved/all', programController.getUnapprovedPrograms);
+
+// 4. Fetch all programs
+router.get('/all', programController.getAllPrograms);
+
+// 5. Approve a program
+router.put('/approve/:id', programController.approveProgram);
 
 module.exports = router;
