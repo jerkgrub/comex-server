@@ -6,6 +6,7 @@ const ProgramSchema = new mongoose.Schema(
     description: String,
     isApproved: Boolean,
     createdBy: String,
+    isDeleted: { type: Boolean, default: false }, // Soft-delete flag
   },
   { timestamps: true }
 );
