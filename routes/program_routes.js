@@ -17,4 +17,16 @@ router.get('/all', programController.getAllPrograms);
 // 5. Approve a program
 router.put('/approve/:id', programController.approveProgram);
 
+router.get('/pending/count', async (req, res) => {
+    try {
+        const count = await Program.countDocuments({
+            'adminApproval.isApproved': false,
+        });
+        res.json({ count });
+    } catch (error) {
+        console.error('Error fetching pending programs count:', error);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
 module.exports = router;
