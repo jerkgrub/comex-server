@@ -19,14 +19,15 @@ router.put('/approve/:id', projectController.approveProject);
 
 router.get('/pending/count', async (req, res) => {
     try {
-        // Count projects where `isApproved` is false
         const count = await Project.countDocuments({ isApproved: false });
         res.json({ count });
     } catch (error) {
-        console.error('Error fetching pending projects count:', error);
-        res.status(500).json({ error: 'Server error' });
+        console.error('Error fetching pending projects count:', error.message);
+        console.error('Stack trace:', error.stack);
+        res.status(500).json({ error: 'Server error', message: error.message });
     }
 });
+
 
 
 module.exports = router;
