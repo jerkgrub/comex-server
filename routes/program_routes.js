@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const programController = require('../controllers/program_controller');
+const Program = require('../models/program_model');
 
 // 1. Create a new program
 router.post('/new', programController.createProgram);
