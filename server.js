@@ -1,16 +1,17 @@
 //server.js
-require("dotenv").config();
-const express = require("express");
-const cors = require("cors");
-const connectToDatabase = require("./config/mongo_config");
+require('dotenv').config();
+const express = require('express');
+const cors = require('cors');
+const connectToDatabase = require('./config/mongo_config');
 const Otp = require('./Otp'); // Import Otp
+const bodyParser = require('body-parser');
 
 const app = express();
 
 // Middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 app.use(cors());
+app.use(express.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
 // Database Connection Middleware
 app.use(async (req, res, next) => {
@@ -18,24 +19,28 @@ app.use(async (req, res, next) => {
     await connectToDatabase();
     next();
   } catch (error) {
-    console.error("Database connection error:", error);
-    res.status(500).json({ message: "Database connection error", error });
+    console.error('Database connection error:', error);
+    res.status(500).json({ message: 'Database connection error', error });
   }
 });
 
 // Import routes
-const userRoutes = require("./routes/user_routes");
-const activityRoutes = require("./routes/activity_routes");
-const creditRoutes = require("./routes/credit_routes");
-const programRoutes = require("./routes/program_routes");
-const projectRoutes = require("./routes/project_routes");
+const userRoutes = require('./routes/user_routes');
+const activityRoutes = require('./routes/activity_routes');
+const creditRoutes = require('./routes/credit_routes');
+const programRoutes = require('./routes/program_routes');
+const projectRoutes = require('./routes/project_routes');
 
-app.use("/api", userRoutes);
-app.use("/api/activity", activityRoutes);
-app.use("/api/credit", creditRoutes);
-app.use("/api/program", programRoutes)
-app.use("/api/project", projectRoutes);
+app.use('/api', userRoutes);
+app.use('/api/activity', activityRoutes);
+app.use('/api/credit', creditRoutes);
+app.use('/api/program', programRoutes);
+app.use('/api/project', projectRoutes);
 
+// Test route
+app.get('/test', (req, res) => {
+  res.json({ message: 'Server is working!' });
+});
 
 // OTP Routes
 app.post('/api/auth/forgot-password', async (req, res) => {
@@ -60,10 +65,12 @@ app.post('/api/auth/validate-otp', (req, res) => {
   }
 });
 
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error("Unhandled error:", err.stack);
-  res.status(500).json({ message: "An unexpected error occurred." });
-});
+// Conditionally start the server for local testing
+if (require.main === module) {
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => {
+    console.log(`Server is running locally on port ${PORT}`);
+  });
+}
 
 module.exports = app;
