@@ -49,4 +49,7 @@ router.get('/pending/count', async (req, res) => {
     }
   });  
 
+// New endpoint: Fetch activities by project ID
+router.get('/by-project/:projectId', activityController.getActivitiesByProject);
+
 module.exports = router;

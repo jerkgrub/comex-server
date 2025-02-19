@@ -204,6 +204,18 @@ const deleteProject = async (req, res) => {
   }
 };
 
+// New: Fetch all projects belonging to a given program
+const getProjectsByProgram = async (req, res) => {
+  try {
+    const programId = req.params.programId;
+    const projects = await Project.find({ programId, isDeleted: false });
+    res.status(200).json({ success: true, projects });
+  } catch (error) {
+    console.error("Error fetching projects by program:", error);
+    res.status(500).json({ success: false, message: "Error fetching projects by program", error });
+  }
+};
+
 module.exports = {
   createProject,
   getApprovedProjects,
@@ -213,4 +225,5 @@ module.exports = {
   getProjectById,
   updateProject,
   deleteProject,
+  getProjectsByProgram,
 };

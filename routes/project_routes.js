@@ -41,4 +41,7 @@ router.get("/pending/count", async (req, res) => {
   }
 });
 
+// New endpoint: Fetch all projects within a specified program
+router.get("/program/:programId", projectController.getProjectsByProgram);
+
 module.exports = router;

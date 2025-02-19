@@ -70,7 +70,19 @@ const newActivity = (req, res) => {
 
 // 2. Fetch all activities
 const findAllActivity = (req, res) => {
-  Activity.find()
+  // Build a filter object based on optional query parameters: type, programId, projectId
+  const filter = {};
+  if (req.query.type) {
+    filter.type = req.query.type;
+  }
+  if (req.query.programId) {
+    filter.programId = req.query.programId;
+  }
+  if (req.query.projectId) {
+    filter.projectId = req.query.projectId;
+  }
+  
+  Activity.find(filter)
     .then((allActivities) => {
       res.json({ Activities: allActivities });
     })
@@ -207,6 +219,18 @@ const removeRespondent = (req, res) => {
     });
 };
 
+// New: Get activities by project ID
+const getActivitiesByProject = async (req, res) => {
+  try {
+    const projectId = req.params.projectId;
+    const activities = await Activity.find({ projectId });
+    res.status(200).json({ success: true, activities });
+  } catch (error) {
+    console.error("Error fetching activities by project:", error);
+    res.status(500).json({ success: false, message: "Error fetching activities by project", error });
+  }
+};
+
 module.exports = {
   // Activities
   newActivity,
@@ -224,4 +248,7 @@ module.exports = {
   findPendingActivities,
   findHighlights,
   findJoinedActivities,
+
+  // New export:
+  getActivitiesByProject,
 };

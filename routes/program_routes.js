@@ -41,4 +41,7 @@ router.get("/pending/count", async (req, res) => {
   }
 });
 
+// New endpoint: Fetch all programs within a department
+router.get("/department/:department", programController.getProgramsByDepartment);
+
 module.exports = router;

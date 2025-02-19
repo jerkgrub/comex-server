@@ -204,6 +204,18 @@ const deleteProgram = async (req, res) => {
   }
 };
 
+// New: Fetch all programs by department
+const getProgramsByDepartment = async (req, res) => {
+  try {
+    const department = req.params.department;
+    const programs = await Program.find({ department, isDeleted: false });
+    res.status(200).json({ success: true, programs });
+  } catch (error) {
+    console.error("Error fetching programs by department:", error);
+    res.status(500).json({ success: false, message: "Error fetching programs by department", error });
+  }
+};
+
 module.exports = {
   createProgram,
   getApprovedPrograms,
@@ -213,4 +225,5 @@ module.exports = {
   getProgramById,
   updateProgram,
   deleteProgram,
+  getProgramsByDepartment,
 };
