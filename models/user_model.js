@@ -8,6 +8,14 @@ const UserSchema = new mongoose.Schema(
   {
     // User details
     isActivated: Boolean,
+    isApproved: {
+      type: Boolean,
+      default: function() {
+        // Auto-approve for non-crucial roles
+        const nonCrucialRoles = ['ntp', 'student', 'faculty'];
+        return nonCrucialRoles.includes(this.usertype?.toLowerCase());
+      }
+    },
     password: String,
     avatar: String,
     firstName: String,

@@ -68,35 +68,79 @@ const resetPassword = async (req, res) => {
   }
 };
 
-// 1. Create a new account
-const newAcc = (req, res) => {
-  const { email } = req.body;
+// New method to fetch approved users
+const getApprovedUsers = async (req, res) => {
+  try {
+    const approvedUsers = await User.find({ isApproved: true })
+      .select('-password')
+      .sort({ createdAt: -1 });
+    res.json({ users: approvedUsers });
+  } catch (err) {
+    res.status(500).json({ message: 'Error fetching approved users', error: err });
+  }
+};
 
-  // Check if the email already exists
-  User.findOne({ email })
-    .then((existingUser) => {
-      if (existingUser) {
-        return res.status(400).json({
-          message:
-            'The email you have provided is already associated with an account.',
-        });
-      }
+// New method to fetch pending approval users
+const getPendingUsers = async (req, res) => {
+  try {
+    const pendingUsers = await User.find({ isApproved: false })
+      .select('-password')
+      .sort({ createdAt: -1 });
+    res.json({ users: pendingUsers });
+  } catch (err) {
+    res.status(500).json({ message: 'Error fetching pending users', error: err });
+  }
+};
 
-      // If email is not used, create the new user
-      const newUser = new User(req.body);
-      // Password will be hashed in the pre-save hook
-      newUser
-        .save()
-        .then((newAcc) => {
-          res.json({ newAcc: newAcc, status: 'Successfully registered' });
-        })
-        .catch((err) => {
-          res.status(500).json({ message: 'Something went wrong', error: err });
-        });
-    })
-    .catch((err) => {
-      res.status(500).json({ message: 'Something went wrong', error: err });
+// New method to approve a user
+const approveUser = async (req, res) => {
+  try {
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      { isApproved: true },
+      { new: true }
+    ).select('-password');
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json({ message: 'User approved successfully', user });
+  } catch (err) {
+    res.status(500).json({ message: 'Error approving user', error: err });
+  }
+};
+
+// Modify the existing newAcc method to handle auto-approval
+const newAcc = async (req, res) => {
+  try {
+    const { email, usertype } = req.body;
+
+    // Check if email exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({
+        message: 'Email already associated with an account.',
+      });
+    }
+
+    // Auto-approve for non-crucial roles
+    const nonCrucialRoles = ['ntp', 'student', 'faculty'];
+    const isApproved = nonCrucialRoles.includes(usertype.toLowerCase());
+
+    const newUser = new User({
+      ...req.body,
+      isApproved
     });
+
+    const savedUser = await newUser.save();
+    res.json({ 
+      newAcc: savedUser, 
+      status: isApproved ? 'Account created and approved' : 'Account created, pending approval'
+    });
+  } catch (err) {
+    res.status(500).json({ message: 'Something went wrong', error: err });
+  }
 };
 
 // 2. Read all users
@@ -245,14 +289,18 @@ const deleteUser = (req, res) => {
     });
 };
 
-// User login
+// Modify the login method to check approval status
 const login = async (req, res) => {
   try {
     const user = await User.findOne({ email: req.body.email });
 
-    // Check if user exists
     if (!user) {
       return res.status(401).json({ message: 'Email does not exist' });
+    }
+
+    // Check if user is approved
+    if (!user.isApproved) {
+      return res.status(403).json({ message: 'Account pending approval' });
     }
 
     // Check if the password is correct
@@ -295,9 +343,7 @@ const login = async (req, res) => {
       user: userInfo,
     });
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: 'Something went wrong', error: error.message });
+    res.status(500).json({ message: 'Something went wrong', error: error.message });
   }
 };
 
@@ -311,5 +357,8 @@ module.exports = {
   deleteUser, // Delete
   login, // Authentication
   uploadAvatar, // Upload avatar
-  upload // multer
+  upload, // multer
+  getApprovedUsers,
+  getPendingUsers,
+  approveUser,
 };
