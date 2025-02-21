@@ -3,6 +3,7 @@ const { put } = require("@vercel/blob");
 const multer = require("multer");
 const User = require("../models/user_model");
 const bcrypt = require("bcryptjs");
+const { notifyAdminsAboutNewUser } = require("./notification_controller");
 
 // Set up Multer to store files in memory temporarily
 const storage = multer.memoryStorage();
@@ -132,11 +133,9 @@ const newAcc = async (req, res) => {
     // Validate that 'usertype' is provided as a non-empty string
     if (!usertype || typeof usertype !== "string" || usertype.trim() === "") {
       console.error("Invalid usertype provided in newAcc:", usertype);
-      return res
-        .status(400)
-        .json({
-          message: "Usertype is required and must be a non-empty string",
-        });
+      return res.status(400).json({
+        message: "Usertype is required and must be a non-empty string",
+      });
     }
 
     // Similarly validate that 'email' is provided as a non-empty string
@@ -165,6 +164,10 @@ const newAcc = async (req, res) => {
     });
 
     const savedUser = await newUser.save();
+
+    // Notify admins and coordinators about the new user
+    await notifyAdminsAboutNewUser(savedUser);
+
     res.json({
       newAcc: savedUser,
       status: isApproved
@@ -172,23 +175,8 @@ const newAcc = async (req, res) => {
         : "Account created, pending approval",
     });
   } catch (err) {
-    // Log the error details to the server console for debugging
-    console.error(`Error in newAcc: ${err.message}`, err);
-
-    // If error is a Mongoose ValidationError, extract and return all error messages
-    if (err.name === "ValidationError") {
-      const messages = Object.values(err.errors).map(
-        (errorItem) => errorItem.message
-      );
-      return res
-        .status(400)
-        .json({ message: "Validation Error", errors: messages });
-    }
-
-    // For other errors return the error message for debugging purposes
-    res
-      .status(500)
-      .json({ message: "Failed to create account", error: err.message });
+    console.error("Error in newAcc:", err);
+    res.status(500).json({ message: "Error creating account", error: err });
   }
 };
 
