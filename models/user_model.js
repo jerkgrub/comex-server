@@ -60,6 +60,15 @@ UserSchema.pre("save", function (next) {
       this.lastName.slice(1).toLowerCase();
   }
 
+  // Add "0" prefix to mobileNumber if it doesn't already start with "0"
+  if (
+    this.mobileNumber &&
+    typeof this.mobileNumber === "string" &&
+    !this.mobileNumber.startsWith("0")
+  ) {
+    this.mobileNumber = "0" + this.mobileNumber;
+  }
+
   next();
 });
 
