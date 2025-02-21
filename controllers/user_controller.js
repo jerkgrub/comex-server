@@ -337,7 +337,7 @@ const deleteUser = (req, res) => {
     });
 };
 
-// Modify the login method to check approval status
+// Modify the login method to check approval status and activation
 const login = async (req, res) => {
   try {
     const user = await User.findOne({ email: req.body.email });
@@ -349,6 +349,11 @@ const login = async (req, res) => {
     // Check if user is approved
     if (!user.isApproved) {
       return res.status(403).json({ message: "Account pending approval" });
+    }
+
+    // Check if user is activated
+    if (!user.isActivated) {
+      return res.status(403).json({ message: "Account is deactivated" });
     }
 
     // Check if the password is correct
