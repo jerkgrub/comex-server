@@ -30,12 +30,14 @@ const activityRoutes = require('./routes/activity_routes');
 const creditRoutes = require('./routes/credit_routes');
 const programRoutes = require('./routes/program_routes');
 const projectRoutes = require('./routes/project_routes');
+const notificationRoutes = require('./routes/notification_routes');
 
 app.use('/api', userRoutes);
 app.use('/api/activity', activityRoutes);
 app.use('/api/credit', creditRoutes);
 app.use('/api/program', programRoutes);
 app.use('/api/project', projectRoutes);
+app.use('/api/notification', notificationRoutes);
 
 // Test route
 app.get('/test', (req, res) => {
