@@ -31,16 +31,23 @@ const creditRoutes = require('./routes/credit_routes');
 const programRoutes = require('./routes/program_routes');
 const projectRoutes = require('./routes/project_routes');
 const notificationRoutes = require('./routes/notification_routes');
+const contentRoutes = require('./routes/content_routes');
 
+// user
 app.use('/api', userRoutes);
-app.use('/api/activity', activityRoutes);
 app.use('/api/credit', creditRoutes);
-app.use('/api/program', programRoutes);
-app.use('/api/project', projectRoutes);
 app.use('/api/notification', notificationRoutes);
 
+// initiatives
+app.use('/api/activity', activityRoutes);
+app.use('/api/program', programRoutes);
+app.use('/api/project', projectRoutes);
+
+// content
+app.use('/api/content', contentRoutes);
+
 // Test route
-app.get('/test', (req, res) => {
+app.get('/api/test', (req, res) => {
   res.json({ message: 'Server is working!' });
 });
 
