@@ -1,14 +1,14 @@
 // config/mongo_config.js
-const mongoose = require("mongoose");
-require("dotenv").config(); // Load environment variables
+const mongoose = require('mongoose');
+require('dotenv').config(); // Load environment variables
 
 const MONGODB_URI = process.env.MONGODB_URI;
 
 if (!MONGODB_URI) {
-  throw new Error("Please define the MONGODB_URI environment variable in your .env file.");
+  throw new Error('Please define the MONGODB_URI environment variable in your .env file.');
 }
 
-/** 
+/**
  * In serverless environments, it's important to reuse the database connection across function invocations.
  * We'll use a global variable to store the connection.
  */
@@ -28,16 +28,14 @@ async function connectToDatabase() {
     // If no connection promise exists, create one
     cached.promise = mongoose
       .connect(MONGODB_URI, {
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
-        serverSelectionTimeoutMS: 5000,
+        serverSelectionTimeoutMS: 5000
       })
-      .then((mongoose) => {
-        console.log("New connection to MongoDB established");
+      .then(mongoose => {
+        console.log('New connection to MongoDB established');
         return mongoose;
       })
-      .catch((error) => {
-        console.error("Error connecting to MongoDB:", error);
+      .catch(error => {
+        console.error('Error connecting to MongoDB:', error);
         throw error; // Ensure that the error is handled in the calling function
       });
   }
