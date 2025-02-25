@@ -13,6 +13,7 @@ const contentSchema = new mongoose.Schema(
     },
     hero: {
       tagline: { type: String },
+      tagline2: { type: String },
       description: { type: String },
       caption: { type: String }
     }
