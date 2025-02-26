@@ -17,7 +17,7 @@ exports.createForm = async (req, res) => {
     const form = new Form({
       title,
       description,
-      questions: processedQuestions,
+      questions: processedQuestions
       // Removed author field since there's only one admin
     });
 
@@ -66,7 +66,7 @@ exports.updateForm = async (req, res) => {
     }
 
     // No authorization check needed
-    
+
     // Update only the fields that were provided
     if (title) form.title = title;
     if (description !== undefined) form.description = description;
