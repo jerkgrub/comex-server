@@ -32,6 +32,7 @@ const programRoutes = require('./routes/program_routes');
 const projectRoutes = require('./routes/project_routes');
 const notificationRoutes = require('./routes/notification_routes');
 const contentRoutes = require('./routes/content_routes');
+const formRoutes = require('./routes/form_routes');
 
 // user
 app.use('/api', userRoutes);
@@ -43,13 +44,11 @@ app.use('/api/activity', activityRoutes);
 app.use('/api/program', programRoutes);
 app.use('/api/project', projectRoutes);
 
+// forms
+app.use('/api/form', formRoutes);
+
 // content
 app.use('/api/content', contentRoutes);
-
-// Test route
-app.get('/api/test', (req, res) => {
-  res.json({ message: 'Server is working!' });
-});
 
 // OTP Routes
 app.post('/api/auth/forgot-password', async (req, res) => {
