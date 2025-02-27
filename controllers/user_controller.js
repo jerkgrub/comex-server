@@ -356,6 +356,7 @@ const login = async (req, res) => {
     // If login is successful
     const token = user.generateAuthToken();
     const userInfo = {
+      _id: user._id,
       avatar: user.avatar,
       firstName: user.firstName,
       middleName: user.middleName,
