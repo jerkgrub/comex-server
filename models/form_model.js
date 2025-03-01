@@ -1,31 +1,34 @@
 const mongoose = require('mongoose');
 const { Schema } = mongoose;
 
-// Option schema for choice-based questions (if you're using this)
-const optionSchema = new Schema({
-  value: String,
-  text: String,
-  imageUrl: String
-});
+// Option schema for choice-based questions
+const optionSchema = new Schema(
+  {
+    // Removed explicit id field - will use MongoDB's auto-generated _id
+    value: String,
+    label: String,
+    imageUrl: String
+  },
+  { _id: true } // This already ensures MongoDB creates _id fields
+);
 
 // Question schema
 const questionSchema = new Schema({
-  id: { type: String, required: true },
-  text: { type: String, required: true },
-  description: String,
+  // Removed explicit id field - will use MongoDB's auto-generated _id
+  title: { type: String, required: true },
   type: {
     type: String,
     required: true,
     enum: [
-      'short_answer',
-      'paragraph',
-      'multiple_choice',
-      'checkbox',
-      'dropdown',
-      'file-upload',
-      'linear_scale',
-      'date',
-      'time'
+      'Short Answer',
+      'Paragraph',
+      'Multiple Choice',
+      'Checkbox',
+      'Dropdown',
+      'File Upload',
+      'Linear Scale',
+      'Date',
+      'Time'
     ]
   },
   isRequired: { type: Boolean, default: false },
@@ -49,20 +52,19 @@ const questionSchema = new Schema({
   }
 });
 
-// no need to save ID of author as there will only be 1 user managing the forms
 // Form schema
 const formSchema = new Schema(
   {
+    // MongoDB will automatically generate _id for each form
     title: { type: String, required: true, trim: true },
     description: String,
-    // Removed author field as there will only be 1 user managing the forms
     isPublished: { type: Boolean, default: false },
     settings: {
       signInRequired: { type: Boolean, default: false },
       confirmationMessage: { type: String, default: 'Your response has been recorded.' },
       allowMultipleResponses: { type: Boolean, default: false },
-      closesAt: Date, // Date when the form will no longer accept responses
-      acceptingResponses: { type: Boolean, default: true } // Whether the form is currently accepting responses
+      closesAt: Date,
+      acceptingResponses: { type: Boolean, default: true }
     },
     questions: [questionSchema],
     tags: [String],
