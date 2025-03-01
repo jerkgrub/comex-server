@@ -1,13 +1,14 @@
+//response_model
 const mongoose = require('mongoose');
 const { Schema } = mongoose;
 
 const answerSchema = new Schema({
-  questionId: { type: String, required: true },
+  questionId: { type: Schema.Types.ObjectId, required: true },
   value: Schema.Types.Mixed, // Can store any type of answer
-  fileUrl: String, // For file type questions
+  fileUrl: String // For file type questions
 });
 
-const submissionSchema = new Schema(
+const responseSchema = new Schema(
   {
     form: { type: Schema.Types.ObjectId, ref: 'Form', required: true },
     respondent: {
@@ -32,9 +33,9 @@ const submissionSchema = new Schema(
 );
 
 // Indexes for better query performance
-submissionSchema.index({ form: 1 }); // For fetching submissions of a form
-submissionSchema.index({ 'respondent.email': 1, form: 1 }); // For finding respondent's submissions
-submissionSchema.index({ createdAt: -1 }); // For sorting by submission date
+responseSchema.index({ form: 1 }); // For fetching responses of a form
+responseSchema.index({ 'respondent.email': 1, form: 1 }); // For finding respondent's responses
+responseSchema.index({ createdAt: -1 }); // For sorting by response date
 
-const Submission = mongoose.model('Submission', submissionSchema);
-module.exports = Submission;
+const Response = mongoose.model('Response', responseSchema);
+module.exports = Response;

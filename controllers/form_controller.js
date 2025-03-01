@@ -1,23 +1,18 @@
+//form_controller
 const Form = require('../models/form_model');
-const Submission = require('../models/submission_model');
+const Response = require('../models/response_model');
 const mongoose = require('mongoose');
-const { v4: uuidv4 } = require('uuid'); // For generating unique question IDs
 
 // Form CRUD operations
 exports.createForm = async (req, res) => {
   try {
     const { title, description, questions = [] } = req.body;
 
-    // Generate unique IDs for questions if not provided
-    const processedQuestions = questions.map(q => ({
-      ...q,
-      id: q.id || uuidv4()
-    }));
-
+    // No need to generate IDs for questions as MongoDB will do it
     const form = new Form({
       title,
       description,
-      questions: processedQuestions
+      questions
       // Removed author field since there's only one admin
     });
 
@@ -94,8 +89,8 @@ exports.deleteForm = async (req, res) => {
     // Option 1: Hard delete
     await Form.findByIdAndDelete(req.params.formId);
 
-    // Also delete all submissions for this form
-    await Submission.deleteMany({ form: req.params.formId });
+    // Also delete all responses for this form
+    await Response.deleteMany({ form: req.params.formId });
 
     res.status(200).json({ message: 'Form deleted successfully' });
   } catch (error) {
@@ -120,8 +115,9 @@ exports.submitForm = async (req, res) => {
     }
 
     // Validate required questions
-    const requiredQuestions = form.questions.filter(q => q.isRequired).map(q => q.id);
+    const requiredQuestions = form.questions.filter(q => q.isRequired).map(q => q._id.toString());
 
+    // Convert string questionIds to ObjectIds for validation
     const answeredQuestions = answers.map(a => a.questionId);
 
     const missingRequiredQuestions = requiredQuestions.filter(
@@ -135,10 +131,16 @@ exports.submitForm = async (req, res) => {
       });
     }
 
-    // Create submission
-    const submission = new Submission({
+    // Convert string questionIds to ObjectIds for storage
+    const processedAnswers = answers.map(answer => ({
+      ...answer,
+      questionId: new mongoose.Types.ObjectId(answer.questionId)
+    }));
+
+    // Create response
+    const response = new Response({
       form: formId,
-      answers,
+      answers: processedAnswers,
       respondent,
       metadata: {
         ipAddress: req.ip,
@@ -146,18 +148,18 @@ exports.submitForm = async (req, res) => {
       }
     });
 
-    await submission.save();
+    await response.save();
 
     res.status(201).json({
       message: form.settings?.confirmationMessage || 'Your response has been recorded.',
-      submissionId: submission._id
+      responseId: response._id
     });
   } catch (error) {
     res.status(500).json({ message: 'Error submitting form', error: error.message });
   }
 };
 
-exports.getFormSubmissions = async (req, res) => {
+exports.getFormResponses = async (req, res) => {
   try {
     const { formId } = req.params;
     const { page = 1, limit = 20 } = req.query;
@@ -170,16 +172,16 @@ exports.getFormSubmissions = async (req, res) => {
 
     // No authorization check needed
 
-    const total = await Submission.countDocuments({ form: formId });
+    const total = await Response.countDocuments({ form: formId });
 
-    const submissions = await Submission.find({ form: formId })
+    const responses = await Response.find({ form: formId })
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(parseInt(limit))
       .select('-__v');
 
     res.status(200).json({
-      submissions,
+      responses,
       pagination: {
         total,
         page: parseInt(page),
@@ -187,25 +189,25 @@ exports.getFormSubmissions = async (req, res) => {
       }
     });
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching submissions', error: error.message });
+    res.status(500).json({ message: 'Error fetching responses', error: error.message });
   }
 };
 
-exports.getSubmissionById = async (req, res) => {
+exports.getResponseById = async (req, res) => {
   try {
-    const { submissionId } = req.params;
+    const { responseId } = req.params;
 
-    const submission = await Submission.findById(submissionId).populate('form');
+    const response = await Response.findById(responseId).populate('form');
 
-    if (!submission) {
-      return res.status(404).json({ message: 'Submission not found' });
+    if (!response) {
+      return res.status(404).json({ message: 'Response not found' });
     }
 
     // No authorization check needed
 
-    res.status(200).json(submission);
+    res.status(200).json(response);
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching submission', error: error.message });
+    res.status(500).json({ message: 'Error fetching response', error: error.message });
   }
 };
 
@@ -253,18 +255,18 @@ exports.getFormAnalytics = async (req, res) => {
 
     // No authorization check needed
 
-    const totalSubmissions = await Submission.countDocuments({ form: formId });
+    const totalResponses = await Response.countDocuments({ form: formId });
 
     // Calculate analytics for each question
     const questionAnalytics = [];
 
     for (const question of form.questions) {
-      if (['single_choice', 'multiple_choice', 'dropdown'].includes(question.type)) {
+      if (['Multiple Choice', 'Checkbox', 'Dropdown'].includes(question.type)) {
         // Aggregate answers for choice-based questions
-        const aggregation = await Submission.aggregate([
+        const aggregation = await Response.aggregate([
           { $match: { form: mongoose.Types.ObjectId(formId) } },
           { $unwind: '$answers' },
-          { $match: { 'answers.questionId': question.id } },
+          { $match: { 'answers.questionId': question._id } },
           {
             $group: {
               _id: '$answers.value',
@@ -275,8 +277,8 @@ exports.getFormAnalytics = async (req, res) => {
         ]);
 
         questionAnalytics.push({
-          questionId: question.id,
-          questionText: question.text,
+          questionId: question._id.toString(),
+          questionTitle: question.title,
           type: question.type,
           totalAnswers: aggregation.reduce((sum, item) => sum + item.count, 0),
           distribution: aggregation
@@ -286,8 +288,8 @@ exports.getFormAnalytics = async (req, res) => {
 
     res.status(200).json({
       formId,
-      totalSubmissions,
-      submissionRate: totalSubmissions, // You could calculate completion rate if you track form views
+      totalResponses,
+      responseRate: totalResponses, // You could calculate completion rate if you track form views
       questionAnalytics
     });
   } catch (error) {
@@ -309,23 +311,27 @@ exports.exportFormData = async (req, res) => {
 
     // No authorization check needed
 
-    const submissions = await Submission.find({ form: formId }).sort({ createdAt: -1 });
+    const responses = await Response.find({ form: formId }).sort({ createdAt: -1 });
 
     if (format === 'csv') {
       // Process and format data for CSV export
-      const headers = ['Submission ID', 'Submission Date', 'Respondent Email'];
+      const headers = ['Response ID', 'Response Date', 'Respondent Email'];
 
       // Add question headers
       form.questions.forEach(q => {
-        headers.push(q.text);
+        headers.push(q.title);
       });
 
-      const rows = submissions.map(sub => {
-        const row = [sub._id.toString(), sub.createdAt.toISOString(), sub.respondent?.email || ''];
+      const rows = responses.map(resp => {
+        const row = [
+          resp._id.toString(),
+          resp.createdAt.toISOString(),
+          resp.respondent?.email || ''
+        ];
 
         // Add question answers
         form.questions.forEach(q => {
-          const answer = sub.answers.find(a => a.questionId === q.id);
+          const answer = resp.answers.find(a => a.questionId.equals(q._id));
           row.push(answer ? answer.value : '');
         });
 
@@ -347,12 +353,12 @@ exports.exportFormData = async (req, res) => {
         title: form.title,
         description: form.description,
         questions: form.questions.map(q => ({
-          id: q.id,
-          text: q.text,
+          _id: q._id,
+          title: q.title,
           type: q.type
         }))
       },
-      submissions
+      responses
     });
   } catch (error) {
     res.status(500).json({ message: 'Error exporting form data', error: error.message });

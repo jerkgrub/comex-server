@@ -10,10 +10,10 @@ router.get('/:formId', formController.getFormById);
 router.put('/:formId', formController.updateForm);
 router.delete('/:formId', formController.deleteForm);
 
-// Form submission routes
+// Form response routes
 router.post('/:formId/submit', formController.submitForm);
-router.get('/:formId/submissions', formController.getFormSubmissions);
-router.get('/submissions/:submissionId', formController.getSubmissionById);
+router.get('/:formId/responses', formController.getFormResponses);
+router.get('/responses/:responseId', formController.getResponseById);
 
 // Analytics & Reporting routes
 router.get('/:formId/analytics', formController.getFormAnalytics);
