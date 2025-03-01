@@ -5,7 +5,7 @@ const { Schema } = mongoose;
 const optionSchema = new Schema({
   value: String,
   text: String,
-  imageUrl: String,
+  imageUrl: String
 });
 
 // Question schema
@@ -16,8 +16,17 @@ const questionSchema = new Schema({
   type: {
     type: String,
     required: true,
-    enum: ['short_text', 'long_text', 'number', 'single_choice', 'multiple_choice', 
-           'dropdown', 'date', 'time', 'file', 'scale', 'linear_scale', 'grid']
+    enum: [
+      'short_answer',
+      'paragraph',
+      'multiple_choice',
+      'checkbox',
+      'dropdown',
+      'file-upload',
+      'linear_scale',
+      'date',
+      'time'
+    ]
   },
   isRequired: { type: Boolean, default: false },
   options: [optionSchema], // For choice-based questions
@@ -28,14 +37,14 @@ const questionSchema = new Schema({
     maxLength: Number,
     regex: String,
     fileTypes: [String],
-    maxFileSize: Number,
+    maxFileSize: Number
   },
   metadata: {
     position: Number,
     visibilityLogic: {
       dependsOn: String,
       condition: String,
-      value: Schema.Types.Mixed,
+      value: Schema.Types.Mixed
     }
   }
 });
@@ -48,13 +57,11 @@ const formSchema = new Schema(
     // Removed author field
     isPublished: { type: Boolean, default: false },
     settings: {
-      collectEmail: { type: Boolean, default: false },
+      signInRequired: { type: Boolean, default: false },
       confirmationMessage: { type: String, default: 'Your response has been recorded.' },
       allowMultipleResponses: { type: Boolean, default: false },
-      showProgressBar: { type: Boolean, default: true },
-      shuffleQuestions: { type: Boolean, default: false },
-      theme: { type: String, default: 'default' },
-      expiresAt: Date,
+      closesAt: Date,
+      isClosed: { type: Boolean, default: false }
     },
     questions: [questionSchema],
     tags: [String],
