@@ -6,7 +6,7 @@ const optionSchema = new Schema(
   {
     // Removed explicit id field - will use MongoDB's auto-generated _id
     value: String,
-    label: String,
+    title: String,
     imageUrl: String
   },
   { _id: true } // This already ensures MongoDB creates _id fields
