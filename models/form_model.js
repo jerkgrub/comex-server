@@ -49,19 +49,20 @@ const questionSchema = new Schema({
   }
 });
 
+// no need to save ID of author as there will only be 1 user managing the forms
 // Form schema
 const formSchema = new Schema(
   {
     title: { type: String, required: true, trim: true },
     description: String,
-    // Removed author field
+    // Removed author field as there will only be 1 user managing the forms
     isPublished: { type: Boolean, default: false },
     settings: {
       signInRequired: { type: Boolean, default: false },
       confirmationMessage: { type: String, default: 'Your response has been recorded.' },
       allowMultipleResponses: { type: Boolean, default: false },
-      closesAt: Date,
-      isClosed: { type: Boolean, default: false }
+      closesAt: Date, // Date when the form will no longer accept responses
+      acceptingResponses: { type: Boolean, default: true } // Whether the form is currently accepting responses
     },
     questions: [questionSchema],
     tags: [String],
