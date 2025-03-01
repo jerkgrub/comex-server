@@ -65,6 +65,7 @@ const formSchema = new Schema(
       confirmationMessage: { type: String, default: 'Your response has been recorded.' },
       allowMultipleResponses: { type: Boolean, default: false },
       closesAt: Date,
+      maxResponses: { type: Number, default: 0 },
       acceptingResponses: { type: Boolean, default: true }
     },
     questions: [questionSchema],

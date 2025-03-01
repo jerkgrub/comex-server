@@ -110,8 +110,18 @@ exports.submitForm = async (req, res) => {
       return res.status(404).json({ message: 'Form not found' });
     }
 
-    if (!form.isPublished) {
+    if (!form.isPublished || !form.settings?.acceptingResponses) {
       return res.status(403).json({ message: 'This form is not accepting responses' });
+    }
+
+    // Check if maximum responses limit has been reached
+    if (form.settings?.maxResponses > 0) {
+      const responseCount = await Response.countDocuments({ form: formId });
+      if (responseCount >= form.settings.maxResponses) {
+        return res
+          .status(403)
+          .json({ message: 'This form has reached its maximum response limit' });
+      }
     }
 
     // Validate required questions
