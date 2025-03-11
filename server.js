@@ -53,19 +53,35 @@ app.use('/api/content', contentRoutes);
 // OTP Routes
 app.post('/api/auth/forgot-password', async (req, res) => {
   const { email } = req.body;
+  console.log('[DEBUG] Received forgot-password request for email:', email);
 
   try {
     await Otp.sendOtp(email);
+    console.log('[DEBUG] OTP sent successfully to email:', email);
     res.status(200).json({ success: true });
   } catch (error) {
+    console.error('[DEBUG] Error in forgot-password endpoint:', error);
+
+    // Check if it's an email validation error
+    if (error.message === 'Invalid email format or domain') {
+      return res.status(400).json({
+        success: false,
+        message:
+          'Invalid email format or domain. Please use your institutional email ending with nu-moa.edu.ph.'
+      });
+    }
+
     res.status(500).json({ success: false, message: 'Error sending OTP' });
   }
 });
 
 app.post('/api/auth/validate-otp', (req, res) => {
   const { email, otp } = req.body;
+  console.log('[DEBUG] Received validate-otp request for email:', email, 'OTP:', otp);
 
   const isValid = Otp.validateOtp(email, otp);
+  console.log('[DEBUG] OTP validation result for email:', email, 'Result:', isValid);
+
   if (isValid) {
     res.status(200).json({ success: true });
   } else {
