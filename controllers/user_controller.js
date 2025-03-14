@@ -170,15 +170,63 @@ const newAcc = async (req, res) => {
   }
 };
 
-// 2. Read all users
+// 2. Read all users - Modified to only show activated users
 const findAllUser = (req, res) => {
-  User.find()
+  User.find({ isActivated: true })
     .select('-password') // Exclude password field
     .then(allDaUser => {
       res.json({ Users: allDaUser });
     })
     .catch(err => {
       res.status(500).json({ message: 'Something went wrong', error: err });
+    });
+};
+
+// Get deactivated users
+const getDeactivatedUsers = (req, res) => {
+  User.find({ isActivated: false })
+    .select('-password') // Exclude password field
+    .then(deactivatedUsers => {
+      res.json({ Users: deactivatedUsers });
+    })
+    .catch(err => {
+      res.status(500).json({ message: 'Error fetching deactivated users', error: err });
+    });
+};
+
+// Deactivate a user
+const deactivateUser = (req, res) => {
+  User.findByIdAndUpdate(req.params.id, { isActivated: false }, { new: true })
+    .select('-password')
+    .then(deactivatedUser => {
+      if (!deactivatedUser) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      res.json({
+        message: 'User successfully deactivated',
+        user: deactivatedUser
+      });
+    })
+    .catch(err => {
+      res.status(500).json({ message: 'Error deactivating user', error: err });
+    });
+};
+
+// Restore a deactivated user
+const restoreUser = (req, res) => {
+  User.findByIdAndUpdate(req.params.id, { isActivated: true }, { new: true })
+    .select('-password')
+    .then(restoredUser => {
+      if (!restoredUser) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      res.json({
+        message: 'User successfully restored',
+        user: restoredUser
+      });
+    })
+    .catch(err => {
+      res.status(500).json({ message: 'Error restoring user', error: err });
     });
 };
 
@@ -386,5 +434,8 @@ module.exports = {
   upload, // multer
   getApprovedUsers,
   getPendingUsers,
-  approveUser
+  approveUser,
+  deactivateUser, // Deactivate user
+  restoreUser, // Restore user
+  getDeactivatedUsers // Get deactivated users
 };

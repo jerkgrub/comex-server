@@ -12,12 +12,22 @@ router.post('/users/new', userController.newAcc);
 router.get('/users/approved', auth, userController.getApprovedUsers);
 router.get('/users/pending', auth, userController.getPendingUsers);
 router.put('/users/approve/:id', auth, userController.approveUser);
-router.get('/users/all', auth, userController.findAllUser);
+router.get('/users/all', userController.findAllUser);
 router.get('/users/:id', auth, userController.findOneUser);
 router.get('/users/email/:email', auth, userController.findOneUserByEmail);
 router.put('/users/update/:id', auth, userController.updateUser);
+
+// New routes for user activation management
+router.put('/users/deactivate/:id', userController.deactivateUser);
+router.get('/users/deactivated', userController.getDeactivatedUsers);
+router.put('/users/restore/:id', userController.restoreUser);
+
 router.delete('/users/delete/:id', auth, userController.deleteUser);
 router.post('/reset-password', userController.resetPassword);
-router.put('/users/upload-avatar/:id', userController.upload.single('avatar'), userController.uploadAvatar);
+router.put(
+  '/users/upload-avatar/:id',
+  userController.upload.single('avatar'),
+  userController.uploadAvatar
+);
 
 module.exports = router;
