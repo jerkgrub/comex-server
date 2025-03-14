@@ -76,7 +76,7 @@ const resetPassword = async (req, res) => {
 // New method to fetch approved users
 const getApprovedUsers = async (req, res) => {
   try {
-    const approvedUsers = await User.find({ isApproved: true })
+    const approvedUsers = await User.find({ isApproved: true, isActivated: true })
       .select('-password')
       .sort({ createdAt: -1 });
     res.json({ users: approvedUsers });
@@ -88,7 +88,7 @@ const getApprovedUsers = async (req, res) => {
 // New method to fetch pending approval users
 const getPendingUsers = async (req, res) => {
   try {
-    const pendingUsers = await User.find({ isApproved: false })
+    const pendingUsers = await User.find({ isApproved: false, isActivated: true })
       .select('-password')
       .sort({ createdAt: -1 });
     res.json({ users: pendingUsers });
