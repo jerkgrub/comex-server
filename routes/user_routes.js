@@ -11,6 +11,7 @@ router.post('/users/new', userController.newAcc);
 // Protected Routes (Authentication Required)
 router.get('/users/approved', auth, userController.getApprovedUsers);
 router.get('/users/pending', auth, userController.getPendingUsers);
+router.get('/users/deactivated',userController.getDeactivatedUsers);
 router.put('/users/approve/:id', auth, userController.approveUser);
 router.get('/users/all', userController.findAllUser);
 router.get('/users/:id', auth, userController.findOneUser);
@@ -19,7 +20,6 @@ router.put('/users/update/:id', auth, userController.updateUser);
 
 // New routes for user activation management
 router.put('/users/deactivate/:id', userController.deactivateUser);
-router.get('/users/deactivated', userController.getDeactivatedUsers);
 router.put('/users/restore/:id', userController.restoreUser);
 
 router.delete('/users/delete/:id', auth, userController.deleteUser);
