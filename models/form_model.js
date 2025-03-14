@@ -43,6 +43,12 @@ const questionSchema = new Schema({
     fileTypes: [String],
     maxFileSize: Number
   },
+  linearScale: {
+    minValue: { type: Number, default: 0 },
+    maxValue: { type: Number, default: 5 },
+    minLabel: { type: String, default: '' },
+    maxLabel: { type: String, default: '' }
+  },
   metadata: {
     position: Number,
     visibilityLogic: {
