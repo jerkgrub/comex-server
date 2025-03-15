@@ -112,8 +112,15 @@ exports.deleteForm = async (req, res) => {
 // Helper function to upload file to Vercel Blob
 const uploadFileToBlob = async (fileBuffer, fileName, fileType) => {
   try {
-    // Generate a unique file name
-    const uniqueFileName = `form-uploads/${Date.now()}-${fileName}`;
+    // Generate a unique file name with timestamp to ensure uniqueness
+    const timestamp = Date.now();
+    const uniqueFileName = `form-uploads/${timestamp}-${fileName.replace(/\s+/g, '_')}`;
+
+    console.log('Uploading to Vercel Blob:', {
+      path: uniqueFileName,
+      contentType: fileType,
+      bufferSize: fileBuffer.length
+    });
 
     // Upload the file to Vercel Blob
     const { url } = await put(uniqueFileName, fileBuffer, {
@@ -121,6 +128,7 @@ const uploadFileToBlob = async (fileBuffer, fileName, fileType) => {
       contentType: fileType
     });
 
+    console.log('Successfully uploaded to Vercel Blob, URL:', url);
     return url;
   } catch (error) {
     console.error('Error uploading file to Vercel Blob:', error);
@@ -140,8 +148,15 @@ exports.uploadFormFile = async (req, res) => {
       return res.status(400).json({ message: 'No file uploaded' });
     }
 
+    console.log('Received file upload request:', {
+      filename: file.originalname,
+      mimetype: file.mimetype,
+      size: file.size
+    });
+
     const url = await uploadFileToBlob(file.buffer, file.originalname, file.mimetype);
 
+    console.log('Returning file URL to client:', url);
     res.status(200).json({ fileUrl: url });
   } catch (error) {
     console.error('Error uploading form file:', error);
