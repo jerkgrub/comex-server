@@ -195,27 +195,42 @@ exports.submitForm = async (req, res) => {
         const question = form.questions.find(q => q._id.equals(questionId));
 
         // If this is a file upload question and we have a file value
-        if (question?.type === 'File Upload' && answer.value) {
-          try {
-            // The value should be a JSON string containing file info
-            const fileInfo = JSON.parse(answer.value);
-
-            // Check for fileUrl in either the answer object or the parsed fileInfo
-            const fileUrl = answer.fileUrl || fileInfo.fileUrl || null;
-
+        if (question?.type === 'File Upload') {
+          // Check if fileUrl is directly provided in the answer
+          if (answer.fileUrl) {
+            console.log('File URL found directly in answer:', answer.fileUrl);
             return {
               questionId,
-              value: fileInfo.name || 'Uploaded file',
-              fileUrl: fileUrl
-            };
-          } catch (error) {
-            console.error('Error processing file upload answer:', error);
-            return {
-              questionId,
-              value: answer.value,
-              fileUrl: null
+              value: answer.value || 'Uploaded file',
+              fileUrl: answer.fileUrl
             };
           }
+
+          // If not, try to parse it from the value if it's a JSON string
+          if (typeof answer.value === 'string' && answer.value.includes('fileUrl')) {
+            try {
+              // The value should be a JSON string containing file info
+              const fileInfo = JSON.parse(answer.value);
+              console.log('Parsed file info from value:', fileInfo);
+
+              if (fileInfo.fileUrl) {
+                return {
+                  questionId,
+                  value: fileInfo.name || 'Uploaded file',
+                  fileUrl: fileInfo.fileUrl
+                };
+              }
+            } catch (error) {
+              console.error('Error parsing file upload answer:', error);
+            }
+          }
+
+          // Fallback if no fileUrl was found
+          return {
+            questionId,
+            value: answer.value || 'Uploaded file',
+            fileUrl: null
+          };
         }
 
         // For non-file questions, just return the answer
