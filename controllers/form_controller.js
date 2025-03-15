@@ -200,20 +200,13 @@ exports.submitForm = async (req, res) => {
             // The value should be a JSON string containing file info
             const fileInfo = JSON.parse(answer.value);
 
-            // If fileUrl is already present, use it (might have been uploaded separately)
-            if (answer.fileUrl) {
-              return {
-                questionId,
-                value: fileInfo.name || 'Uploaded file',
-                fileUrl: answer.fileUrl
-              };
-            }
+            // Check for fileUrl in either the answer object or the parsed fileInfo
+            const fileUrl = answer.fileUrl || fileInfo.fileUrl || null;
 
-            // Otherwise, return the answer as is
             return {
               questionId,
               value: fileInfo.name || 'Uploaded file',
-              fileUrl: null // Will be handled by the client separately
+              fileUrl: fileUrl
             };
           } catch (error) {
             console.error('Error processing file upload answer:', error);
