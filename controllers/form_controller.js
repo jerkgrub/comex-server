@@ -25,9 +25,7 @@ exports.createForm = async (req, res) => {
 
 exports.getAllForms = async (req, res) => {
   try {
-    const forms = await Form.find()
-      .select('title description isPublished createdAt updatedAt')
-      .sort({ updatedAt: -1 });
+    const forms = await Form.find().select('title description isPublished createdAt updatedAt').sort({ updatedAt: -1 });
 
     res.status(200).json(forms);
   } catch (error) {
@@ -118,9 +116,7 @@ exports.submitForm = async (req, res) => {
     if (form.settings?.maxResponses > 0) {
       const responseCount = await Response.countDocuments({ form: formId });
       if (responseCount >= form.settings.maxResponses) {
-        return res
-          .status(403)
-          .json({ message: 'This form has reached its maximum response limit' });
+        return res.status(403).json({ message: 'This form has reached its maximum response limit' });
       }
     }
 
@@ -130,9 +126,7 @@ exports.submitForm = async (req, res) => {
     // Convert string questionIds to ObjectIds for validation
     const answeredQuestions = answers.map(a => a.questionId);
 
-    const missingRequiredQuestions = requiredQuestions.filter(
-      qId => !answeredQuestions.includes(qId)
-    );
+    const missingRequiredQuestions = requiredQuestions.filter(qId => !answeredQuestions.includes(qId));
 
     if (missingRequiredQuestions.length > 0) {
       return res.status(400).json({
@@ -252,6 +246,46 @@ exports.duplicateForm = async (req, res) => {
   }
 };
 
+// Publish form
+exports.publishForm = async (req, res) => {
+  try {
+    const { formId } = req.params;
+
+    const form = await Form.findById(formId);
+
+    if (!form) {
+      return res.status(404).json({ message: 'Form not found' });
+    }
+
+    // Check if form is already published
+    if (form.isPublished) {
+      return res.status(400).json({ message: 'Form is already published' });
+    }
+
+    // Update the form to be published
+    form.isPublished = true;
+
+    // Make sure form is accepting responses when published
+    if (form.settings) {
+      form.settings.acceptingResponses = true;
+    } else {
+      form.settings = {
+        acceptingResponses: true,
+        confirmationMessage: 'Your response has been recorded.',
+        signInRequired: false,
+        allowMultipleResponses: false,
+        maxResponses: 0
+      };
+    }
+
+    await form.save();
+
+    res.status(200).json(form);
+  } catch (error) {
+    res.status(500).json({ message: 'Error publishing form', error: error.message });
+  }
+};
+
 // Analytics
 exports.getFormAnalytics = async (req, res) => {
   try {
@@ -333,11 +367,7 @@ exports.exportFormData = async (req, res) => {
       });
 
       const rows = responses.map(resp => {
-        const row = [
-          resp._id.toString(),
-          resp.createdAt.toISOString(),
-          resp.respondent?.email || ''
-        ];
+        const row = [resp._id.toString(), resp.createdAt.toISOString(), resp.respondent?.email || ''];
 
         // Add question answers
         form.questions.forEach(q => {

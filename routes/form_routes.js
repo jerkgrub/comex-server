@@ -13,6 +13,7 @@ router.delete('/:formId', formController.deleteForm);
 // Form response routes
 router.post('/:formId/submit', formController.submitForm);
 router.get('/:formId/responses', formController.getFormResponses);
+router.post('/:formId/publish', formController.publishForm);
 router.get('/responses/:responseId', formController.getResponseById);
 
 // Analytics & Reporting routes
