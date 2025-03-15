@@ -1,15 +1,30 @@
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
 const ProjectSchema = new mongoose.Schema(
   {
-    title: String,
+    isActivated: Boolean, //for soft-deletion
+    createdBy: String, // signed in user's id
     programId: String, // Foreign key reference to Program
-    isApproved: Boolean,
-    createdBy: String, // Reference to the coordinator who created it
-    isDeleted: { type: Boolean, default: false }, // Soft-delete flag
+
+    title: String,
+    description: String,
+
+    // approval system
+    isApproved: {
+      // the 2 below are department-specific
+      byRepresentative: Boolean,
+      byDean: Boolean,
+
+      // the 5 below are universal
+      byGeneralAccountingSupervisor: Boolean, // General Accounting Supervisor
+      byComexCoordinator: Boolean, // Comex Coordinator
+      byAcademicServicesDirector: Boolean, // Academic Services Director
+      byAcademicDirector: Boolean, // Academic Director
+      byExecutiveDirector: Boolean // Executive Director
+    }
   },
   { timestamps: true }
 );
 
-const Project = mongoose.model("Project", ProjectSchema);
+const Project = mongoose.model('Project', ProjectSchema);
 module.exports = Project;

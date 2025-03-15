@@ -1,229 +1,302 @@
-const Project = require("../models/project_model");
-
-// Helper function to exclude soft-deleted records
-const excludeDeleted = { isDeleted: false };
+const Project = require('../models/project_model');
 
 // 1. Create a new project
-const createProject = async (req, res) => {
+exports.createProject = async (req, res) => {
   try {
-    const { title, programId, createdBy } = req.body;
+    const projectData = {
+      ...req.body,
+      isActivated: true,
+      isApproved: {
+        byRepresentative: false,
+        byDean: false,
+        byGeneralAccountingSupervisor: false,
+        byComexCoordinator: false,
+        byAcademicServicesDirector: false,
+        byAcademicDirector: false,
+        byExecutiveDirector: false
+      }
+    };
 
-    const newProject = new Project({
-      title,
-      programId,
-      createdBy,
-      isApproved: false, // Default to unapproved
-    });
-
-    const savedProject = await newProject.save();
-    res.status(201).json({
-      success: true,
-      message: "Project created successfully",
-      project: savedProject,
-    });
+    const project = new Project(projectData);
+    const savedProject = await project.save();
+    res.status(201).json(savedProject);
   } catch (error) {
-    console.error("Error creating project:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error creating project",
-      error,
-    });
+    res.status(500).json({ message: error.message });
   }
 };
 
-// 2. Fetch all approved projects
-const getApprovedProjects = async (req, res) => {
+// 2. Read operations
+exports.getAllProjects = async (req, res) => {
   try {
-    const approvedProjects = await Project.find({
-      isApproved: true,
-      ...excludeDeleted,
-    });
-    res.status(200).json({ success: true, projects: approvedProjects });
+    const projects = await Project.find({ isActivated: true });
+    res.status(200).json(projects);
   } catch (error) {
-    console.error("Error fetching approved projects:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error fetching approved projects",
-      error,
-    });
+    res.status(500).json({ message: error.message });
   }
 };
 
-// 3. Fetch all unapproved projects
-const getUnapprovedProjects = async (req, res) => {
+exports.getProjectById = async (req, res) => {
   try {
-    const unapprovedProjects = await Project.find({
-      isApproved: false,
-      ...excludeDeleted,
-    });
-    res.status(200).json({ success: true, projects: unapprovedProjects });
+    const project = await Project.findById(req.params.id);
+    if (!project) {
+      return res.status(404).json({ message: 'Project not found' });
+    }
+    res.status(200).json(project);
   } catch (error) {
-    console.error("Error fetching unapproved projects:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error fetching unapproved projects",
-      error,
-    });
+    res.status(500).json({ message: error.message });
   }
 };
 
-// 4. Fetch all projects
-const getAllProjects = async (req, res) => {
+exports.getProjectsByProgram = async (req, res) => {
   try {
-    const projects = await Project.find(excludeDeleted);
-    res.status(200).json({ success: true, projects });
-  } catch (error) {
-    console.error("Error fetching all projects:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error fetching all projects",
-      error,
+    const projects = await Project.find({
+      programId: req.params.programId,
+      isActivated: true
     });
+    res.status(200).json(projects);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };
 
-// 5. Approve a project
-const approveProject = async (req, res) => {
+exports.getApprovedProjectsByProgram = async (req, res) => {
   try {
-    const projectId = req.params.id;
-    const updatedProject = await Project.findOneAndUpdate(
-      { _id: projectId, ...excludeDeleted },
-      { isApproved: true },
-      { new: true, runValidators: true }
-    );
+    const projects = await Project.find({
+      programId: req.params.programId,
+      isActivated: true,
+      'isApproved.byRepresentative': true,
+      'isApproved.byDean': true,
+      'isApproved.byGeneralAccountingSupervisor': true,
+      'isApproved.byComexCoordinator': true,
+      'isApproved.byAcademicServicesDirector': true,
+      'isApproved.byAcademicDirector': true,
+      'isApproved.byExecutiveDirector': true
+    });
+    res.status(200).json(projects);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.getPendingProjectsByProgram = async (req, res) => {
+  try {
+    const projects = await Project.find({
+      programId: req.params.programId,
+      isActivated: true,
+      $or: [
+        { 'isApproved.byRepresentative': false },
+        { 'isApproved.byDean': false },
+        { 'isApproved.byGeneralAccountingSupervisor': false },
+        { 'isApproved.byComexCoordinator': false },
+        { 'isApproved.byAcademicServicesDirector': false },
+        { 'isApproved.byAcademicDirector': false },
+        { 'isApproved.byExecutiveDirector': false }
+      ]
+    });
+    res.status(200).json(projects);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.getDeactivatedProjectsByProgram = async (req, res) => {
+  try {
+    const projects = await Project.find({
+      programId: req.params.programId,
+      isActivated: false
+    });
+    res.status(200).json(projects);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.getApprovedProjects = async (req, res) => {
+  try {
+    const projects = await Project.find({
+      isActivated: true,
+      'isApproved.byRepresentative': true,
+      'isApproved.byDean': true,
+      'isApproved.byGeneralAccountingSupervisor': true,
+      'isApproved.byComexCoordinator': true,
+      'isApproved.byAcademicServicesDirector': true,
+      'isApproved.byAcademicDirector': true,
+      'isApproved.byExecutiveDirector': true
+    });
+    res.status(200).json(projects);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.getPendingProjects = async (req, res) => {
+  try {
+    const projects = await Project.find({
+      isActivated: true,
+      $or: [
+        { 'isApproved.byRepresentative': false },
+        { 'isApproved.byDean': false },
+        { 'isApproved.byGeneralAccountingSupervisor': false },
+        { 'isApproved.byComexCoordinator': false },
+        { 'isApproved.byAcademicServicesDirector': false },
+        { 'isApproved.byAcademicDirector': false },
+        { 'isApproved.byExecutiveDirector': false }
+      ]
+    });
+    res.status(200).json(projects);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.getDeactivatedProjects = async (req, res) => {
+  try {
+    const projects = await Project.find({ isActivated: false });
+    res.status(200).json(projects);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// 3. Update operations
+exports.updateProject = async (req, res) => {
+  try {
+    const updatedProject = await Project.findByIdAndUpdate(req.params.id, req.body, { new: true });
 
     if (!updatedProject) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Project not found" });
+      return res.status(404).json({ message: 'Project not found' });
     }
 
-    res.status(200).json({
-      success: true,
-      message: "Project approved successfully",
-      project: updatedProject,
-    });
+    res.status(200).json(updatedProject);
   } catch (error) {
-    console.error("Error approving project:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error approving project",
-      error,
-    });
+    res.status(500).json({ message: error.message });
   }
 };
 
-// 6. Fetch a single project by ID
-const getProjectById = async (req, res) => {
+// Approval functions
+exports.approveProjectByRepresentative = async (req, res) => {
   try {
-    const projectId = req.params.id;
-    const project = await Project.findOne({
-      _id: projectId,
-      ...excludeDeleted,
-    });
+    const project = await Project.findByIdAndUpdate(req.params.id, { 'isApproved.byRepresentative': true }, { new: true });
 
     if (!project) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Project not found" });
+      return res.status(404).json({ message: 'Project not found' });
     }
 
-    res.status(200).json({ success: true, project });
+    res.status(200).json(project);
   } catch (error) {
-    console.error("Error fetching project by ID:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error fetching project by ID",
-      error,
-    });
+    res.status(500).json({ message: error.message });
   }
 };
 
-// 7. Update a project
-const updateProject = async (req, res) => {
+exports.approveProjectByDean = async (req, res) => {
   try {
-    const projectId = req.params.id;
-    const { title, programId } = req.body;
+    const project = await Project.findByIdAndUpdate(req.params.id, { 'isApproved.byDean': true }, { new: true });
 
-    const updatedProject = await Project.findOneAndUpdate(
-      { _id: projectId, ...excludeDeleted },
-      { title, programId },
-      { new: true, runValidators: true }
-    );
-
-    if (!updatedProject) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Project not found" });
+    if (!project) {
+      return res.status(404).json({ message: 'Project not found' });
     }
 
-    res.status(200).json({
-      success: true,
-      message: "Project updated successfully",
-      project: updatedProject,
-    });
+    res.status(200).json(project);
   } catch (error) {
-    console.error("Error updating project:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error updating project",
-      error,
-    });
+    res.status(500).json({ message: error.message });
   }
 };
 
-// 8. Soft-delete a project
-const deleteProject = async (req, res) => {
+exports.approveProjectByGeneralAccountingSupervisor = async (req, res) => {
   try {
-    const projectId = req.params.id;
+    const project = await Project.findByIdAndUpdate(req.params.id, { 'isApproved.byGeneralAccountingSupervisor': true }, { new: true });
 
-    const deletedProject = await Project.findOneAndUpdate(
-      { _id: projectId, ...excludeDeleted },
-      { isDeleted: true },
-      { new: true }
-    );
-
-    if (!deletedProject) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Project not found" });
+    if (!project) {
+      return res.status(404).json({ message: 'Project not found' });
     }
 
-    res.status(200).json({
-      success: true,
-      message: "Project deleted successfully",
-      project: deletedProject,
-    });
+    res.status(200).json(project);
   } catch (error) {
-    console.error("Error deleting project:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error deleting project",
-      error,
-    });
+    res.status(500).json({ message: error.message });
   }
 };
 
-// New: Fetch all projects belonging to a given program
-const getProjectsByProgram = async (req, res) => {
+exports.approveProjectByComexCoordinator = async (req, res) => {
   try {
-    const programId = req.params.programId;
-    const projects = await Project.find({ programId, isDeleted: false });
-    res.status(200).json({ success: true, projects });
+    const project = await Project.findByIdAndUpdate(req.params.id, { 'isApproved.byComexCoordinator': true }, { new: true });
+
+    if (!project) {
+      return res.status(404).json({ message: 'Project not found' });
+    }
+
+    res.status(200).json(project);
   } catch (error) {
-    console.error("Error fetching projects by program:", error);
-    res.status(500).json({ success: false, message: "Error fetching projects by program", error });
+    res.status(500).json({ message: error.message });
   }
 };
 
-module.exports = {
-  createProject,
-  getApprovedProjects,
-  getUnapprovedProjects,
-  getAllProjects,
-  approveProject,
-  getProjectById,
-  updateProject,
-  deleteProject,
-  getProjectsByProgram,
+exports.approveProjectByAcademicServicesDirector = async (req, res) => {
+  try {
+    const project = await Project.findByIdAndUpdate(req.params.id, { 'isApproved.byAcademicServicesDirector': true }, { new: true });
+
+    if (!project) {
+      return res.status(404).json({ message: 'Project not found' });
+    }
+
+    res.status(200).json(project);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.approveProjectByAcademicDirector = async (req, res) => {
+  try {
+    const project = await Project.findByIdAndUpdate(req.params.id, { 'isApproved.byAcademicDirector': true }, { new: true });
+
+    if (!project) {
+      return res.status(404).json({ message: 'Project not found' });
+    }
+
+    res.status(200).json(project);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.approveProjectByExecutiveDirector = async (req, res) => {
+  try {
+    const project = await Project.findByIdAndUpdate(req.params.id, { 'isApproved.byExecutiveDirector': true }, { new: true });
+
+    if (!project) {
+      return res.status(404).json({ message: 'Project not found' });
+    }
+
+    res.status(200).json(project);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// 4. Soft-delete operations
+exports.deactivateProject = async (req, res) => {
+  try {
+    const project = await Project.findByIdAndUpdate(req.params.id, { isActivated: false }, { new: true });
+
+    if (!project) {
+      return res.status(404).json({ message: 'Project not found' });
+    }
+
+    res.status(200).json(project);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.restoreProject = async (req, res) => {
+  try {
+    const project = await Project.findByIdAndUpdate(req.params.id, { isActivated: true }, { new: true });
+
+    if (!project) {
+      return res.status(404).json({ message: 'Project not found' });
+    }
+
+    res.status(200).json(project);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 };

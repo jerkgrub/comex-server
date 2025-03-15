@@ -59,6 +59,58 @@ exports.getProgramsByDepartment = async (req, res) => {
   }
 };
 
+exports.getApprovedProgramsByDepartment = async (req, res) => {
+  try {
+    const programs = await Program.find({
+      department: req.params.department,
+      isActivated: true,
+      'isApproved.byRepresentative': true,
+      'isApproved.byDean': true,
+      'isApproved.byGeneralAccountingSupervisor': true,
+      'isApproved.byComexCoordinator': true,
+      'isApproved.byAcademicServicesDirector': true,
+      'isApproved.byAcademicDirector': true,
+      'isApproved.byExecutiveDirector': true
+    });
+    res.status(200).json(programs);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.getPendingProgramsByDepartment = async (req, res) => {
+  try {
+    const programs = await Program.find({
+      department: req.params.department,
+      isActivated: true,
+      $or: [
+        { 'isApproved.byRepresentative': false },
+        { 'isApproved.byDean': false },
+        { 'isApproved.byGeneralAccountingSupervisor': false },
+        { 'isApproved.byComexCoordinator': false },
+        { 'isApproved.byAcademicServicesDirector': false },
+        { 'isApproved.byAcademicDirector': false },
+        { 'isApproved.byExecutiveDirector': false }
+      ]
+    });
+    res.status(200).json(programs);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.getDeactivatedProgramsByDepartment = async (req, res) => {
+  try {
+    const programs = await Program.find({
+      department: req.params.department,
+      isActivated: false
+    });
+    res.status(200).json(programs);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 exports.getApprovedPrograms = async (req, res) => {
   try {
     const programs = await Program.find({

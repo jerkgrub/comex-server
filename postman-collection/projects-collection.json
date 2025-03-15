@@ -1,0 +1,406 @@
+{
+  "info": {
+    "name": "Project API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Create a new project",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"programId\": \"{{programId}}\",\n  \"title\": \"Sample Project\",\n  \"description\": \"A sample project under a program\",\n  \"createdBy\": \"user123\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:0369/api/project/new",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "project", "new"]
+        }
+      }
+    },
+    {
+      "name": "Get all projects",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/project",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "project"]
+        }
+      }
+    },
+    {
+      "name": "Get project by ID",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/project/{{projectId}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "project", "{{projectId}}"],
+          "variable": [
+            {
+              "key": "projectId",
+              "value": "replace_with_actual_project_id"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get projects by program",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/project/program/{{programId}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "project", "program", "{{programId}}"],
+          "variable": [
+            {
+              "key": "programId",
+              "value": "replace_with_actual_program_id"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get approved projects by program",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/project/program/approved/{{programId}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "project", "program", "approved", "{{programId}}"],
+          "variable": [
+            {
+              "key": "programId",
+              "value": "replace_with_actual_program_id"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get pending projects by program",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/project/program/pending/{{programId}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "project", "program", "pending", "{{programId}}"],
+          "variable": [
+            {
+              "key": "programId",
+              "value": "replace_with_actual_program_id"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get deactivated projects by program",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/project/program/deactivated/{{programId}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "project", "program", "deactivated", "{{programId}}"],
+          "variable": [
+            {
+              "key": "programId",
+              "value": "replace_with_actual_program_id"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get approved projects",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/project/approved",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "project", "approved"]
+        }
+      }
+    },
+    {
+      "name": "Get pending projects",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/project/pending",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "project", "pending"]
+        }
+      }
+    },
+    {
+      "name": "Get deactivated projects",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/project/deactivated",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "project", "deactivated"]
+        }
+      }
+    },
+    {
+      "name": "Update a project",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Updated Project Title\",\n  \"description\": \"An updated description for the project\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:0369/api/project/{{projectId}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "project", "{{projectId}}"],
+          "variable": [
+            {
+              "key": "projectId",
+              "value": "replace_with_actual_project_id"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Approve project by Representative",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/project/approve/by-representative/{{projectId}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "project", "approve", "by-representative", "{{projectId}}"],
+          "variable": [
+            {
+              "key": "projectId",
+              "value": "replace_with_actual_project_id"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Approve project by Dean",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/project/approve/by-dean/{{projectId}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "project", "approve", "by-dean", "{{projectId}}"],
+          "variable": [
+            {
+              "key": "projectId",
+              "value": "replace_with_actual_project_id"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Approve project by General Accounting Supervisor",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/project/approve/by-general-accounting-supervisor/{{projectId}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "project", "approve", "by-general-accounting-supervisor", "{{projectId}}"],
+          "variable": [
+            {
+              "key": "projectId",
+              "value": "replace_with_actual_project_id"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Approve project by Comex Coordinator",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/project/approve/by-comex-coordinator/{{projectId}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "project", "approve", "by-comex-coordinator", "{{projectId}}"],
+          "variable": [
+            {
+              "key": "projectId",
+              "value": "replace_with_actual_project_id"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Approve project by Academic Services Director",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/project/approve/by-academic-services-director/{{projectId}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "project", "approve", "by-academic-services-director", "{{projectId}}"],
+          "variable": [
+            {
+              "key": "projectId",
+              "value": "replace_with_actual_project_id"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Approve project by Academic Director",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/project/approve/by-academic-director/{{projectId}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "project", "approve", "by-academic-director", "{{projectId}}"],
+          "variable": [
+            {
+              "key": "projectId",
+              "value": "replace_with_actual_project_id"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Approve project by Executive Director",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/project/approve/by-executive-director/{{projectId}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "project", "approve", "by-executive-director", "{{projectId}}"],
+          "variable": [
+            {
+              "key": "projectId",
+              "value": "replace_with_actual_project_id"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Deactivate a project",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/project/deactivate/{{projectId}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "project", "deactivate", "{{projectId}}"],
+          "variable": [
+            {
+              "key": "projectId",
+              "value": "replace_with_actual_project_id"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Restore a project",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/project/restore/{{projectId}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "project", "restore", "{{projectId}}"],
+          "variable": [
+            {
+              "key": "projectId",
+              "value": "replace_with_actual_project_id"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "projectId",
+      "value": "replace_with_actual_project_id"
+    },
+    {
+      "key": "programId",
+      "value": "replace_with_actual_program_id"
+    }
+  ]
+}

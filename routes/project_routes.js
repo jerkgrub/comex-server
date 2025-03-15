@@ -1,47 +1,38 @@
-const express = require("express");
+const express = require('express');
 const router = express.Router();
-const projectController = require("../controllers/project_controller");
-const Project = require("../models/project_model");
+const projectController = require('../controllers/project_controller');
+const Project = require('../models/project_model');
 
-// 1. Create a new project
-router.post("/new", projectController.createProject);
+// 1. Create
+router.post('/new', projectController.createProject);
 
-// 2. Fetch all approved projects
-router.get("/approved/all", projectController.getApprovedProjects);
+// 2. Read (keep in mind, that you should only fetch projects that have an isActivated value of true)
+router.get('/', projectController.getAllProjects);
+router.get('/deactivated', projectController.getDeactivatedProjects); // for here, only fetch projects that have an isActivated value of false
+router.get('/approved/', projectController.getApprovedProjects); //get all projects that have an isApproved that have all trues
+router.get('/pending/', projectController.getPendingProjects); // get all projects that have an isApproved that have at least one false
 
-// 3. Fetch all unapproved projects
-router.get("/unapproved/all", projectController.getUnapprovedProjects);
+// program specific
+router.get('/program/:programId', projectController.getProjectsByProgram); //get projects under specific program
+router.get('/program/approved/:programId', projectController.getApprovedProjectsByProgram); //get all projects that have an isApproved that have all trues under specific program
+router.get('/program/pending/:programId', projectController.getPendingProjectsByProgram); // get all projects that have an isApproved that have at least one false under specific program
+router.get('/program/deactivated/:programId', projectController.getDeactivatedProjectsByProgram); // for here, only fetch projects that have an isActivated value of false under specific program
 
-// 4. Fetch all projects
-router.get("/all", projectController.getAllProjects);
+router.get('/:id', projectController.getProjectById); // get a single project by id
 
-// 5. Approve a project
-router.put("/approve/:id", projectController.approveProject);
+// 3. Update
+router.put('/:id', projectController.updateProject);
+// Approval system (basically just setting their respective isApproved field to true)
+router.put('/approve/by-representative/:id', projectController.approveProjectByRepresentative);
+router.put('/approve/by-dean/:id', projectController.approveProjectByDean);
+router.put('/approve/by-general-accounting-supervisor/:id', projectController.approveProjectByGeneralAccountingSupervisor);
+router.put('/approve/by-comex-coordinator/:id', projectController.approveProjectByComexCoordinator);
+router.put('/approve/by-academic-services-director/:id', projectController.approveProjectByAcademicServicesDirector);
+router.put('/approve/by-academic-director/:id', projectController.approveProjectByAcademicDirector);
+router.put('/approve/by-executive-director/:id', projectController.approveProjectByExecutiveDirector);
 
-// 6. Fetch a single project by ID
-router.get("/:id", projectController.getProjectById);
-
-// 7. Update a project
-router.put("/:id", projectController.updateProject);
-
-// 8. Soft-delete a project
-router.delete("/:id", projectController.deleteProject);
-
-// 9. Count pending (unapproved) projects
-router.get("/pending/count", async (req, res) => {
-  try {
-    const count = await Project.countDocuments({
-      isApproved: false,
-      isDeleted: false,
-    });
-    res.json({ count });
-  } catch (error) {
-    console.error("Error fetching pending projects count:", error.message);
-    res.status(500).json({ error: "Server error", message: error.message });
-  }
-});
-
-// New endpoint: Fetch all projects within a specified program
-router.get("/program/:programId", projectController.getProjectsByProgram);
+// 4. Soft-delete a project
+router.put('/deactivate/:id', projectController.deactivateProject);
+router.put('/restore/:id', projectController.restoreProject);
 
 module.exports = router;

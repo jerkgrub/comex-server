@@ -9,7 +9,14 @@ router.post('/new', programController.createProgram);
 // 2. Read (keep in mind, that you should only fetch programs that have an isActivated value of true)
 router.get('/', programController.getAllPrograms);
 router.get('/deactivated', programController.getDeactivatedPrograms); // and finally, for here, only fetch programs that have an isActivated value of false
+
+// department specific
 router.get('/department/:department', programController.getProgramsByDepartment);
+router.get('/department/approved/:department', programController.getApprovedProgramsByDepartment);
+router.get('/department/pending/:department', programController.getPendingProgramsByDepartment);
+router.get('/department/deactivated/:department', programController.getDeactivatedProgramsByDepartment);
+
+// universal
 router.get('/approved/', programController.getApprovedPrograms); //get all programs that have an isApproved that have all trues
 router.get('/pending/', programController.getPendingPrograms); // get all programs that have an isApproved that have at least one false
 router.get('/:id', programController.getProgramById); // get a single program by id

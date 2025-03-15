@@ -76,6 +76,48 @@
       }
     },
     {
+      "name": "Get approved programs by department",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/program/department/approved/Computer Science",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "program", "department", "approved", "Computer Science"]
+        }
+      }
+    },
+    {
+      "name": "Get pending programs by department",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/program/department/pending/Computer Science",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "program", "department", "pending", "Computer Science"]
+        }
+      }
+    },
+    {
+      "name": "Get deactivated programs by department",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/program/department/deactivated/Computer Science",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "program", "department", "deactivated", "Computer Science"]
+        }
+      }
+    },
+    {
       "name": "Get approved programs",
       "request": {
         "method": "GET",
