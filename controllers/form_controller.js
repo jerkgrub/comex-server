@@ -2,6 +2,19 @@
 const Form = require('../models/form_model');
 const Response = require('../models/response_model');
 const mongoose = require('mongoose');
+const { put } = require('@vercel/blob');
+const multer = require('multer');
+
+// Set up Multer to store files in memory temporarily
+const storage = multer.memoryStorage();
+const upload = multer({
+  storage: storage,
+  limits: { fileSize: 5000000 }, // 5MB limit
+  fileFilter: (req, file, cb) => {
+    // Accept all file types for form uploads
+    cb(null, true);
+  }
+});
 
 // Form CRUD operations
 exports.createForm = async (req, res) => {
@@ -96,6 +109,46 @@ exports.deleteForm = async (req, res) => {
   }
 };
 
+// Helper function to upload file to Vercel Blob
+const uploadFileToBlob = async (fileBuffer, fileName, fileType) => {
+  try {
+    // Generate a unique file name
+    const uniqueFileName = `form-uploads/${Date.now()}-${fileName}`;
+
+    // Upload the file to Vercel Blob
+    const { url } = await put(uniqueFileName, fileBuffer, {
+      access: 'public',
+      contentType: fileType
+    });
+
+    return url;
+  } catch (error) {
+    console.error('Error uploading file to Vercel Blob:', error);
+    throw error;
+  }
+};
+
+// Middleware to handle file uploads
+exports.handleFileUpload = upload.single('file');
+
+// Process file upload and return URL
+exports.uploadFormFile = async (req, res) => {
+  try {
+    const file = req.file;
+
+    if (!file) {
+      return res.status(400).json({ message: 'No file uploaded' });
+    }
+
+    const url = await uploadFileToBlob(file.buffer, file.originalname, file.mimetype);
+
+    res.status(200).json({ fileUrl: url });
+  } catch (error) {
+    console.error('Error uploading form file:', error);
+    res.status(500).json({ message: 'Error uploading file', error: error.message });
+  }
+};
+
 // Form submission handling
 exports.submitForm = async (req, res) => {
   try {
@@ -135,11 +188,50 @@ exports.submitForm = async (req, res) => {
       });
     }
 
-    // Convert string questionIds to ObjectIds for storage
-    const processedAnswers = answers.map(answer => ({
-      ...answer,
-      questionId: new mongoose.Types.ObjectId(answer.questionId)
-    }));
+    // Process answers - handle file uploads if present
+    const processedAnswers = await Promise.all(
+      answers.map(async answer => {
+        const questionId = new mongoose.Types.ObjectId(answer.questionId);
+        const question = form.questions.find(q => q._id.equals(questionId));
+
+        // If this is a file upload question and we have a file value
+        if (question?.type === 'File Upload' && answer.value) {
+          try {
+            // The value should be a JSON string containing file info
+            const fileInfo = JSON.parse(answer.value);
+
+            // If fileUrl is already present, use it (might have been uploaded separately)
+            if (answer.fileUrl) {
+              return {
+                questionId,
+                value: fileInfo.name || 'Uploaded file',
+                fileUrl: answer.fileUrl
+              };
+            }
+
+            // Otherwise, return the answer as is
+            return {
+              questionId,
+              value: fileInfo.name || 'Uploaded file',
+              fileUrl: null // Will be handled by the client separately
+            };
+          } catch (error) {
+            console.error('Error processing file upload answer:', error);
+            return {
+              questionId,
+              value: answer.value,
+              fileUrl: null
+            };
+          }
+        }
+
+        // For non-file questions, just return the answer
+        return {
+          ...answer,
+          questionId
+        };
+      })
+    );
 
     // Create response
     const response = new Response({
@@ -404,3 +496,5 @@ exports.exportFormData = async (req, res) => {
     res.status(500).json({ message: 'Error exporting form data', error: error.message });
   }
 };
+
+exports.upload = upload;

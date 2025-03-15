@@ -16,6 +16,9 @@ router.get('/:formId/responses', formController.getFormResponses);
 router.post('/:formId/publish', formController.publishForm);
 router.get('/responses/:responseId', formController.getResponseById);
 
+// File upload route
+router.post('/upload-file', formController.handleFileUpload, formController.uploadFormFile);
+
 // Analytics & Reporting routes
 router.get('/:formId/analytics', formController.getFormAnalytics);
 router.get('/:formId/export', formController.exportFormData);
