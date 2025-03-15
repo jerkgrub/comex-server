@@ -2,6 +2,7 @@
 const Form = require('../models/form_model');
 const Response = require('../models/response_model');
 const mongoose = require('mongoose');
+const { uploadFile } = require('@vercel/blob');
 
 // Form CRUD operations
 exports.createForm = async (req, res) => {
@@ -402,5 +403,33 @@ exports.exportFormData = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ message: 'Error exporting form data', error: error.message });
+  }
+};
+
+// Handle form file uploads
+exports.submitFormFile = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'No file uploaded' });
+    }
+
+    const file = req.file;
+    const extension = file.mimetype.split('/')[1];
+    const fileName = `form-files/${Date.now()}-${Math.random().toString(36).substring(7)}.${extension}`;
+
+    // Use Vercel Blob to upload the file
+    const result = await uploadFile(file.buffer, {
+      contentType: file.mimetype,
+      fileName: fileName
+    });
+
+    // Assuming result.url contains the public URL of the uploaded file
+    res.status(200).json({
+      message: 'File uploaded successfully',
+      fileUrl: result.url
+    });
+  } catch (error) {
+    console.error('Error in submitFormFile:', error);
+    res.status(500).json({ message: 'Error uploading file', error: error.message });
   }
 };
