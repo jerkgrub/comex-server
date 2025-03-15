@@ -1,47 +1,33 @@
-const express = require("express");
+const express = require('express');
 const router = express.Router();
-const programController = require("../controllers/program_controller");
-const Program = require("../models/program_model");
+const programController = require('../controllers/program_controller');
+const Program = require('../models/program_model');
 
-// 1. Create a new program
-router.post("/new", programController.createProgram);
+// 1. Create
+router.post('/new', programController.createProgram);
 
-// 2. Fetch all approved programs
-router.get("/approved/all", programController.getApprovedPrograms);
+// 2. Read (keep in mind, that you should only fetch programs that have an isActivated value of true)
+router.get('/', programController.getAllPrograms);
+router.get('/deactivated', programController.getDeactivatedPrograms); // and finally, for here, only fetch programs that have an isActivated value of false
+router.get('/department/:department', programController.getProgramsByDepartment);
+router.get('/approved/', programController.getApprovedPrograms); //get all programs that have an isApproved that have all trues
+router.get('/pending/', programController.getPendingPrograms); // get all programs that have an isApproved that have at least one false
+router.get('/:id', programController.getProgramById); // get a single program by id
 
-// 3. Fetch all unapproved programs
-router.get("/unapproved/all", programController.getUnapprovedPrograms);
 
-// 4. Fetch all programs
-router.get("/all", programController.getAllPrograms);
+// 3. Update
+router.put('/:id', programController.updateProgram);
+// Approval system (basically just setting their respective isApproved field to true)
+router.put('/approve/by-representative/:id', programController.approveProgramByRepresentative);
+router.put('/approve/by-dean/:id', programController.approveProgramByDean);
+router.put('/approve/by-general-accounting-supervisor/:id', programController.approveProgramByGeneralAccountingSupervisor);
+router.put('/approve/by-comex-coordinator/:id', programController.approveProgramByComexCoordinator);
+router.put('/approve/by-academic-services-director/:id', programController.approveProgramByAcademicServicesDirector);
+router.put('/approve/by-academic-director/:id', programController.approveProgramByAcademicDirector);
+router.put('/approve/by-executive-director/:id', programController.approveProgramByExecutiveDirector);
 
-// 5. Approve a program
-router.put("/approve/:id", programController.approveProgram);
-
-// 6. Fetch a single program by ID
-router.get("/:id", programController.getProgramById);
-
-// 7. Update a program
-router.put("/:id", programController.updateProgram);
-
-// 8. Soft-delete a program
-router.delete("/:id", programController.deleteProgram);
-
-// 9. Count pending programs
-router.get("/pending/count", async (req, res) => {
-  try {
-    const count = await Program.countDocuments({
-      isApproved: false,
-      isDeleted: false,
-    });
-    res.json({ count });
-  } catch (error) {
-    console.error("Error fetching pending programs count:", error);
-    res.status(500).json({ error: "Server error" });
-  }
-});
-
-// New endpoint: Fetch all programs within a department
-router.get("/department/:department", programController.getProgramsByDepartment);
+// 4. Soft-delete a program
+router.put('/deactivate/:id', programController.deactivateProgram);
+router.put('/restore/:id', programController.restoreProgram);
 
 module.exports = router;

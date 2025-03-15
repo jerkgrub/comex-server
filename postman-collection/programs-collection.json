@@ -1,0 +1,336 @@
+{
+  "info": {
+    "name": "Program API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Create a new program",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"department\": \"Computer Science\",\n  \"title\": \"Study Abroad Program\",\n  \"description\": \"A semester-long study abroad program for computer science students\",\n  \"createdBy\": \"user123\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:0369/api/program/new",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "program", "new"]
+        }
+      }
+    },
+    {
+      "name": "Get all programs",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/program",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "program"]
+        }
+      }
+    },
+    {
+      "name": "Get program by ID",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/program/{{programId}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "program", "{{programId}}"],
+          "variable": [
+            {
+              "key": "programId",
+              "value": "replace_with_actual_program_id"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get programs by department",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/program/department/Computer Science",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "program", "department", "Computer Science"]
+        }
+      }
+    },
+    {
+      "name": "Get approved programs",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/program/approved",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "program", "approved"]
+        }
+      }
+    },
+    {
+      "name": "Get pending programs",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/program/pending",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "program", "pending"]
+        }
+      }
+    },
+    {
+      "name": "Get deactivated programs",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/program/deactivated",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "program", "deactivated"]
+        }
+      }
+    },
+    {
+      "name": "Update a program",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Updated Study Abroad Program\",\n  \"description\": \"An updated description for the study abroad program\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:0369/api/program/{{programId}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "program", "{{programId}}"],
+          "variable": [
+            {
+              "key": "programId",
+              "value": "replace_with_actual_program_id"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Approve program by Representative",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/program/approve/by-representative/{{programId}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "program", "approve", "by-representative", "{{programId}}"],
+          "variable": [
+            {
+              "key": "programId",
+              "value": "replace_with_actual_program_id"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Approve program by Dean",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/program/approve/by-dean/{{programId}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "program", "approve", "by-dean", "{{programId}}"],
+          "variable": [
+            {
+              "key": "programId",
+              "value": "replace_with_actual_program_id"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Approve program by General Accounting Supervisor",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/program/approve/by-general-accounting-supervisor/{{programId}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "program", "approve", "by-general-accounting-supervisor", "{{programId}}"],
+          "variable": [
+            {
+              "key": "programId",
+              "value": "replace_with_actual_program_id"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Approve program by Comex Coordinator",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/program/approve/by-comex-coordinator/{{programId}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "program", "approve", "by-comex-coordinator", "{{programId}}"],
+          "variable": [
+            {
+              "key": "programId",
+              "value": "replace_with_actual_program_id"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Approve program by Academic Services Director",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/program/approve/by-academic-services-director/{{programId}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "program", "approve", "by-academic-services-director", "{{programId}}"],
+          "variable": [
+            {
+              "key": "programId",
+              "value": "replace_with_actual_program_id"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Approve program by Academic Director",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/program/approve/by-academic-director/{{programId}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "program", "approve", "by-academic-director", "{{programId}}"],
+          "variable": [
+            {
+              "key": "programId",
+              "value": "replace_with_actual_program_id"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Approve program by Executive Director",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/program/approve/by-executive-director/{{programId}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "program", "approve", "by-executive-director", "{{programId}}"],
+          "variable": [
+            {
+              "key": "programId",
+              "value": "replace_with_actual_program_id"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Deactivate a program",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/program/deactivate/{{programId}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "program", "deactivate", "{{programId}}"],
+          "variable": [
+            {
+              "key": "programId",
+              "value": "replace_with_actual_program_id"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Restore a program",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/program/restore/{{programId}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "program", "restore", "{{programId}}"],
+          "variable": [
+            {
+              "key": "programId",
+              "value": "replace_with_actual_program_id"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "programId",
+      "value": "replace_with_actual_program_id"
+    }
+  ]
+}

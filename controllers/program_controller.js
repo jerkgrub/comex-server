@@ -1,229 +1,250 @@
-const Program = require("../models/program_model");
-
-// Helper function to exclude soft-deleted records
-const excludeDeleted = { isDeleted: false };
+const Program = require('../models/program_model');
 
 // 1. Create a new program
-const createProgram = async (req, res) => {
+exports.createProgram = async (req, res) => {
   try {
-    const { title, description, createdBy } = req.body;
+    const programData = {
+      ...req.body,
+      isActivated: true,
+      isApproved: {
+        byRepresentative: false,
+        byDean: false,
+        byGeneralAccountingSupervisor: false,
+        byComexCoordinator: false,
+        byAcademicServicesDirector: false,
+        byAcademicDirector: false,
+        byExecutiveDirector: false
+      }
+    };
 
-    const newProgram = new Program({
-      title,
-      description,
-      isApproved: false, // Default to unapproved
-      createdBy,
-    });
-
-    const savedProgram = await newProgram.save();
-    res.status(201).json({
-      success: true,
-      message: "Program created successfully",
-      program: savedProgram,
-    });
+    const program = new Program(programData);
+    const savedProgram = await program.save();
+    res.status(201).json(savedProgram);
   } catch (error) {
-    console.error("Error creating program:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error creating program",
-      error,
-    });
+    res.status(500).json({ message: error.message });
   }
 };
 
-// 2. Fetch all approved programs
-const getApprovedPrograms = async (req, res) => {
+// 2. Read operations
+exports.getAllPrograms = async (req, res) => {
   try {
-    const approvedPrograms = await Program.find({
-      isApproved: true,
-      ...excludeDeleted,
-    });
-    res.status(200).json({ success: true, programs: approvedPrograms });
+    const programs = await Program.find({ isActivated: true });
+    res.status(200).json(programs);
   } catch (error) {
-    console.error("Error fetching approved programs:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error fetching approved programs",
-      error,
-    });
+    res.status(500).json({ message: error.message });
   }
 };
 
-// 3. Fetch all unapproved programs
-const getUnapprovedPrograms = async (req, res) => {
+exports.getProgramById = async (req, res) => {
   try {
-    const unapprovedPrograms = await Program.find({
-      isApproved: false,
-      ...excludeDeleted,
-    });
-    res.status(200).json({ success: true, programs: unapprovedPrograms });
+    const program = await Program.findById(req.params.id);
+    if (!program) {
+      return res.status(404).json({ message: 'Program not found' });
+    }
+    res.status(200).json(program);
   } catch (error) {
-    console.error("Error fetching unapproved programs:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error fetching unapproved programs",
-      error,
-    });
+    res.status(500).json({ message: error.message });
   }
 };
 
-// 4. Fetch all programs
-const getAllPrograms = async (req, res) => {
+exports.getProgramsByDepartment = async (req, res) => {
   try {
-    const programs = await Program.find(excludeDeleted);
-    res.status(200).json({ success: true, programs });
-  } catch (error) {
-    console.error("Error fetching all programs:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error fetching all programs",
-      error,
+    const programs = await Program.find({
+      department: req.params.department,
+      isActivated: true
     });
+    res.status(200).json(programs);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };
 
-// 5. Approve a program
-const approveProgram = async (req, res) => {
+exports.getApprovedPrograms = async (req, res) => {
   try {
-    const programId = req.params.id;
-    const updatedProgram = await Program.findOneAndUpdate(
-      { _id: programId, ...excludeDeleted },
-      { isApproved: true },
-      { new: true, runValidators: true }
-    );
+    const programs = await Program.find({
+      isActivated: true,
+      'isApproved.byRepresentative': true,
+      'isApproved.byDean': true,
+      'isApproved.byGeneralAccountingSupervisor': true,
+      'isApproved.byComexCoordinator': true,
+      'isApproved.byAcademicServicesDirector': true,
+      'isApproved.byAcademicDirector': true,
+      'isApproved.byExecutiveDirector': true
+    });
+    res.status(200).json(programs);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.getPendingPrograms = async (req, res) => {
+  try {
+    const programs = await Program.find({
+      isActivated: true,
+      $or: [
+        { 'isApproved.byRepresentative': false },
+        { 'isApproved.byDean': false },
+        { 'isApproved.byGeneralAccountingSupervisor': false },
+        { 'isApproved.byComexCoordinator': false },
+        { 'isApproved.byAcademicServicesDirector': false },
+        { 'isApproved.byAcademicDirector': false },
+        { 'isApproved.byExecutiveDirector': false }
+      ]
+    });
+    res.status(200).json(programs);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.getDeactivatedPrograms = async (req, res) => {
+  try {
+    const programs = await Program.find({ isActivated: false });
+    res.status(200).json(programs);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// 3. Update operations
+exports.updateProgram = async (req, res) => {
+  try {
+    const updatedProgram = await Program.findByIdAndUpdate(req.params.id, req.body, { new: true });
 
     if (!updatedProgram) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Program not found" });
+      return res.status(404).json({ message: 'Program not found' });
     }
 
-    res.status(200).json({
-      success: true,
-      message: "Program approved successfully",
-      program: updatedProgram,
-    });
+    res.status(200).json(updatedProgram);
   } catch (error) {
-    console.error("Error approving program:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error approving program",
-      error,
-    });
+    res.status(500).json({ message: error.message });
   }
 };
 
-// 6. Fetch a single program by ID
-const getProgramById = async (req, res) => {
+// Approval functions
+exports.approveProgramByRepresentative = async (req, res) => {
   try {
-    const programId = req.params.id;
-    const program = await Program.findOne({
-      _id: programId,
-      ...excludeDeleted,
-    });
+    const program = await Program.findByIdAndUpdate(req.params.id, { 'isApproved.byRepresentative': true }, { new: true });
 
     if (!program) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Program not found" });
+      return res.status(404).json({ message: 'Program not found' });
     }
 
-    res.status(200).json({ success: true, program });
+    res.status(200).json(program);
   } catch (error) {
-    console.error("Error fetching program by ID:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error fetching program by ID",
-      error,
-    });
+    res.status(500).json({ message: error.message });
   }
 };
 
-// 7. Update a program
-const updateProgram = async (req, res) => {
+exports.approveProgramByDean = async (req, res) => {
   try {
-    const programId = req.params.id;
-    const { title, description } = req.body;
+    const program = await Program.findByIdAndUpdate(req.params.id, { 'isApproved.byDean': true }, { new: true });
 
-    const updatedProgram = await Program.findOneAndUpdate(
-      { _id: programId, ...excludeDeleted },
-      { title, description },
-      { new: true, runValidators: true }
-    );
-
-    if (!updatedProgram) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Program not found" });
+    if (!program) {
+      return res.status(404).json({ message: 'Program not found' });
     }
 
-    res.status(200).json({
-      success: true,
-      message: "Program updated successfully",
-      program: updatedProgram,
-    });
+    res.status(200).json(program);
   } catch (error) {
-    console.error("Error updating program:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error updating program",
-      error,
-    });
+    res.status(500).json({ message: error.message });
   }
 };
 
-// 8. Soft-delete a program
-const deleteProgram = async (req, res) => {
+exports.approveProgramByGeneralAccountingSupervisor = async (req, res) => {
   try {
-    const programId = req.params.id;
+    const program = await Program.findByIdAndUpdate(req.params.id, { 'isApproved.byGeneralAccountingSupervisor': true }, { new: true });
 
-    const deletedProgram = await Program.findOneAndUpdate(
-      { _id: programId, ...excludeDeleted },
-      { isDeleted: true },
-      { new: true }
-    );
-
-    if (!deletedProgram) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Program not found" });
+    if (!program) {
+      return res.status(404).json({ message: 'Program not found' });
     }
 
-    res.status(200).json({
-      success: true,
-      message: "Program deleted successfully",
-      program: deletedProgram,
-    });
+    res.status(200).json(program);
   } catch (error) {
-    console.error("Error deleting program:", error);
-    res.status(500).json({
-      success: false,
-      message: "Error deleting program",
-      error,
-    });
+    res.status(500).json({ message: error.message });
   }
 };
 
-// New: Fetch all programs by department
-const getProgramsByDepartment = async (req, res) => {
+exports.approveProgramByComexCoordinator = async (req, res) => {
   try {
-    const department = req.params.department;
-    const programs = await Program.find({ department, isDeleted: false });
-    res.status(200).json({ success: true, programs });
+    const program = await Program.findByIdAndUpdate(req.params.id, { 'isApproved.byComexCoordinator': true }, { new: true });
+
+    if (!program) {
+      return res.status(404).json({ message: 'Program not found' });
+    }
+
+    res.status(200).json(program);
   } catch (error) {
-    console.error("Error fetching programs by department:", error);
-    res.status(500).json({ success: false, message: "Error fetching programs by department", error });
+    res.status(500).json({ message: error.message });
   }
 };
 
-module.exports = {
-  createProgram,
-  getApprovedPrograms,
-  getUnapprovedPrograms,
-  getAllPrograms,
-  approveProgram,
-  getProgramById,
-  updateProgram,
-  deleteProgram,
-  getProgramsByDepartment,
+exports.approveProgramByAcademicServicesDirector = async (req, res) => {
+  try {
+    const program = await Program.findByIdAndUpdate(req.params.id, { 'isApproved.byAcademicServicesDirector': true }, { new: true });
+
+    if (!program) {
+      return res.status(404).json({ message: 'Program not found' });
+    }
+
+    res.status(200).json(program);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.approveProgramByAcademicDirector = async (req, res) => {
+  try {
+    const program = await Program.findByIdAndUpdate(req.params.id, { 'isApproved.byAcademicDirector': true }, { new: true });
+
+    if (!program) {
+      return res.status(404).json({ message: 'Program not found' });
+    }
+
+    res.status(200).json(program);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.approveProgramByExecutiveDirector = async (req, res) => {
+  try {
+    const program = await Program.findByIdAndUpdate(req.params.id, { 'isApproved.byExecutiveDirector': true }, { new: true });
+
+    if (!program) {
+      return res.status(404).json({ message: 'Program not found' });
+    }
+
+    res.status(200).json(program);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// 4. Soft-delete operations
+exports.deactivateProgram = async (req, res) => {
+  try {
+    const program = await Program.findByIdAndUpdate(req.params.id, { isActivated: false }, { new: true });
+
+    if (!program) {
+      return res.status(404).json({ message: 'Program not found' });
+    }
+
+    res.status(200).json(program);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.restoreProgram = async (req, res) => {
+  try {
+    const program = await Program.findByIdAndUpdate(req.params.id, { isActivated: true }, { new: true });
+
+    if (!program) {
+      return res.status(404).json({ message: 'Program not found' });
+    }
+
+    res.status(200).json(program);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 };
