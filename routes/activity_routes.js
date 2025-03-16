@@ -7,11 +7,23 @@ const Activity = require('../models/activity_model');
 router.get('/joined-activities/:id', activityController.findJoinedActivities);
 // Fetch activities with type: Institutional & College Driven
 router.get('/highlights', activityController.findHighlights);
-// New routes for approved and pending activities
+// universal (Instituional + College-Driven) CAUTION: only fetch activities that have an isActivated value of true
 router.get('/approved', activityController.findApprovedActivities);
 router.get('/pending', activityController.findPendingActivities);
-// Get deactivated activities
 router.get('/deactivated', activityController.getDeactivatedActivities);
+
+// project-specific / 'College Driven' | CAUTION: only fetch activities that have an isActivated value of true
+router.get('/project/:projectId', activityController.getActivitiesByProject);
+router.get('/project/:projectId/pending', activityController.findPendingActivitiesByProject);
+router.get('/project/:projectId/approved', activityController.findApprovedActivitiesByProject);
+// CAUTION: only fetch activities that have an isActivated value of false
+router.get('/project/:projectId/deactivated', activityController.getDeactivatedActivitiesByProject);
+
+// institutional-specific | CAUTION: only fetch activities that have an isActivated value of true, and a type of 'Institutional'
+router.get('/institutional', activityController.findInstitutionalActivities);
+router.get('/institutional/pending', activityController.findPendingInstitutionalActivities);
+router.get('/institutional/approved', activityController.findApprovedInstitutionalActivities);
+router.get('/institutional/deactivated', activityController.getDeactivatedInstitutionalActivities);
 
 // 1. Create
 router.post('/new', activityController.newActivity); // Removed "/api/activity" prefix
@@ -41,7 +53,7 @@ router.delete('/respondent/:activityId/:userId', activityController.removeRespon
 router.get('/pending/count', async (req, res) => {
   try {
     const count = await Activity.countDocuments({
-      'adminApproval.isApproved': false,
+      isApproved: false,
       isActivated: { $ne: false } // Only count activated activities
     });
     res.json({ count });
@@ -57,5 +69,8 @@ router.get('/by-project/:projectId', activityController.getActivitiesByProject);
 // Activity soft-deletion handling
 router.put('/deactivate/:id', activityController.deactivateActivity);
 router.put('/restore/:id', activityController.restoreActivity);
+
+// Activity approval
+router.put('/approve/:id', activityController.approveActivity);
 
 module.exports = router;

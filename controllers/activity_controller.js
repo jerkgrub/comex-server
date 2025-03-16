@@ -20,7 +20,7 @@ const findJoinedActivities = (req, res) => {
 const findHighlights = (req, res) => {
   Activity.find({
     type: { $in: ['Institutional', 'College Driven'] },
-    'adminApproval.isApproved': true,
+    isApproved: true,
     isActivated: { $ne: false }
   })
     .then(highlightActivities => {
@@ -33,7 +33,7 @@ const findHighlights = (req, res) => {
 
 // Fetch approved activities
 const findApprovedActivities = (req, res) => {
-  Activity.find({ 'adminApproval.isApproved': true, isActivated: { $ne: false } })
+  Activity.find({ isApproved: true, isActivated: { $ne: false } })
     .then(approvedActivities => {
       res.json({ Activities: approvedActivities });
     })
@@ -44,7 +44,7 @@ const findApprovedActivities = (req, res) => {
 
 // Fetch pending activities (not approved yet)
 const findPendingActivities = (req, res) => {
-  Activity.find({ 'adminApproval.isApproved': false, isActivated: { $ne: false } })
+  Activity.find({ isApproved: false, isActivated: { $ne: false } })
     .then(pendingActivities => {
       res.json({ Activities: pendingActivities });
     })
@@ -201,7 +201,9 @@ const addRespondent = (req, res) => {
       }
 
       // Check if the respondent with the provided userId already exists
-      const existingRespondent = activity.respondents.find(respondent => respondent.userId === userId);
+      const existingRespondent = activity.respondents.find(
+        respondent => respondent.userId === userId
+      );
       if (existingRespondent) {
         return res.status(400).json({ message: 'Respondent with the same userId already exists' });
       }
@@ -247,7 +249,9 @@ const removeRespondent = (req, res) => {
       }
 
       // Filter out the respondent by userId
-      activity.respondents = activity.respondents.filter(respondent => respondent.userId !== userId);
+      activity.respondents = activity.respondents.filter(
+        respondent => respondent.userId !== userId
+      );
 
       return activity.save();
     })
@@ -267,11 +271,126 @@ const getActivitiesByProject = async (req, res) => {
   try {
     const projectId = req.params.projectId;
     const activities = await Activity.find({ projectId, isActivated: { $ne: false } });
-    res.status(200).json({ success: true, activities });
+    res.status(200).json({ Activities: activities });
   } catch (error) {
     console.error('Error fetching activities by project:', error);
-    res.status(500).json({ success: false, message: 'Error fetching activities by project', error });
+    res.status(500).json({ message: 'Error fetching activities by project', error });
   }
+};
+
+// Project-specific pending activities
+const findPendingActivitiesByProject = async (req, res) => {
+  try {
+    const projectId = req.params.projectId;
+    const activities = await Activity.find({
+      projectId,
+      isApproved: false,
+      isActivated: { $ne: false }
+    });
+    res.json({ Activities: activities });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching pending activities by project', error });
+  }
+};
+
+// Project-specific approved activities
+const findApprovedActivitiesByProject = async (req, res) => {
+  try {
+    const projectId = req.params.projectId;
+    const activities = await Activity.find({
+      projectId,
+      isApproved: true,
+      isActivated: { $ne: false }
+    });
+    res.json({ Activities: activities });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching approved activities by project', error });
+  }
+};
+
+// Project-specific deactivated activities
+const getDeactivatedActivitiesByProject = async (req, res) => {
+  try {
+    const projectId = req.params.projectId;
+    const activities = await Activity.find({
+      projectId,
+      isActivated: false
+    });
+    res.json({ Activities: activities });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching deactivated activities by project', error });
+  }
+};
+
+// Institutional activities
+const findInstitutionalActivities = async (req, res) => {
+  try {
+    const activities = await Activity.find({
+      type: 'Institutional',
+      isActivated: { $ne: false }
+    });
+    res.json({ Activities: activities });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching institutional activities', error });
+  }
+};
+
+// Institutional pending activities
+const findPendingInstitutionalActivities = async (req, res) => {
+  try {
+    const activities = await Activity.find({
+      type: 'Institutional',
+      isApproved: false,
+      isActivated: { $ne: false }
+    });
+    res.json({ Activities: activities });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching pending institutional activities', error });
+  }
+};
+
+// Institutional approved activities
+const findApprovedInstitutionalActivities = async (req, res) => {
+  try {
+    const activities = await Activity.find({
+      type: 'Institutional',
+      isApproved: true,
+      isActivated: { $ne: false }
+    });
+    res.json({ Activities: activities });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching approved institutional activities', error });
+  }
+};
+
+// Institutional deactivated activities
+const getDeactivatedInstitutionalActivities = async (req, res) => {
+  try {
+    const activities = await Activity.find({
+      type: 'Institutional',
+      isActivated: false
+    });
+    res.json({ Activities: activities });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching deactivated institutional activities', error });
+  }
+};
+
+// Approve an activity
+const approveActivity = (req, res) => {
+  Activity.findByIdAndUpdate(req.params.id, { isApproved: true }, { new: true })
+    .then(approvedActivity => {
+      if (!approvedActivity) {
+        return res.status(404).json({ message: 'Activity not found' });
+      }
+      res.json({
+        message: 'Activity successfully approved',
+        activity: approvedActivity
+      });
+    })
+    .catch(err => {
+      res.status(500).json({ message: 'Error approving activity', error: err });
+    });
 };
 
 module.exports = {
@@ -287,6 +406,7 @@ module.exports = {
   getAllRespondents,
   removeRespondent,
 
+  // Universal activities
   findApprovedActivities,
   findPendingActivities,
   findHighlights,
@@ -297,6 +417,18 @@ module.exports = {
   restoreActivity,
   getDeactivatedActivities,
 
-  // New export:
-  getActivitiesByProject
+  // Project-specific activities
+  getActivitiesByProject,
+  findPendingActivitiesByProject,
+  findApprovedActivitiesByProject,
+  getDeactivatedActivitiesByProject,
+
+  // Institutional activities
+  findInstitutionalActivities,
+  findPendingInstitutionalActivities,
+  findApprovedInstitutionalActivities,
+  getDeactivatedInstitutionalActivities,
+
+  // Activity approval
+  approveActivity
 };

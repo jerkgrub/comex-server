@@ -21,7 +21,9 @@ const ActivitySchema = new mongoose.Schema(
     registrationEnd: String, //
     startDate: String, //
     endDate: String, //
-    time: String, //
+    // time: String, //we don't need this anymore
+    startTime: String,
+    endTime: String,
     hours: Number,
     department: String, //
 
@@ -29,11 +31,7 @@ const ActivitySchema = new mongoose.Schema(
     respondents: [{ userId: String }],
 
     // approvals
-    adminApproval: {
-      isApproved: Boolean,
-      approvedBy: String,
-      approvalDate: Date
-    }
+    isApproved: Boolean,
   },
   { timestamps: true }
 );

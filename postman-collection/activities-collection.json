@@ -1,0 +1,473 @@
+{
+  "info": {
+    "name": "Activity API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Create a new activity",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"type\": \"College Driven\",\n  \"programId\": \"{{programId}}\",\n  \"projectId\": \"{{projectId}}\",\n  \"organizer\": \"Computer Science Department\",\n  \"title\": \"Web Development Workshop\",\n  \"location\": \"Computer Lab 101\",\n  \"description\": \"A workshop on modern web development techniques\",\n  \"image\": \"https://example.com/image.jpg\",\n  \"objectives\": \"Learn modern web development frameworks and tools\",\n  \"isVoluntaryAndUnpaid\": true,\n  \"beneficiaries\": \"Computer Science students\",\n  \"registrationStart\": \"2023-06-01\",\n  \"registrationEnd\": \"2023-06-15\",\n  \"startDate\": \"2023-06-20\",\n  \"endDate\": \"2023-06-21\",\n  \"startTime\": \"9:00 AM\",\n  \"endTime\": \"4:00 PM\",\n  \"hours\": 14,\n  \"department\": \"Computer Science\",\n  \"isApproved\": false\n}"
+        },
+        "url": {
+          "raw": "http://localhost:0369/api/activity/new",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "activity", "new"]
+        }
+      }
+    },
+    {
+      "name": "Get all activities",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/activity/all",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "activity", "all"]
+        }
+      }
+    },
+    {
+      "name": "Get activity by ID",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/activity/{{activityId}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "activity", "{{activityId}}"],
+          "variable": [
+            {
+              "key": "activityId",
+              "value": "replace_with_actual_activity_id"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get highlights (Institutional & College Driven)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/activity/highlights",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "activity", "highlights"]
+        }
+      }
+    },
+    {
+      "name": "Get joined activities by user",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/activity/joined-activities/{{userId}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "activity", "joined-activities", "{{userId}}"],
+          "variable": [
+            {
+              "key": "userId",
+              "value": "replace_with_actual_user_id"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get approved activities",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/activity/approved",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "activity", "approved"]
+        }
+      }
+    },
+    {
+      "name": "Get pending activities",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/activity/pending",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "activity", "pending"]
+        }
+      }
+    },
+    {
+      "name": "Get deactivated activities",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/activity/deactivated",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "activity", "deactivated"]
+        }
+      }
+    },
+    {
+      "name": "Get pending activities count",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/activity/pending/count",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "activity", "pending", "count"]
+        }
+      }
+    },
+    {
+      "name": "Get activities by project",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/activity/project/{{projectId}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "activity", "project", "{{projectId}}"],
+          "variable": [
+            {
+              "key": "projectId",
+              "value": "replace_with_actual_project_id"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get pending activities by project",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/activity/project/{{projectId}}/pending",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "activity", "project", "{{projectId}}", "pending"],
+          "variable": [
+            {
+              "key": "projectId",
+              "value": "replace_with_actual_project_id"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get approved activities by project",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/activity/project/{{projectId}}/approved",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "activity", "project", "{{projectId}}", "approved"],
+          "variable": [
+            {
+              "key": "projectId",
+              "value": "replace_with_actual_project_id"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get deactivated activities by project",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/activity/project/{{projectId}}/deactivated",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "activity", "project", "{{projectId}}", "deactivated"],
+          "variable": [
+            {
+              "key": "projectId",
+              "value": "replace_with_actual_project_id"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get institutional activities",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/activity/institutional",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "activity", "institutional"]
+        }
+      }
+    },
+    {
+      "name": "Get pending institutional activities",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/activity/institutional/pending",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "activity", "institutional", "pending"]
+        }
+      }
+    },
+    {
+      "name": "Get approved institutional activities",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/activity/institutional/approved",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "activity", "institutional", "approved"]
+        }
+      }
+    },
+    {
+      "name": "Get deactivated institutional activities",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/activity/institutional/deactivated",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "activity", "institutional", "deactivated"]
+        }
+      }
+    },
+    {
+      "name": "Update an activity",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Updated Web Development Workshop\",\n  \"description\": \"An updated workshop on modern web development techniques\",\n  \"location\": \"Computer Lab 102\",\n  \"startTime\": \"10:00 AM\",\n  \"endTime\": \"5:00 PM\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:0369/api/activity/update/{{activityId}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "activity", "update", "{{activityId}}"],
+          "variable": [
+            {
+              "key": "activityId",
+              "value": "replace_with_actual_activity_id"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Delete an activity",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/activity/delete/{{activityId}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "activity", "delete", "{{activityId}}"],
+          "variable": [
+            {
+              "key": "activityId",
+              "value": "replace_with_actual_activity_id"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Deactivate an activity (soft delete)",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/activity/deactivate/{{activityId}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "activity", "deactivate", "{{activityId}}"],
+          "variable": [
+            {
+              "key": "activityId",
+              "value": "replace_with_actual_activity_id"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Restore a deactivated activity",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/activity/restore/{{activityId}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "activity", "restore", "{{activityId}}"],
+          "variable": [
+            {
+              "key": "activityId",
+              "value": "replace_with_actual_activity_id"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Approve an activity",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/activity/approve/{{activityId}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "activity", "approve", "{{activityId}}"],
+          "variable": [
+            {
+              "key": "activityId",
+              "value": "replace_with_actual_activity_id"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Add respondent to activity",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"userId\": \"{{userId}}\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:0369/api/activity/add/respondent/{{activityId}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "activity", "add", "respondent", "{{activityId}}"],
+          "variable": [
+            {
+              "key": "activityId",
+              "value": "replace_with_actual_activity_id"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get all respondents of an activity",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/activity/get/respondents/{{activityId}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "activity", "get", "respondents", "{{activityId}}"],
+          "variable": [
+            {
+              "key": "activityId",
+              "value": "replace_with_actual_activity_id"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Remove respondent from activity",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/activity/respondent/{{activityId}}/{{userId}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "activity", "respondent", "{{activityId}}", "{{userId}}"],
+          "variable": [
+            {
+              "key": "activityId",
+              "value": "replace_with_actual_activity_id"
+            },
+            {
+              "key": "userId",
+              "value": "replace_with_actual_user_id"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
