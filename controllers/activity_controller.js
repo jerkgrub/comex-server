@@ -400,27 +400,62 @@ const linkFormToActivity = async (req, res) => {
     const { activityId } = req.params;
     const { formId } = req.body;
 
+    if (!activityId || !formId) {
+      return res.status(400).json({
+        message: 'Activity ID and Form ID are required'
+      });
+    }
+
+    // First, verify that both the activity and form exist
     const activity = await Activity.findById(activityId);
     if (!activity) {
-      return res.status(404).json({ message: 'Activity not found' });
+      return res.status(404).json({
+        message: 'Activity not found'
+      });
     }
 
-    // Check if form is already linked
-    const existingLink = activity.linkedForms.find(link => link.formId.toString() === formId);
+    const Form = require('../models/form_model'); // Import the Form model
+    const form = await Form.findById(formId);
+    if (!form) {
+      return res.status(404).json({
+        message: 'Form not found'
+      });
+    }
+
+    // Create a new ActivityForm document to represent the link
+    const ActivityForm = require('../models/activity_form_model'); // Import the ActivityForm model
+
+    // Check if this link already exists
+    const existingLink = await ActivityForm.findOne({
+      activityId: activityId,
+      formId: formId
+    });
+
     if (existingLink) {
-      return res.status(400).json({ message: 'Form is already linked to this activity' });
+      return res.status(400).json({
+        message: 'This form is already linked to the activity'
+      });
     }
 
-    // Add the form link
-    activity.linkedForms.push({
+    // Create the new link
+    const newLink = new ActivityForm({
+      activityId,
       formId,
       status: 'pending' // Default status
     });
 
-    await activity.save();
-    res.status(200).json({ message: 'Form linked successfully', activity });
+    await newLink.save();
+
+    return res.status(201).json({
+      message: 'Form linked to activity successfully',
+      link: newLink
+    });
   } catch (error) {
-    res.status(500).json({ message: 'Error linking form to activity', error: error.message });
+    console.error('Error in linkFormToActivity:', error);
+    return res.status(500).json({
+      message: 'Error linking form to activity',
+      error: error.message
+    });
   }
 };
 
