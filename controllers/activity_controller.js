@@ -462,15 +462,34 @@ const linkFormToActivity = async (req, res) => {
 const getActivityForms = async (req, res) => {
   try {
     const { activityId } = req.params;
-    const activity = await Activity.findById(activityId).populate('linkedForms.formId');
 
+    // Verify the activity exists
+    const activity = await Activity.findById(activityId);
     if (!activity) {
       return res.status(404).json({ message: 'Activity not found' });
     }
 
-    res.status(200).json({ forms: activity.linkedForms });
+    // Import the ActivityForm model
+    const ActivityForm = require('../models/activity_form_model');
+
+    // Find all form links for this activity
+    const formLinks = await ActivityForm.find({ activityId }).populate('formId');
+
+    // Extract the form data from the populated links
+    const forms = formLinks.map(link => ({
+      ...link.formId._doc,
+      _id: link.formId._id,
+      status: link.status,
+      linkId: link._id
+    }));
+
+    res.status(200).json(forms);
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching activity forms', error: error.message });
+    console.error('Error in getActivityForms:', error);
+    res.status(500).json({
+      message: 'Error fetching activity forms',
+      error: error.message
+    });
   }
 };
 
@@ -496,18 +515,27 @@ const approveFormLink = async (req, res) => {
 const removeFormLink = async (req, res) => {
   try {
     const { linkId } = req.params;
-    const activity = await Activity.findOne({ 'linkedForms._id': linkId });
 
-    if (!activity) {
+    // Import the ActivityForm model
+    const ActivityForm = require('../models/activity_form_model');
+
+    // Find and delete the link
+    const deletedLink = await ActivityForm.findByIdAndDelete(linkId);
+
+    if (!deletedLink) {
       return res.status(404).json({ message: 'Form link not found' });
     }
 
-    activity.linkedForms.pull(linkId);
-    await activity.save();
-
-    res.status(200).json({ message: 'Form link removed successfully' });
+    res.status(200).json({
+      message: 'Form link removed successfully',
+      deletedLink
+    });
   } catch (error) {
-    res.status(500).json({ message: 'Error removing form link', error: error.message });
+    console.error('Error in removeFormLink:', error);
+    res.status(500).json({
+      message: 'Error removing form link',
+      error: error.message
+    });
   }
 };
 

@@ -1,42 +1,38 @@
 // models/activity_form_model.js
 const mongoose = require('mongoose');
+const Schema = mongoose.Schema;
 
-const ActivityFormSchema = new mongoose.Schema({
-  activity: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Activity',
-    required: true
-  },
-  form: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Form',
-    required: true
-  },
-  type: {
-    type: String,
-    enum: ['REGISTRATION', 'EVALUATION', 'SURVEY'],
-    required: true
-  },
-  status: {
-    approval: {
+const activityFormSchema = new Schema(
+  {
+    activityId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Activity',
+      required: true
+    },
+    formId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Form',
+      required: true
+    },
+    status: {
       type: String,
-      enum: ['PENDING', 'APPROVED', 'REJECTED'],
-      default: 'PENDING'
+      enum: ['pending', 'approved', 'rejected'],
+      default: 'pending'
     },
     approvedBy: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: 'User'
     },
-    approvedAt: Date
+    approvedAt: {
+      type: Date
+    }
   },
-  creditDetails: {
-    hours: Number,
-    description: String
-  },
-  autoApprove: { type: Boolean, default: false }
-}, { timestamps: true });
+  { timestamps: true }
+);
 
-ActivityFormSchema.index({ activity: 1, form: 1 });
+// Create a compound index to ensure uniqueness of activity-form pairs
+activityFormSchema.index({ activityId: 1, formId: 1 }, { unique: true });
 
-const ActivityForm = mongoose.model('ActivityForm', ActivityFormSchema);
+const ActivityForm = mongoose.model('ActivityForm', activityFormSchema);
+
 module.exports = ActivityForm;
