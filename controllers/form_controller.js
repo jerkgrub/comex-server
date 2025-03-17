@@ -5,6 +5,8 @@ const mongoose = require('mongoose');
 const { put } = require('@vercel/blob');
 const multer = require('multer');
 const Activity = require('../models/activity_model');
+const Credit = require('../models/credit_model');
+const ActivityForm = require('../models/activity_form_model');
 
 // Set up Multer to store files in memory temporarily
 const storage = multer.memoryStorage();
@@ -603,6 +605,84 @@ const submitFormWithContext = async (req, res) => {
   }
 };
 
+// Approve a form response
+const approveResponse = async (req, res) => {
+  try {
+    const { responseId } = req.params;
+
+    // Find the response
+    const response = await Response.findById(responseId);
+    if (!response) {
+      return res.status(404).json({ message: 'Response not found' });
+    }
+
+    // Find the form to get credit value
+    const form = await Form.findById(response.form);
+    if (!form) {
+      return res.status(404).json({ message: 'Form not found' });
+    }
+
+    // Check if user exists
+    if (!response.respondent || !response.respondent.user) {
+      return res.status(400).json({ message: 'Response has no associated user' });
+    }
+
+    // Create a credit entry
+    const credit = new Credit({
+      user: response.respondent.user,
+      activity: response.activityForm
+        ? await ActivityForm.findById(response.activityForm).then(af => af.activity)
+        : null,
+      activityForm: response.activityForm,
+      response: response._id,
+      hours: form.credits || 0,
+      description: `Credit awarded for completing ${form.title}`,
+      awardedAt: new Date()
+    });
+
+    await credit.save();
+
+    // Update response status if needed
+    response.status = 'approved';
+    await response.save();
+
+    res.status(200).json({
+      message: 'Response approved and credit awarded',
+      credit
+    });
+  } catch (error) {
+    console.error('Error approving response:', error);
+    res.status(500).json({ message: 'Error approving response', error: error.message });
+  }
+};
+
+// Deny a form response
+const denyResponse = async (req, res) => {
+  try {
+    const { responseId } = req.params;
+    const { reason } = req.body;
+
+    // Find the response
+    const response = await Response.findById(responseId);
+    if (!response) {
+      return res.status(404).json({ message: 'Response not found' });
+    }
+
+    // Update response status
+    response.status = 'denied';
+    response.denialReason = reason || 'Response was denied';
+    await response.save();
+
+    res.status(200).json({
+      message: 'Response denied',
+      response
+    });
+  } catch (error) {
+    console.error('Error denying response:', error);
+    res.status(500).json({ message: 'Error denying response', error: error.message });
+  }
+};
+
 module.exports = {
   // Form CRUD operations
   createForm,
@@ -632,5 +712,9 @@ module.exports = {
   // Form categorization and activity linking
   getFormsByCategory,
   getFormActivities,
-  submitFormWithContext
+  submitFormWithContext,
+
+  // Response approval
+  approveResponse,
+  denyResponse
 };

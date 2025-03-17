@@ -7,37 +7,42 @@ const answerSchema = new mongoose.Schema({
   fileUrl: String
 });
 
-const responseSchema = new mongoose.Schema({
-  form: { 
-    type: mongoose.Schema.Types.ObjectId, 
-    ref: 'Form', 
-    required: true 
+const responseSchema = new mongoose.Schema(
+  {
+    form: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Form',
+      required: true
+    },
+    activityForm: {
+      // New reference
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'ActivityForm'
+    },
+    respondent: {
+      email: String,
+      name: String,
+      user: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+      }
+    },
+    answers: [answerSchema],
+    metadata: {
+      ipAddress: String,
+      userAgent: String,
+      timeSpent: Number,
+      completionDate: { type: Date, default: Date.now }
+    },
+    status: {
+      type: String,
+      enum: ['complete', 'partial', 'approved', 'denied', 'pending'],
+      default: 'pending'
+    },
+    denialReason: String
   },
-  activityForm: {  // New reference
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'ActivityForm'
-  },
-  respondent: {
-    email: String,
-    name: String,
-    user: { 
-      type: mongoose.Schema.Types.ObjectId, 
-      ref: 'User' 
-    }
-  },
-  answers: [answerSchema],
-  metadata: {
-    ipAddress: String,
-    userAgent: String,
-    timeSpent: Number,
-    completionDate: { type: Date, default: Date.now }
-  },
-  status: {
-    type: String,
-    enum: ['complete', 'partial'],
-    default: 'complete'
-  }
-}, { timestamps: true });
+  { timestamps: true }
+);
 
 responseSchema.index({ form: 1 });
 responseSchema.index({ 'respondent.email': 1, form: 1 });

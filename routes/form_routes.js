@@ -16,6 +16,10 @@ router.get('/:formId/responses', formController.getFormResponses);
 router.post('/:formId/publish', formController.publishForm);
 router.get('/responses/:responseId', formController.getResponseById);
 
+// Response approval routes
+router.post('/responses/:responseId/approve', formController.approveResponse);
+router.post('/responses/:responseId/deny', formController.denyResponse);
+
 // File upload route
 router.post('/upload-file', formController.handleFileUpload, formController.uploadFormFile);
 
