@@ -1,39 +1,25 @@
-//form_model
+// models/form_model.js
 const mongoose = require('mongoose');
-const { Schema } = mongoose;
 
-// Option schema for choice-based questions
-const optionSchema = new Schema(
-  {
-    // Removed explicit id field - will use MongoDB's auto-generated _id
-    value: String,
-    title: String,
-    imageUrl: String
-  },
-  { _id: true } // This already ensures MongoDB creates _id fields
-);
+const optionSchema = new mongoose.Schema({
+  value: String,
+  title: String,
+  imageUrl: String
+}, { _id: true });
 
-// Question schema
-const questionSchema = new Schema({
-  // Removed explicit id field - will use MongoDB's auto-generated _id
+const questionSchema = new mongoose.Schema({
   title: { type: String, required: true },
-  type: {
+  type: { 
     type: String,
     required: true,
     enum: [
-      'Short Answer',
-      'Paragraph',
-      'Multiple Choice',
-      'Checkbox',
-      'Dropdown',
-      'File Upload',
-      'Linear Scale',
-      'Date',
-      'Time'
+      'Short Answer', 'Paragraph', 'Multiple Choice', 
+      'Checkbox', 'Dropdown', 'File Upload', 
+      'Linear Scale', 'Date', 'Time'
     ]
   },
   isRequired: { type: Boolean, default: false },
-  options: [optionSchema], // For choice-based questions
+  options: [optionSchema],
   validation: {
     minValue: Number,
     maxValue: Number,
@@ -46,42 +32,41 @@ const questionSchema = new Schema({
   linearScale: {
     minValue: { type: Number, default: 0 },
     maxValue: { type: Number, default: 5 },
-    minLabel: { type: String, default: '' },
-    maxLabel: { type: String, default: '' }
+    minLabel: String,
+    maxLabel: String
   },
   metadata: {
     position: Number,
     visibilityLogic: {
       dependsOn: String,
       condition: String,
-      value: Schema.Types.Mixed
+      value: mongoose.Schema.Types.Mixed
     }
   }
 });
 
-// Form schema
-const formSchema = new Schema(
-  {
-    // MongoDB will automatically generate _id for each form
-    title: { type: String, required: true, trim: true },
-    description: String,
-    isPublished: { type: Boolean, default: false },
-    settings: {
-      signInRequired: { type: Boolean, default: false },
-      confirmationMessage: { type: String, default: 'Your response has been recorded.' },
-      allowMultipleResponses: { type: Boolean, default: false },
-      closesAt: Date,
-      maxResponses: { type: Number, default: 0 },
-      acceptingResponses: { type: Boolean, default: true }
-    },
-    questions: [questionSchema],
-    tags: [String],
-    folder: String
+const formSchema = new mongoose.Schema({
+  title: { type: String, required: true },
+  description: String,
+  isPublished: { type: Boolean, default: false },
+  category: {  // New field for filtering
+    type: String,
+    enum: ['INSTITUTIONAL', 'DEPARTMENTAL', 'GENERAL'],
+    default: 'GENERAL'
   },
-  { timestamps: true }
-);
+  settings: {
+    signInRequired: { type: Boolean, default: false },
+    confirmationMessage: { type: String, default: 'Your response has been recorded.' },
+    allowMultipleResponses: { type: Boolean, default: false },
+    closesAt: Date,
+    maxResponses: { type: Number, default: 0 },
+    acceptingResponses: { type: Boolean, default: true }
+  },
+  questions: [questionSchema],
+  tags: [String],
+  folder: String
+}, { timestamps: true });
 
-// Indexes for better query performance
 formSchema.index({ title: 'text', description: 'text' });
 formSchema.index({ isPublished: 1 });
 

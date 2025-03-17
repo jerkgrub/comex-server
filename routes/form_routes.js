@@ -26,4 +26,13 @@ router.get('/:formId/export', formController.exportFormData);
 // Form utilities
 router.post('/:formId/duplicate', formController.duplicateForm);
 
+// Form Categorization Routes
+router.get('/category/:category', formController.getFormsByCategory);
+
+// Form-Activity Linking Info
+router.get('/:formId/linked-activities', formController.getFormActivities);
+
+// Modified form submission route with activity context
+router.post('/:formId/submit/:activityFormId', formController.submitFormWithContext);
+
 module.exports = router;

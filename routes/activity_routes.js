@@ -73,4 +73,17 @@ router.put('/restore/:id', activityController.restoreActivity);
 // Activity approval
 router.put('/approve/:id', activityController.approveActivity);
 
+// Activity-Form Linking Routes
+router.post('/:activityId/link-form', activityController.linkFormToActivity);
+router.get('/:activityId/forms', activityController.getActivityForms);
+router.put('/activity-form/:linkId/approve', activityController.approveFormLink);
+router.delete('/activity-form/:linkId', activityController.removeFormLink);
+
+// Enhanced Approval Routes
+router.get('/:activityId/pending-forms', activityController.getPendingForms);
+router.get('/:activityId/approved-forms', activityController.getApprovedForms);
+
+// Credit-related Routes
+router.get('/:activityId/credits', activityController.getActivityCredits);
+
 module.exports = router;

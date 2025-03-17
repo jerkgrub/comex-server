@@ -4,6 +4,7 @@ const Response = require('../models/response_model');
 const mongoose = require('mongoose');
 const { put } = require('@vercel/blob');
 const multer = require('multer');
+const Activity = require('../models/activity_model');
 
 // Set up Multer to store files in memory temporarily
 const storage = multer.memoryStorage();
@@ -17,7 +18,7 @@ const upload = multer({
 });
 
 // Form CRUD operations
-exports.createForm = async (req, res) => {
+const createForm = async (req, res) => {
   try {
     const { title, description, questions = [] } = req.body;
 
@@ -36,9 +37,11 @@ exports.createForm = async (req, res) => {
   }
 };
 
-exports.getAllForms = async (req, res) => {
+const getAllForms = async (req, res) => {
   try {
-    const forms = await Form.find().select('title description isPublished createdAt updatedAt').sort({ updatedAt: -1 });
+    const forms = await Form.find()
+      .select('title description isPublished createdAt updatedAt')
+      .sort({ updatedAt: -1 });
 
     res.status(200).json(forms);
   } catch (error) {
@@ -46,7 +49,7 @@ exports.getAllForms = async (req, res) => {
   }
 };
 
-exports.getFormById = async (req, res) => {
+const getFormById = async (req, res) => {
   try {
     const form = await Form.findById(req.params.formId);
 
@@ -61,7 +64,7 @@ exports.getFormById = async (req, res) => {
   }
 };
 
-exports.updateForm = async (req, res) => {
+const updateForm = async (req, res) => {
   try {
     const { title, description, questions, settings, isPublished } = req.body;
 
@@ -87,7 +90,7 @@ exports.updateForm = async (req, res) => {
   }
 };
 
-exports.deleteForm = async (req, res) => {
+const deleteForm = async (req, res) => {
   try {
     const form = await Form.findById(req.params.formId);
 
@@ -137,10 +140,10 @@ const uploadFileToBlob = async (fileBuffer, fileName, fileType) => {
 };
 
 // Middleware to handle file uploads
-exports.handleFileUpload = upload.single('file');
+const handleFileUpload = upload.single('file');
 
 // Process file upload and return URL
-exports.uploadFormFile = async (req, res) => {
+const uploadFormFile = async (req, res) => {
   try {
     const file = req.file;
 
@@ -165,7 +168,7 @@ exports.uploadFormFile = async (req, res) => {
 };
 
 // Form submission handling
-exports.submitForm = async (req, res) => {
+const submitForm = async (req, res) => {
   try {
     const { formId } = req.params;
     const { answers, respondent } = req.body;
@@ -184,7 +187,9 @@ exports.submitForm = async (req, res) => {
     if (form.settings?.maxResponses > 0) {
       const responseCount = await Response.countDocuments({ form: formId });
       if (responseCount >= form.settings.maxResponses) {
-        return res.status(403).json({ message: 'This form has reached its maximum response limit' });
+        return res
+          .status(403)
+          .json({ message: 'This form has reached its maximum response limit' });
       }
     }
 
@@ -194,7 +199,9 @@ exports.submitForm = async (req, res) => {
     // Convert string questionIds to ObjectIds for validation
     const answeredQuestions = answers.map(a => a.questionId);
 
-    const missingRequiredQuestions = requiredQuestions.filter(qId => !answeredQuestions.includes(qId));
+    const missingRequiredQuestions = requiredQuestions.filter(
+      qId => !answeredQuestions.includes(qId)
+    );
 
     if (missingRequiredQuestions.length > 0) {
       return res.status(400).json({
@@ -278,7 +285,7 @@ exports.submitForm = async (req, res) => {
   }
 };
 
-exports.getFormResponses = async (req, res) => {
+const getFormResponses = async (req, res) => {
   try {
     const { formId } = req.params;
     const { page = 1, limit = 20 } = req.query;
@@ -312,7 +319,7 @@ exports.getFormResponses = async (req, res) => {
   }
 };
 
-exports.getResponseById = async (req, res) => {
+const getResponseById = async (req, res) => {
   try {
     const { responseId } = req.params;
 
@@ -331,7 +338,7 @@ exports.getResponseById = async (req, res) => {
 };
 
 // Form utilities
-exports.duplicateForm = async (req, res) => {
+const duplicateForm = async (req, res) => {
   try {
     const { formId } = req.params;
 
@@ -362,7 +369,7 @@ exports.duplicateForm = async (req, res) => {
 };
 
 // Publish form
-exports.publishForm = async (req, res) => {
+const publishForm = async (req, res) => {
   try {
     const { formId } = req.params;
 
@@ -402,7 +409,7 @@ exports.publishForm = async (req, res) => {
 };
 
 // Analytics
-exports.getFormAnalytics = async (req, res) => {
+const getFormAnalytics = async (req, res) => {
   try {
     const { formId } = req.params;
 
@@ -457,7 +464,7 @@ exports.getFormAnalytics = async (req, res) => {
 };
 
 // Export data
-exports.exportFormData = async (req, res) => {
+const exportFormData = async (req, res) => {
   try {
     const { formId } = req.params;
     const { format = 'json' } = req.query;
@@ -482,7 +489,11 @@ exports.exportFormData = async (req, res) => {
       });
 
       const rows = responses.map(resp => {
-        const row = [resp._id.toString(), resp.createdAt.toISOString(), resp.respondent?.email || ''];
+        const row = [
+          resp._id.toString(),
+          resp.createdAt.toISOString(),
+          resp.respondent?.email || ''
+        ];
 
         // Add question answers
         form.questions.forEach(q => {
@@ -520,4 +531,106 @@ exports.exportFormData = async (req, res) => {
   }
 };
 
-exports.upload = upload;
+// Form Categorization
+const getFormsByCategory = async (req, res) => {
+  try {
+    const { category } = req.params;
+    const forms = await Form.find({ category }).sort({ updatedAt: -1 });
+
+    if (!forms.length) {
+      return res.status(404).json({ message: `No forms found in category: ${category}` });
+    }
+
+    res.status(200).json({ forms });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching forms by category', error: error.message });
+  }
+};
+
+// Form-Activity Linking
+const getFormActivities = async (req, res) => {
+  try {
+    const { formId } = req.params;
+    const activities = await Activity.find({ 'linkedForms.formId': formId }).populate(
+      'linkedForms.formId'
+    );
+
+    if (!activities.length) {
+      return res.status(404).json({ message: 'No activities linked to this form' });
+    }
+
+    res.status(200).json({ activities });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching form activities', error: error.message });
+  }
+};
+
+// Modified form submission with activity context
+const submitFormWithContext = async (req, res) => {
+  try {
+    const { formId, activityFormId } = req.params;
+    const { answers, respondent } = req.body;
+
+    const form = await Form.findById(formId);
+    if (!form) {
+      return res.status(404).json({ message: 'Form not found' });
+    }
+
+    // Verify the activity-form link exists and is approved
+    const activity = await Activity.findOne({
+      'linkedForms._id': activityFormId,
+      'linkedForms.formId': formId,
+      'linkedForms.status': 'approved'
+    });
+
+    if (!activity) {
+      return res.status(404).json({ message: 'Invalid or unapproved activity-form link' });
+    }
+
+    // Create response with activity context
+    const response = new Response({
+      form: formId,
+      activityFormId,
+      activityId: activity._id,
+      answers,
+      respondent
+    });
+
+    await response.save();
+    res.status(201).json({ response });
+  } catch (error) {
+    res.status(500).json({ message: 'Error submitting form response', error: error.message });
+  }
+};
+
+module.exports = {
+  // Form CRUD operations
+  createForm,
+  getAllForms,
+  getFormById,
+  updateForm,
+  deleteForm,
+
+  // Form response handling
+  submitForm,
+  getFormResponses,
+  getResponseById,
+
+  // Form utilities
+  duplicateForm,
+  publishForm,
+
+  // Analytics & Reporting
+  getFormAnalytics,
+  exportFormData,
+
+  // File handling
+  handleFileUpload,
+  uploadFormFile,
+  upload,
+
+  // Form categorization and activity linking
+  getFormsByCategory,
+  getFormActivities,
+  submitFormWithContext
+};

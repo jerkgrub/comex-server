@@ -1,4 +1,5 @@
 const Activity = require('../models/activity_model');
+const Credit = require('../models/credit_model');
 
 // Fetch activities where the user is a respondent
 const findJoinedActivities = (req, res) => {
@@ -393,6 +394,135 @@ const approveActivity = (req, res) => {
     });
 };
 
+// Activity-Form Linking Methods
+const linkFormToActivity = async (req, res) => {
+  try {
+    const { activityId } = req.params;
+    const { formId } = req.body;
+
+    const activity = await Activity.findById(activityId);
+    if (!activity) {
+      return res.status(404).json({ message: 'Activity not found' });
+    }
+
+    // Check if form is already linked
+    const existingLink = activity.linkedForms.find(link => link.formId.toString() === formId);
+    if (existingLink) {
+      return res.status(400).json({ message: 'Form is already linked to this activity' });
+    }
+
+    // Add the form link
+    activity.linkedForms.push({
+      formId,
+      status: 'pending' // Default status
+    });
+
+    await activity.save();
+    res.status(200).json({ message: 'Form linked successfully', activity });
+  } catch (error) {
+    res.status(500).json({ message: 'Error linking form to activity', error: error.message });
+  }
+};
+
+const getActivityForms = async (req, res) => {
+  try {
+    const { activityId } = req.params;
+    const activity = await Activity.findById(activityId).populate('linkedForms.formId');
+
+    if (!activity) {
+      return res.status(404).json({ message: 'Activity not found' });
+    }
+
+    res.status(200).json({ forms: activity.linkedForms });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching activity forms', error: error.message });
+  }
+};
+
+const approveFormLink = async (req, res) => {
+  try {
+    const { linkId } = req.params;
+    const activity = await Activity.findOne({ 'linkedForms._id': linkId });
+
+    if (!activity) {
+      return res.status(404).json({ message: 'Form link not found' });
+    }
+
+    const formLink = activity.linkedForms.id(linkId);
+    formLink.status = 'approved';
+    await activity.save();
+
+    res.status(200).json({ message: 'Form link approved', activity });
+  } catch (error) {
+    res.status(500).json({ message: 'Error approving form link', error: error.message });
+  }
+};
+
+const removeFormLink = async (req, res) => {
+  try {
+    const { linkId } = req.params;
+    const activity = await Activity.findOne({ 'linkedForms._id': linkId });
+
+    if (!activity) {
+      return res.status(404).json({ message: 'Form link not found' });
+    }
+
+    activity.linkedForms.pull(linkId);
+    await activity.save();
+
+    res.status(200).json({ message: 'Form link removed successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error removing form link', error: error.message });
+  }
+};
+
+const getPendingForms = async (req, res) => {
+  try {
+    const { activityId } = req.params;
+    const activity = await Activity.findById(activityId).populate('linkedForms.formId');
+
+    if (!activity) {
+      return res.status(404).json({ message: 'Activity not found' });
+    }
+
+    const pendingForms = activity.linkedForms.filter(link => link.status === 'pending');
+    res.status(200).json({ forms: pendingForms });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching pending forms', error: error.message });
+  }
+};
+
+const getApprovedForms = async (req, res) => {
+  try {
+    const { activityId } = req.params;
+    const activity = await Activity.findById(activityId).populate('linkedForms.formId');
+
+    if (!activity) {
+      return res.status(404).json({ message: 'Activity not found' });
+    }
+
+    const approvedForms = activity.linkedForms.filter(link => link.status === 'approved');
+    res.status(200).json({ forms: approvedForms });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching approved forms', error: error.message });
+  }
+};
+
+const getActivityCredits = async (req, res) => {
+  try {
+    const { activityId } = req.params;
+    const credits = await Credit.find({ activityId }).populate('userId');
+
+    if (!credits.length) {
+      return res.status(404).json({ message: 'No credits found for this activity' });
+    }
+
+    res.status(200).json({ credits });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching activity credits', error: error.message });
+  }
+};
+
 module.exports = {
   // Activities
   newActivity,
@@ -430,5 +560,14 @@ module.exports = {
   getDeactivatedInstitutionalActivities,
 
   // Activity approval
-  approveActivity
+  approveActivity,
+
+  // Activity-Form Linking Methods
+  linkFormToActivity,
+  getActivityForms,
+  approveFormLink,
+  removeFormLink,
+  getPendingForms,
+  getApprovedForms,
+  getActivityCredits
 };

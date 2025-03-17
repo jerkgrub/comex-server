@@ -43,6 +43,7 @@ app.use('/api/notification', notificationRoutes);
 app.use('/api/activity', activityRoutes);
 app.use('/api/program', programRoutes);
 app.use('/api/project', projectRoutes);
+app.use('/api/credit', creditRoutes);
 
 // forms
 app.use('/api/form', formRoutes);

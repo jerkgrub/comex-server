@@ -1,75 +1,38 @@
-const mongoose = require("mongoose");
+// models/credit_model.js
+const mongoose = require('mongoose');
 
-const CreditSchema = new mongoose.Schema(
-  {
-    location: {
-      type: String,
-    },
-    organizer: {
-      type: String,
-    },
-    activityId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Activity",
-    },
-    isRegisteredEvent: {
-      type: Boolean,
-    },
-    userId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-    },
-    type: {
-      type: String,
-    },
-    title: {
-      type: String,
-      // Conditional requirement based on isRegisteredEvent
-    },
-    isVoluntary: {
-      type: Boolean,
-      // Conditional requirement based on isRegisteredEvent
-    },
-    beneficiaries: {
-      type: String,
-      // Conditional requirement based on isRegisteredEvent
-    },
-    startDate: {
-      type: Date,
-      // Conditional requirement based on isRegisteredEvent
-    },
-    endDate: {
-      type: Date,
-      // Conditional requirement based on isRegisteredEvent
-    },
-    totalHoursRendered: {
-      type: Number,
-    },
-    supportingDocuments: {
-      type: String, // URL or path to the uploaded file
-    },
-    facultyReflection: {
-      type: String,
-    },
-    // New Fields for Approval/Rejection
-    status: {
-      type: String,
-      enum: ["Pending", "Approved", "Rejected"],
-      default: "Pending",
-    },
-    approvedBy: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User", // Assuming approvers are also users
-    },
-    approvedAt: {
-      type: Date,
-    },
-    rejectionReason: {
-      type: String,
-    },
+const CreditSchema = new mongoose.Schema({
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
   },
-  { timestamps: true }
-);
+  activity: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Activity',
+    required: true
+  },
+  activityForm: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'ActivityForm',
+    required: true
+  },
+  response: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Response'
+  },
+  hours: {
+    type: Number,
+    required: true
+  },
+  description: String,
+  awardedAt: {
+    type: Date,
+    default: Date.now
+  }
+});
 
-const Credit = mongoose.model("Credit", CreditSchema);
+CreditSchema.index({ user: 1, activity: 1 });
+
+const Credit = mongoose.model('Credit', CreditSchema);
 module.exports = Credit;
