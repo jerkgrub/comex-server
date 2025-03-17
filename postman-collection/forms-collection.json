@@ -1,0 +1,278 @@
+{
+  "info": {
+    "name": "Form API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Create a new form",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Sample Form\",\n  \"description\": \"A sample form for testing\",\n  \"category\": \"GENERAL\",\n  \"settings\": {\n    \"signInRequired\": true,\n    \"confirmationMessage\": \"Thank you for your response!\",\n    \"allowMultipleResponses\": false,\n    \"acceptingResponses\": true\n  },\n  \"questions\": [\n    {\n      \"title\": \"What is your name?\",\n      \"type\": \"Short Answer\",\n      \"isRequired\": true,\n      \"metadata\": {\n        \"position\": 1\n      }\n    },\n    {\n      \"title\": \"How would you rate this event?\",\n      \"type\": \"Linear Scale\",\n      \"isRequired\": true,\n      \"linearScale\": {\n        \"minValue\": 1,\n        \"maxValue\": 5,\n        \"minLabel\": \"Poor\",\n        \"maxLabel\": \"Excellent\"\n      },\n      \"metadata\": {\n        \"position\": 2\n      }\n    }\n  ]\n}"
+        },
+        "url": {
+          "raw": "http://localhost:0369/api/form",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "form"]
+        }
+      }
+    },
+    {
+      "name": "Get all forms",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/form",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "form"]
+        }
+      }
+    },
+    {
+      "name": "Get form by ID",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/form/{{formId}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "form", "{{formId}}"]
+        }
+      }
+    },
+    {
+      "name": "Update form",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Updated Form Title\",\n  \"description\": \"Updated form description\",\n  \"questions\": [\n    {\n      \"title\": \"Updated question\",\n      \"type\": \"Short Answer\",\n      \"isRequired\": true,\n      \"metadata\": {\n        \"position\": 1\n      }\n    }\n  ]\n}"
+        },
+        "url": {
+          "raw": "http://localhost:0369/api/form/{{formId}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "form", "{{formId}}"]
+        }
+      }
+    },
+    {
+      "name": "Delete form",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/form/{{formId}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "form", "{{formId}}"]
+        }
+      }
+    },
+    {
+      "name": "Submit form response",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"respondent\": {\n    \"email\": \"user@example.com\",\n    \"name\": \"John Doe\",\n    \"user\": \"{{userId}}\"\n  },\n  \"answers\": [\n    {\n      \"questionId\": \"{{questionId1}}\",\n      \"value\": \"John Doe\"\n    },\n    {\n      \"questionId\": \"{{questionId2}}\",\n      \"value\": 4\n    }\n  ]\n}"
+        },
+        "url": {
+          "raw": "http://localhost:0369/api/form/{{formId}}/submit",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "form", "{{formId}}", "submit"]
+        }
+      }
+    },
+    {
+      "name": "Get form responses",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/form/{{formId}}/responses",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "form", "{{formId}}", "responses"]
+        }
+      }
+    },
+    {
+      "name": "Publish form",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/form/{{formId}}/publish",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "form", "{{formId}}", "publish"]
+        }
+      }
+    },
+    {
+      "name": "Get response by ID",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/form/responses/{{responseId}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "form", "responses", "{{responseId}}"]
+        }
+      }
+    },
+    {
+      "name": "Upload form file",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "file",
+              "type": "file",
+              "src": "/path/to/your/file.jpg"
+            }
+          ]
+        },
+        "url": {
+          "raw": "http://localhost:0369/api/form/upload-file",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "form", "upload-file"]
+        }
+      }
+    },
+    {
+      "name": "Get form analytics",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/form/{{formId}}/analytics",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "form", "{{formId}}", "analytics"]
+        }
+      }
+    },
+    {
+      "name": "Export form data",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/form/{{formId}}/export",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "form", "{{formId}}", "export"]
+        }
+      }
+    },
+    {
+      "name": "Duplicate form",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/form/{{formId}}/duplicate",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "form", "{{formId}}", "duplicate"]
+        }
+      }
+    },
+    {
+      "name": "Get forms by category",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/form/category/INSTITUTIONAL",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "form", "category", "INSTITUTIONAL"]
+        }
+      }
+    },
+    {
+      "name": "Get form linked activities",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/form/{{formId}}/linked-activities",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "form", "{{formId}}", "linked-activities"]
+        }
+      }
+    },
+    {
+      "name": "Submit form with activity context",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"respondent\": {\n    \"email\": \"user@example.com\",\n    \"name\": \"John Doe\",\n    \"user\": \"{{userId}}\"\n  },\n  \"answers\": [\n    {\n      \"questionId\": \"{{questionId1}}\",\n      \"value\": \"John Doe\"\n    },\n    {\n      \"questionId\": \"{{questionId2}}\",\n      \"value\": 4\n    }\n  ]\n}"
+        },
+        "url": {
+          "raw": "http://localhost:0369/api/form/{{formId}}/submit/{{activityFormId}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "form", "{{formId}}", "submit", "{{activityFormId}}"]
+        }
+      }
+    }
+  ]
+}

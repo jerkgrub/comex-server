@@ -468,6 +468,113 @@
           ]
         }
       }
+    },
+    {
+      "name": "Link Form to Activity",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"formId\": \"{{formId}}\",\n  \"type\": \"REGISTRATION\",\n  \"autoApprove\": true,\n  \"creditDetails\": {\n    \"hours\": 2,\n    \"description\": \"Participation credit\"\n  }\n}"
+        },
+        "url": {
+          "raw": "http://localhost:0369/api/activity/{{activityId}}/link-form",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "activity", "{{activityId}}", "link-form"]
+        }
+      }
+    },
+    {
+      "name": "Get Activity Forms",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/activity/{{activityId}}/forms",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "activity", "{{activityId}}", "forms"]
+        }
+      }
+    },
+    {
+      "name": "Approve Form Link",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/activity/activity-form/{{linkId}}/approve",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "activity", "activity-form", "{{linkId}}", "approve"]
+        }
+      }
+    },
+    {
+      "name": "Remove Form Link",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/activity/activity-form/{{linkId}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "activity", "activity-form", "{{linkId}}"]
+        }
+      }
+    },
+    {
+      "name": "Get Pending Forms",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/activity/{{activityId}}/pending-forms",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "activity", "{{activityId}}", "pending-forms"]
+        }
+      }
+    },
+    {
+      "name": "Get Approved Forms",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/activity/{{activityId}}/approved-forms",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "activity", "{{activityId}}", "approved-forms"]
+        }
+      }
+    },
+    {
+      "name": "Get Activity Credits",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/activity/{{activityId}}/credits",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "activity", "{{activityId}}", "credits"]
+        }
+      }
     }
   ]
 }

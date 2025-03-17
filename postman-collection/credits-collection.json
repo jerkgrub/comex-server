@@ -1,0 +1,78 @@
+{
+  "info": {
+    "name": "Credit API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Get user credits",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/credit/users/{{userId}}/credits",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "credit", "users", "{{userId}}", "credits"]
+        }
+      }
+    },
+    {
+      "name": "Get credit details",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/credit/{{creditId}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "credit", "{{creditId}}"]
+        }
+      }
+    },
+    {
+      "name": "Revoke credit",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/credit/{{creditId}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "credit", "{{creditId}}"]
+        }
+      }
+    },
+    {
+      "name": "Get activity credits",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/credit/activity/{{activityId}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "credit", "activity", "{{activityId}}"]
+        }
+      }
+    },
+    {
+      "name": "Get form credits",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/credit/form/{{formId}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "credit", "form", "{{formId}}"]
+        }
+      }
+    }
+  ]
+}

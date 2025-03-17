@@ -36,7 +36,6 @@ const formRoutes = require('./routes/form_routes');
 
 // user
 app.use('/api', userRoutes);
-app.use('/api/credit', creditRoutes);
 app.use('/api/notification', notificationRoutes);
 
 // initiatives
