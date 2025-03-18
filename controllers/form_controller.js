@@ -609,6 +609,7 @@ const submitFormWithContext = async (req, res) => {
 const approveResponse = async (req, res) => {
   try {
     const { responseId } = req.params;
+    const { userId } = req.body; // Get userId from request body if provided
 
     // Find the response
     const response = await Response.findById(responseId);
@@ -622,33 +623,52 @@ const approveResponse = async (req, res) => {
       return res.status(404).json({ message: 'Form not found' });
     }
 
-    // Check if user exists
-    if (!response.respondent || !response.respondent.user) {
-      return res.status(400).json({ message: 'Response has no associated user' });
+    // Check if response has user association
+    let userIdToAward = null;
+
+    if (response.respondent && response.respondent.user) {
+      // Use existing user association if available
+      userIdToAward = response.respondent.user;
+    } else if (userId) {
+      // Use the user ID from request body if provided
+      userIdToAward = userId;
+
+      // Update the response with the user association
+      if (!response.respondent) {
+        response.respondent = { user: userId };
+      } else {
+        response.respondent.user = userId;
+      }
+
+      await response.save();
     }
 
-    // Create a credit entry
-    const credit = new Credit({
-      user: response.respondent.user,
-      activity: response.activityForm
-        ? await ActivityForm.findById(response.activityForm).then(af => af.activity)
-        : null,
-      activityForm: response.activityForm,
-      response: response._id,
-      hours: form.credits || 0,
-      description: `Credit awarded for completing ${form.title}`,
-      awardedAt: new Date()
-    });
+    // If we have a user to award credits to, create a credit entry
+    if (userIdToAward) {
+      const credit = new Credit({
+        user: userIdToAward,
+        activity: response.activityForm
+          ? await ActivityForm.findById(response.activityForm).then(af => af.activity)
+          : null,
+        activityForm: response.activityForm,
+        response: response._id,
+        hours: form.credits || 0,
+        description: `Credit awarded for completing ${form.title}`,
+        awardedAt: new Date()
+      });
 
-    await credit.save();
+      await credit.save();
+    }
 
-    // Update response status if needed
+    // Update response status
     response.status = 'approved';
     await response.save();
 
     res.status(200).json({
-      message: 'Response approved and credit awarded',
-      credit
+      message:
+        'Response approved' +
+        (userIdToAward ? ' and credit awarded' : ' (no user to award credits)'),
+      hasUser: !!userIdToAward
     });
   } catch (error) {
     console.error('Error approving response:', error);
