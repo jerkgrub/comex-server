@@ -643,21 +643,50 @@ const approveResponse = async (req, res) => {
       await response.save();
     }
 
-    // If we have a user to award credits to, create a credit entry
-    if (userIdToAward) {
-      const credit = new Credit({
-        user: userIdToAward,
-        activity: response.activityForm
-          ? await ActivityForm.findById(response.activityForm).then(af => af.activity)
-          : null,
-        activityForm: response.activityForm,
-        response: response._id,
-        hours: form.credits || 0,
-        description: `Credit awarded for completing ${form.title}`,
-        awardedAt: new Date()
-      });
+    let creditCreated = false;
+    let credit = null;
 
-      await credit.save();
+    // If we have a user to award credits to and the form has credits, create a credit entry
+    if (userIdToAward && form.credits && form.credits > 0) {
+      try {
+        // Look up activityForm if it exists
+        let activityId = null;
+        let activityFormId = null;
+
+        if (response.activityForm) {
+          // Get the activityForm document
+          const activityForm = await ActivityForm.findById(response.activityForm);
+
+          if (activityForm) {
+            activityId = activityForm.activityId;
+            activityFormId = activityForm._id;
+          }
+        }
+
+        // Only create a credit if we have both a user and an activity
+        if (activityId) {
+          credit = new Credit({
+            user: userIdToAward,
+            activity: activityId,
+            activityForm: activityFormId,
+            response: response._id,
+            hours: form.credits || 0,
+            description: `Credit awarded for completing ${form.title}`,
+            awardedAt: new Date()
+          });
+
+          await credit.save();
+          creditCreated = true;
+          console.log(`Credit created successfully: ${credit._id}`);
+        } else {
+          console.log('No activity associated with this response, skipping credit creation');
+        }
+      } catch (creditError) {
+        console.error('Error creating credit:', creditError);
+        // Continue with response approval even if credit creation fails
+      }
+    } else {
+      console.log('Skipping credit creation - missing user ID or form credits');
     }
 
     // Update response status
@@ -666,9 +695,10 @@ const approveResponse = async (req, res) => {
 
     res.status(200).json({
       message:
-        'Response approved' +
-        (userIdToAward ? ' and credit awarded' : ' (no user to award credits)'),
-      hasUser: !!userIdToAward
+        'Response approved' + (creditCreated ? ' and credit awarded' : ' (no credits awarded)'),
+      hasUser: !!userIdToAward,
+      creditCreated,
+      creditId: credit?._id
     });
   } catch (error) {
     console.error('Error approving response:', error);
