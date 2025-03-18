@@ -1,21 +1,30 @@
 // models/form_model.js
 const mongoose = require('mongoose');
 
-const optionSchema = new mongoose.Schema({
-  value: String,
-  title: String,
-  imageUrl: String
-}, { _id: true });
+const optionSchema = new mongoose.Schema(
+  {
+    value: String,
+    title: String,
+    imageUrl: String
+  },
+  { _id: true }
+);
 
 const questionSchema = new mongoose.Schema({
   title: { type: String, required: true },
-  type: { 
+  type: {
     type: String,
     required: true,
     enum: [
-      'Short Answer', 'Paragraph', 'Multiple Choice', 
-      'Checkbox', 'Dropdown', 'File Upload', 
-      'Linear Scale', 'Date', 'Time'
+      'Short Answer',
+      'Paragraph',
+      'Multiple Choice',
+      'Checkbox',
+      'Dropdown',
+      'File Upload',
+      'Linear Scale',
+      'Date',
+      'Time'
     ]
   },
   isRequired: { type: Boolean, default: false },
@@ -45,27 +54,32 @@ const questionSchema = new mongoose.Schema({
   }
 });
 
-const formSchema = new mongoose.Schema({
-  title: { type: String, required: true },
-  description: String,
-  isPublished: { type: Boolean, default: false },
-  category: {  // New field for filtering
-    type: String,
-    enum: ['INSTITUTIONAL', 'DEPARTMENTAL', 'GENERAL'],
-    default: 'GENERAL'
+const formSchema = new mongoose.Schema(
+  {
+    title: { type: String, required: true },
+    description: String,
+    credits: { type: Number, default: 0 }, // Credits awarded when form is completed and approved
+    isPublished: { type: Boolean, default: false },
+    category: {
+      // New field for filtering
+      type: String,
+      enum: ['INSTITUTIONAL', 'DEPARTMENTAL', 'GENERAL'],
+      default: 'GENERAL'
+    },
+    settings: {
+      signInRequired: { type: Boolean, default: false },
+      confirmationMessage: { type: String, default: 'Your response has been recorded.' },
+      allowMultipleResponses: { type: Boolean, default: false },
+      closesAt: Date,
+      maxResponses: { type: Number, default: 0 },
+      acceptingResponses: { type: Boolean, default: true }
+    },
+    questions: [questionSchema],
+    tags: [String],
+    folder: String
   },
-  settings: {
-    signInRequired: { type: Boolean, default: false },
-    confirmationMessage: { type: String, default: 'Your response has been recorded.' },
-    allowMultipleResponses: { type: Boolean, default: false },
-    closesAt: Date,
-    maxResponses: { type: Number, default: 0 },
-    acceptingResponses: { type: Boolean, default: true }
-  },
-  questions: [questionSchema],
-  tags: [String],
-  folder: String
-}, { timestamps: true });
+  { timestamps: true }
+);
 
 formSchema.index({ title: 'text', description: 'text' });
 formSchema.index({ isPublished: 1 });

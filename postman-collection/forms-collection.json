@@ -93,7 +93,7 @@
       }
     },
     {
-      "name": "Submit form response",
+      "name": "Submit Form Response",
       "request": {
         "method": "POST",
         "header": [
@@ -104,7 +104,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"respondent\": {\n    \"email\": \"user@example.com\",\n    \"name\": \"John Doe\",\n    \"user\": \"{{userId}}\"\n  },\n  \"answers\": [\n    {\n      \"questionId\": \"{{questionId1}}\",\n      \"value\": \"John Doe\"\n    },\n    {\n      \"questionId\": \"{{questionId2}}\",\n      \"value\": 4\n    }\n  ]\n}"
+          "raw": "{\n  \"respondent\": {\n    \"email\": \"user@example.com\",\n    \"name\": \"John Doe\",\n    \"user\": \"65fb6d2c1a91ae28cdcbf123\"\n  },\n  \"answers\": [\n    {\n      \"questionId\": \"{{questionId}}\",\n      \"value\": \"Sample answer\"\n    }\n  ]\n}"
         },
         "url": {
           "raw": "http://localhost:0369/api/form/{{formId}}/submit",
@@ -112,7 +112,8 @@
           "host": ["localhost"],
           "port": "0369",
           "path": ["api", "form", "{{formId}}", "submit"]
-        }
+        },
+        "description": "Submit a response to a form. Credits will be awarded upon approval if the form is linked to an activity."
       }
     },
     {
@@ -272,6 +273,30 @@
           "port": "0369",
           "path": ["api", "form", "{{formId}}", "submit", "{{activityFormId}}"]
         }
+      }
+    },
+    {
+      "name": "Approve Response",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"userId\": \"65fb6d2c1a91ae28cdcbf123\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:0369/api/form/responses/{{responseId}}/approve",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "form", "responses", "{{responseId}}", "approve"]
+        },
+        "description": "Approves a form response and creates a credit if it's linked to an activity. IMPORTANT: Replace the userId value in the request body with an actual MongoDB ObjectId, not the variable template."
       }
     }
   ]

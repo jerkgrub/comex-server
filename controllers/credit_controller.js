@@ -443,6 +443,72 @@ const getFormCredits = async (req, res) => {
   }
 };
 
+// Get credits associated with a specific form response
+const getResponseCredits = async (req, res) => {
+  try {
+    const { responseId } = req.params;
+    console.log(`Looking up credits for response: ${responseId}`);
+
+    const credits = await Credit.find({ response: responseId })
+      .populate('user', 'name email')
+      .populate('activity', 'title')
+      .populate('activityForm');
+
+    console.log(`Found ${credits.length} credits for response ${responseId}`);
+
+    res.status(200).json({ credits });
+  } catch (error) {
+    console.error('Error fetching response credits:', error);
+    res.status(500).json({ message: 'Error fetching response credits', error: error.message });
+  }
+};
+
+// Manually create a credit (for testing)
+const createCreditManually = async (req, res) => {
+  try {
+    const {
+      user,
+      activity,
+      activityForm,
+      response,
+      hours,
+      description,
+      source = 'manual'
+    } = req.body;
+
+    console.log('Creating credit manually with data:', req.body);
+
+    if (!user) {
+      return res.status(400).json({
+        message: 'Missing required fields',
+        required: ['user']
+      });
+    }
+
+    const credit = new Credit({
+      user,
+      activity, // Optional now
+      activityForm, // Optional now
+      response,
+      hours: hours || 1,
+      description: description || 'Manually created credit',
+      awardedAt: new Date(),
+      source
+    });
+
+    await credit.save();
+    console.log(`Manual credit created with ID: ${credit._id}`);
+
+    res.status(201).json({
+      message: 'Credit created successfully',
+      credit
+    });
+  } catch (error) {
+    console.error('Error creating credit manually:', error);
+    res.status(500).json({ message: 'Error creating credit', error: error.message });
+  }
+};
+
 // Export Multer middleware for file uploads
 module.exports = {
   newCredit,
@@ -459,5 +525,7 @@ module.exports = {
   getCreditDetails,
   revokeCredit,
   getActivityCredits,
-  getFormCredits
+  getFormCredits,
+  getResponseCredits,
+  createCreditManually
 };

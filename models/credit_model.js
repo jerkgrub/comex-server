@@ -10,12 +10,12 @@ const CreditSchema = new mongoose.Schema({
   activity: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Activity',
-    required: true
+    required: false
   },
   activityForm: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'ActivityForm',
-    required: true
+    required: false
   },
   response: {
     type: mongoose.Schema.Types.ObjectId,
@@ -29,10 +29,16 @@ const CreditSchema = new mongoose.Schema({
   awardedAt: {
     type: Date,
     default: Date.now
+  },
+  source: {
+    type: String,
+    enum: ['activity', 'form', 'manual'],
+    default: 'form'
   }
 });
 
-CreditSchema.index({ user: 1, activity: 1 });
+CreditSchema.index({ user: 1 });
+CreditSchema.index({ user: 1, activity: 1 }, { sparse: true });
 
 const Credit = mongoose.model('Credit', CreditSchema);
 module.exports = Credit;

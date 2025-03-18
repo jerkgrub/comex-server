@@ -37,6 +37,6 @@ router.get('/category/:category', formController.getFormsByCategory);
 router.get('/:formId/linked-activities', formController.getFormActivities);
 
 // Modified form submission route with activity context
-router.post('/:formId/submit/:activityFormId', formController.submitFormWithContext);
+router.post('/:formId/submit', formController.submitFormWithContext);
 
 module.exports = router;

@@ -10,5 +10,7 @@ router.delete('/:creditId', creditController.revokeCredit);
 // Admin Credit Management
 router.get('/activity/:activityId', creditController.getActivityCredits);
 router.get('/form/:formId', creditController.getFormCredits);
+router.get('/response/:responseId', creditController.getResponseCredits);
+router.post('/create', creditController.createCreditManually);
 
 module.exports = router;

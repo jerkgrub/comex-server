@@ -68,7 +68,7 @@ const getFormById = async (req, res) => {
 
 const updateForm = async (req, res) => {
   try {
-    const { title, description, questions, settings, isPublished } = req.body;
+    const { title, description, questions, settings, isPublished, credits } = req.body;
 
     const form = await Form.findById(req.params.formId);
 
@@ -84,6 +84,7 @@ const updateForm = async (req, res) => {
     if (questions) form.questions = questions;
     if (settings) form.settings = { ...form.settings, ...settings };
     if (isPublished !== undefined) form.isPublished = isPublished;
+    if (credits !== undefined) form.credits = credits;
 
     await form.save();
     res.status(200).json(form);
@@ -570,37 +571,39 @@ const getFormActivities = async (req, res) => {
 // Modified form submission with activity context
 const submitFormWithContext = async (req, res) => {
   try {
-    const { formId, activityFormId } = req.params;
+    const { formId } = req.params;
     const { answers, respondent } = req.body;
+
+    console.log(`Submitting form: formId=${formId}`);
 
     const form = await Form.findById(formId);
     if (!form) {
+      console.log(`Form not found: ${formId}`);
       return res.status(404).json({ message: 'Form not found' });
     }
 
-    // Verify the activity-form link exists and is approved
-    const activity = await Activity.findOne({
-      'linkedForms._id': activityFormId,
-      'linkedForms.formId': formId,
-      'linkedForms.status': 'approved'
-    });
-
-    if (!activity) {
-      return res.status(404).json({ message: 'Invalid or unapproved activity-form link' });
-    }
-
-    // Create response with activity context
+    // Create response with just the form reference
     const response = new Response({
       form: formId,
-      activityFormId,
-      activityId: activity._id,
       answers,
-      respondent
+      respondent,
+      status: 'pending'
     });
 
+    console.log('Saving response');
     await response.save();
-    res.status(201).json({ response });
+
+    console.log(`Response created: ${response._id}`);
+    res.status(201).json({
+      message: 'Response submitted successfully',
+      response: {
+        id: response._id,
+        formId: response.form,
+        status: response.status
+      }
+    });
   } catch (error) {
+    console.error('Error submitting form response:', error);
     res.status(500).json({ message: 'Error submitting form response', error: error.message });
   }
 };
@@ -608,20 +611,40 @@ const submitFormWithContext = async (req, res) => {
 // Approve a form response
 const approveResponse = async (req, res) => {
   try {
+    console.log('=== RESPONSE APPROVAL PROCESS STARTED ===');
     const { responseId } = req.params;
     const { userId } = req.body; // Get userId from request body if provided
+
+    console.log(
+      `Processing approval for responseId: ${responseId}, userId from request: ${
+        userId || 'not provided'
+      }`
+    );
+
+    // Validate MongoDB ObjectId
+    if (userId && !mongoose.Types.ObjectId.isValid(userId)) {
+      console.log(`ERROR: Invalid userId format: ${userId}`);
+      return res.status(400).json({
+        message: 'Invalid userId format. Must be a valid MongoDB ObjectId.',
+        providedId: userId
+      });
+    }
 
     // Find the response
     const response = await Response.findById(responseId);
     if (!response) {
+      console.log(`ERROR: Response with ID ${responseId} not found`);
       return res.status(404).json({ message: 'Response not found' });
     }
+    console.log(`Found response: ${response._id}, form: ${response.form}`);
 
     // Find the form to get credit value
     const form = await Form.findById(response.form);
     if (!form) {
+      console.log(`ERROR: Form with ID ${response.form} not found`);
       return res.status(404).json({ message: 'Form not found' });
     }
+    console.log(`Found form: ${form._id}, title: ${form.title}, credits: ${form.credits || 0}`);
 
     // Check if response has user association
     let userIdToAward = null;
@@ -629,18 +652,25 @@ const approveResponse = async (req, res) => {
     if (response.respondent && response.respondent.user) {
       // Use existing user association if available
       userIdToAward = response.respondent.user;
+      console.log(`Using existing user association from response: ${userIdToAward}`);
     } else if (userId) {
       // Use the user ID from request body if provided
       userIdToAward = userId;
+      console.log(`Using userId from request body: ${userIdToAward}`);
 
       // Update the response with the user association
       if (!response.respondent) {
         response.respondent = { user: userId };
+        console.log(`Created new respondent object with userId: ${userId}`);
       } else {
         response.respondent.user = userId;
+        console.log(`Updated existing respondent object with userId: ${userId}`);
       }
 
       await response.save();
+      console.log('Response updated with user association');
+    } else {
+      console.log('WARNING: No user ID available to award credits to');
     }
 
     let creditCreated = false;
@@ -648,23 +678,26 @@ const approveResponse = async (req, res) => {
 
     // If we have a user to award credits to and the form has credits, create a credit entry
     if (userIdToAward && form.credits && form.credits > 0) {
+      console.log(`Attempting to create credit: user=${userIdToAward}, credits=${form.credits}`);
       try {
-        // Look up activityForm if it exists
+        // NEW APPROACH: Look up any ActivityForm documents that link to this form
+        console.log(`Looking up ActivityForm links for formId: ${form._id}`);
+        const activityFormLink = await ActivityForm.findOne({
+          formId: form._id,
+          status: 'approved'
+        });
+
         let activityId = null;
         let activityFormId = null;
 
-        if (response.activityForm) {
-          // Get the activityForm document
-          const activityForm = await ActivityForm.findById(response.activityForm);
+        if (activityFormLink) {
+          activityId = activityFormLink.activityId;
+          activityFormId = activityFormLink._id;
+          console.log(
+            `Found approved ActivityForm link: activityId=${activityId}, activityFormId=${activityFormId}`
+          );
 
-          if (activityForm) {
-            activityId = activityForm.activityId;
-            activityFormId = activityForm._id;
-          }
-        }
-
-        // Only create a credit if we have both a user and an activity
-        if (activityId) {
+          // Create a credit with activity association
           credit = new Credit({
             user: userIdToAward,
             activity: activityId,
@@ -672,36 +705,63 @@ const approveResponse = async (req, res) => {
             response: response._id,
             hours: form.credits || 0,
             description: `Credit awarded for completing ${form.title}`,
-            awardedAt: new Date()
+            awardedAt: new Date(),
+            source: 'activity'
           });
-
-          await credit.save();
-          creditCreated = true;
-          console.log(`Credit created successfully: ${credit._id}`);
         } else {
-          console.log('No activity associated with this response, skipping credit creation');
+          console.log(`No approved ActivityForm link found for form: ${form._id}`);
+
+          // Create a standalone credit without activity association
+          credit = new Credit({
+            user: userIdToAward,
+            response: response._id,
+            hours: form.credits || 0,
+            description: `Credit awarded for completing ${form.title} (no activity)`,
+            awardedAt: new Date(),
+            source: 'form'
+          });
         }
+
+        console.log('Credit object created, about to save:', JSON.stringify(credit, null, 2));
+        await credit.save();
+        creditCreated = true;
+        console.log(`SUCCESS: Credit created with ID: ${credit._id}`);
       } catch (creditError) {
-        console.error('Error creating credit:', creditError);
+        console.error('ERROR creating credit:', creditError);
+        console.error('Credit error stack:', creditError.stack);
         // Continue with response approval even if credit creation fails
       }
     } else {
-      console.log('Skipping credit creation - missing user ID or form credits');
+      console.log(`Skipping credit creation - conditions not met:
+        - userIdToAward exists: ${!!userIdToAward}
+        - form.credits exists: ${!!form.credits}
+        - form.credits > 0: ${form.credits > 0}`);
     }
 
     // Update response status
     response.status = 'approved';
     await response.save();
+    console.log(`Response status updated to 'approved'`);
+    console.log('=== RESPONSE APPROVAL PROCESS COMPLETED ===');
 
     res.status(200).json({
       message:
         'Response approved' + (creditCreated ? ' and credit awarded' : ' (no credits awarded)'),
       hasUser: !!userIdToAward,
       creditCreated,
-      creditId: credit?._id
+      creditDetails: credit
+        ? {
+            creditId: credit._id,
+            hours: credit.hours,
+            user: credit.user,
+            activity: credit.activity,
+            source: credit.source
+          }
+        : null
     });
   } catch (error) {
     console.error('Error approving response:', error);
+    console.error('Error stack:', error.stack);
     res.status(500).json({ message: 'Error approving response', error: error.message });
   }
 };

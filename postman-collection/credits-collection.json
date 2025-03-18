@@ -73,6 +73,84 @@
           "path": ["api", "credit", "form", "{{formId}}"]
         }
       }
+    },
+    {
+      "name": "Get response credits",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/credit/response/{{responseId}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "credit", "response", "{{responseId}}"]
+        },
+        "description": "Gets credits associated with a specific form response"
+      }
+    },
+    {
+      "name": "Create credit from response manually",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"response\": \"65fb6d2c1a91ae28cdcbf456\",\n  \"user\": \"65fb6d2c1a91ae28cdcbf123\",\n  \"activity\": \"65fb6d2c1a91ae28cdcbf789\",\n  \"activityForm\": \"65fb6d2c1a91ae28cdcbfabc\",\n  \"hours\": 2,\n  \"description\": \"Credit awarded manually for response\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:0369/api/credit/create",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "credit", "create"]
+        },
+        "description": "Manually creates a credit from a response. IMPORTANT: Replace all ID values with actual MongoDB ObjectIds, not the variable templates."
+      }
+    },
+    {
+      "name": "Create form credit only (no activity)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"response\": \"65fb6d2c1a91ae28cdcbf456\",\n  \"user\": \"65fb6d2c1a91ae28cdcbf123\",\n  \"hours\": 2,\n  \"description\": \"Credit awarded for form only\",\n  \"source\": \"form\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:0369/api/credit/create",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "credit", "create"]
+        },
+        "description": "Creates a credit without requiring activity or activityForm."
+      }
+    },
+    {
+      "name": "Check Form-Activity Links",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/form/{{formId}}/linked-activities",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "form", "{{formId}}", "linked-activities"]
+        },
+        "description": "Checks if a form is linked to any activities"
+      }
     }
   ]
 }
