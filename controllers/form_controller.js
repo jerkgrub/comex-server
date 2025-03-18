@@ -829,10 +829,10 @@ const revokeResponse = async (req, res) => {
       return res.status(404).json({ message: 'Response not found' });
     }
 
-    if (response.status !== 'approved') {
+    if (response.status !== 'approved' && response.status !== 'denied') {
       console.log(`ERROR: Cannot revoke response with status: ${response.status}`);
       return res.status(400).json({
-        message: 'Only approved responses can be revoked',
+        message: 'Only approved or denied responses can be revoked',
         currentStatus: response.status
       });
     }
