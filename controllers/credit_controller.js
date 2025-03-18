@@ -363,7 +363,9 @@ const getApprovedCreditsByUserId = async (req, res) => {
 const getUserCredits = async (req, res) => {
   try {
     const { userId } = req.params;
-    const credits = await Credit.find({ userId }).populate('activityId').sort({ createdAt: -1 });
+    const credits = await Credit.find({ user: userId })
+      .populate('activity')
+      .sort({ createdAt: -1 });
 
     if (!credits.length) {
       return res.status(404).json({ message: 'No credits found for this user' });
@@ -463,6 +465,30 @@ const getResponseCredits = async (req, res) => {
   }
 };
 
+// Get credits by both userId and responseId
+const getUserResponseCredits = async (req, res) => {
+  try {
+    const { userId, responseId } = req.params;
+    console.log(`Looking up credits for user: ${userId} and response: ${responseId}`);
+
+    const credits = await Credit.find({ user: userId, response: responseId })
+      .populate('user', 'name email')
+      .populate('activity', 'title')
+      .populate('activityForm');
+
+    console.log(`Found ${credits.length} credits for user ${userId} and response ${responseId}`);
+
+    if (!credits.length) {
+      return res.status(404).json({ message: 'No credits found for this user and response' });
+    }
+
+    res.status(200).json({ credits });
+  } catch (error) {
+    console.error('Error fetching user response credits:', error);
+    res.status(500).json({ message: 'Error fetching user response credits', error: error.message });
+  }
+};
+
 // Manually create a credit (for testing)
 const createCreditManually = async (req, res) => {
   try {
@@ -536,5 +562,6 @@ module.exports = {
   getActivityCredits,
   getFormCredits,
   getResponseCredits,
-  createCreditManually
+  createCreditManually,
+  getUserResponseCredits
 };
