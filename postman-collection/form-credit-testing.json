@@ -1,0 +1,300 @@
+{
+  "info": {
+    "name": "Form Credit Testing",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Tests for the enhanced form approval with custom hours and revocation features"
+  },
+  "item": [
+    {
+      "name": "Setup - Create Test Form",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Credit Testing Form\",\n  \"description\": \"A form for testing credit approval and revocation\",\n  \"credits\": 1,\n  \"category\": \"GENERAL\",\n  \"settings\": {\n    \"signInRequired\": true,\n    \"confirmationMessage\": \"Thank you for your response!\",\n    \"allowMultipleResponses\": false,\n    \"acceptingResponses\": true\n  },\n  \"questions\": [\n    {\n      \"title\": \"What is your name?\",\n      \"type\": \"Short Answer\",\n      \"isRequired\": true,\n      \"metadata\": {\n        \"position\": 1\n      }\n    },\n    {\n      \"title\": \"Provide your feedback\",\n      \"type\": \"Paragraph\",\n      \"isRequired\": true,\n      \"metadata\": {\n        \"position\": 2\n      }\n    }\n  ]\n}"
+        },
+        "url": {
+          "raw": "http://localhost:0369/api/form",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "form"]
+        },
+        "description": "Creates a test form with a default credit value of 1"
+      }
+    },
+    {
+      "name": "Setup - Submit Form Response",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"respondent\": {\n    \"email\": \"test@example.com\",\n    \"name\": \"Test User\",\n    \"user\": \"{{userId}}\"\n  },\n  \"answers\": [\n    {\n      \"questionId\": \"{{questionId1}}\",\n      \"value\": \"Test User\"\n    },\n    {\n      \"questionId\": \"{{questionId2}}\",\n      \"value\": \"This is my feedback for testing.\"\n    }\n  ]\n}"
+        },
+        "url": {
+          "raw": "http://localhost:0369/api/form/{{formId}}/submit",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "form", "{{formId}}", "submit"]
+        },
+        "description": "Submits a test response to the form. Replace {{userId}}, {{questionId1}}, and {{questionId2}} with actual values."
+      }
+    },
+    {
+      "name": "Test 1 - Approve with Default Credits",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"userId\": \"{{userId}}\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:0369/api/form/responses/{{responseId}}/approve",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "form", "responses", "{{responseId}}", "approve"]
+        },
+        "description": "Approves a form response using the default credit value defined in the form (1 credit). Replace {{userId}} and {{responseId}} with actual values."
+      }
+    },
+    {
+      "name": "Test 1 - Verify Credit Created",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/credit/response/{{responseId}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "credit", "response", "{{responseId}}"]
+        },
+        "description": "Verifies that a credit with the default value was created for the response"
+      }
+    },
+    {
+      "name": "Test 1 - Revoke Response Approval",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/form/responses/{{responseId}}/revoke",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "form", "responses", "{{responseId}}", "revoke"]
+        },
+        "description": "Revokes the approval of the form response, returning it to pending status and deleting the associated credit"
+      }
+    },
+    {
+      "name": "Test 1 - Verify Credit Deleted",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/credit/response/{{responseId}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "credit", "response", "{{responseId}}"]
+        },
+        "description": "Verifies that the credit was deleted when the response approval was revoked"
+      }
+    },
+    {
+      "name": "Test 2 - Approve with Custom Hours",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"hours\": 3.5\n}"
+        },
+        "url": {
+          "raw": "http://localhost:0369/api/form/responses/{{responseId}}/approve",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "form", "responses", "{{responseId}}", "approve"]
+        },
+        "description": "Approves a form response with custom hours value (3.5) instead of using the default form credits. Replace {{userId}} and {{responseId}} with actual values."
+      }
+    },
+    {
+      "name": "Test 2 - Verify Custom Hours Credit",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/credit/response/{{responseId}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "credit", "response", "{{responseId}}"]
+        },
+        "description": "Verifies that a credit with the custom hours value (3.5) was created"
+      }
+    },
+    {
+      "name": "Test 2 - Revoke Response Approval",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/form/responses/{{responseId}}/revoke",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "form", "responses", "{{responseId}}", "revoke"]
+        },
+        "description": "Revokes the approval of the form response with custom hours, returning it to pending status and deleting the associated credit"
+      }
+    },
+    {
+      "name": "Test 3 - Approve with Zero Hours",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"hours\": 0\n}"
+        },
+        "url": {
+          "raw": "http://localhost:0369/api/form/responses/{{responseId}}/approve",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "form", "responses", "{{responseId}}", "approve"]
+        },
+        "description": "Approves a form response with zero hours, which should not create a credit. Replace {{userId}} and {{responseId}} with actual values."
+      }
+    },
+    {
+      "name": "Test 3 - Verify No Credit Created",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/credit/response/{{responseId}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "credit", "response", "{{responseId}}"]
+        },
+        "description": "Verifies that no credit was created when hours was set to 0"
+      }
+    },
+    {
+      "name": "Test 4 - Approve with Invalid Hours",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"hours\": \"invalid\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:0369/api/form/responses/{{responseId}}/approve",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "form", "responses", "{{responseId}}", "approve"]
+        },
+        "description": "Tests error handling when invalid hours value is provided. Replace {{userId}} and {{responseId}} with actual values."
+      }
+    },
+    {
+      "name": "Test 5 - Revoke Non-Approved Response",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/form/responses/{{pendingResponseId}}/revoke",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "form", "responses", "{{pendingResponseId}}", "revoke"]
+        },
+        "description": "Tests error handling when trying to revoke a response that is not in approved status. Replace {{pendingResponseId}} with an actual non-approved response ID."
+      }
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [""]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [""]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "userId",
+      "value": "Replace with an actual user ID"
+    },
+    {
+      "key": "formId",
+      "value": "Will be set after creating the test form"
+    },
+    {
+      "key": "responseId",
+      "value": "Will be set after submitting the form response"
+    },
+    {
+      "key": "pendingResponseId",
+      "value": "ID of a response that is not approved"
+    },
+    {
+      "key": "questionId1",
+      "value": "ID of the first question in the form"
+    },
+    {
+      "key": "questionId2",
+      "value": "ID of the second question in the form"
+    }
+  ]
+}

@@ -485,12 +485,21 @@ const createCreditManually = async (req, res) => {
       });
     }
 
+    // Validate hours if provided
+    const creditHours = hours !== undefined ? parseFloat(hours) : 1;
+    if (isNaN(creditHours) || creditHours < 0) {
+      return res.status(400).json({
+        message: 'Invalid hours value. Must be a positive number.',
+        providedValue: hours
+      });
+    }
+
     const credit = new Credit({
       user,
       activity, // Optional now
       activityForm, // Optional now
       response,
-      hours: hours || 1,
+      hours: creditHours,
       description: description || 'Manually created credit',
       awardedAt: new Date(),
       source

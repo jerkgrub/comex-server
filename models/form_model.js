@@ -58,7 +58,7 @@ const formSchema = new mongoose.Schema(
   {
     title: { type: String, required: true },
     description: String,
-    credits: { type: Number, default: 0 }, // Credits awarded when form is completed and approved
+    credits: { type: Number, default: 0 }, // Credits awarded when form is completed and approved, it should be equal to value of hours, which can be found in linked activity
     isPublished: { type: Boolean, default: false },
     category: {
       // New field for filtering

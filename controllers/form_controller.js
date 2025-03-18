@@ -613,12 +613,12 @@ const approveResponse = async (req, res) => {
   try {
     console.log('=== RESPONSE APPROVAL PROCESS STARTED ===');
     const { responseId } = req.params;
-    const { userId } = req.body; // Get userId from request body if provided
+    const { userId, hours } = req.body; // Get userId and hours from request body if provided
 
     console.log(
       `Processing approval for responseId: ${responseId}, userId from request: ${
         userId || 'not provided'
-      }`
+      }, hours from request: ${hours || 'not provided'}`
     );
 
     // Validate MongoDB ObjectId
@@ -627,6 +627,16 @@ const approveResponse = async (req, res) => {
       return res.status(400).json({
         message: 'Invalid userId format. Must be a valid MongoDB ObjectId.',
         providedId: userId
+      });
+    }
+
+    // Validate hours if provided
+    const creditHours = hours !== undefined ? parseFloat(hours) : null;
+    if (hours !== undefined && (isNaN(creditHours) || creditHours < 0)) {
+      console.log(`ERROR: Invalid hours value: ${hours}`);
+      return res.status(400).json({
+        message: 'Invalid hours value. Must be a positive number.',
+        providedValue: hours
       });
     }
 
@@ -676,9 +686,19 @@ const approveResponse = async (req, res) => {
     let creditCreated = false;
     let credit = null;
 
-    // If we have a user to award credits to and the form has credits, create a credit entry
-    if (userIdToAward && form.credits && form.credits > 0) {
-      console.log(`Attempting to create credit: user=${userIdToAward}, credits=${form.credits}`);
+    // If we have a user to award credits to and either the form has credits or admin provided hours
+    const formHasCredits = form.credits && form.credits > 0;
+    const adminProvidedHours = creditHours !== null && creditHours > 0;
+
+    if (userIdToAward && (formHasCredits || adminProvidedHours)) {
+      // Use admin-provided hours if available, otherwise fall back to form.credits
+      const hoursToAward = adminProvidedHours ? creditHours : form.credits || 0;
+
+      console.log(
+        `Attempting to create credit: user=${userIdToAward}, credits=${hoursToAward} (${
+          adminProvidedHours ? 'admin-provided' : 'from form'
+        })`
+      );
       try {
         // NEW APPROACH: Look up any ActivityForm documents that link to this form
         console.log(`Looking up ActivityForm links for formId: ${form._id}`);
@@ -703,7 +723,7 @@ const approveResponse = async (req, res) => {
             activity: activityId,
             activityForm: activityFormId,
             response: response._id,
-            hours: form.credits || 0,
+            hours: hoursToAward,
             description: `Credit awarded for completing ${form.title}`,
             awardedAt: new Date(),
             source: 'activity'
@@ -715,8 +735,8 @@ const approveResponse = async (req, res) => {
           credit = new Credit({
             user: userIdToAward,
             response: response._id,
-            hours: form.credits || 0,
-            description: `Credit awarded for completing ${form.title} (no activity)`,
+            hours: hoursToAward,
+            description: `Credit awarded for passing verification for ${form.title}`,
             awardedAt: new Date(),
             source: 'form'
           });
@@ -735,7 +755,8 @@ const approveResponse = async (req, res) => {
       console.log(`Skipping credit creation - conditions not met:
         - userIdToAward exists: ${!!userIdToAward}
         - form.credits exists: ${!!form.credits}
-        - form.credits > 0: ${form.credits > 0}`);
+        - form.credits > 0: ${form.credits > 0}
+        - adminProvidedHours: ${adminProvidedHours}`);
     }
 
     // Update response status
@@ -793,6 +814,71 @@ const denyResponse = async (req, res) => {
   }
 };
 
+// Revoke an approved response
+const revokeResponse = async (req, res) => {
+  try {
+    console.log('=== RESPONSE REVOCATION PROCESS STARTED ===');
+    const { responseId } = req.params;
+
+    console.log(`Processing revocation for responseId: ${responseId}`);
+
+    // Find the response
+    const response = await Response.findById(responseId);
+    if (!response) {
+      console.log(`ERROR: Response with ID ${responseId} not found`);
+      return res.status(404).json({ message: 'Response not found' });
+    }
+
+    if (response.status !== 'approved') {
+      console.log(`ERROR: Cannot revoke response with status: ${response.status}`);
+      return res.status(400).json({
+        message: 'Only approved responses can be revoked',
+        currentStatus: response.status
+      });
+    }
+
+    console.log(`Found approved response: ${response._id}`);
+
+    // Find and delete any associated credits
+    let deletedCredits = [];
+    try {
+      const credits = await Credit.find({ response: responseId });
+      console.log(`Found ${credits.length} credits associated with this response`);
+
+      if (credits.length > 0) {
+        for (const credit of credits) {
+          console.log(`Deleting credit: ${credit._id}`);
+          await Credit.findByIdAndDelete(credit._id);
+          deletedCredits.push(credit._id);
+        }
+        console.log(`Successfully deleted ${deletedCredits.length} credits`);
+      }
+    } catch (creditError) {
+      console.error('ERROR deleting associated credits:', creditError);
+      // Continue with response revocation even if credit deletion fails
+    }
+
+    // Update response status back to pending
+    response.status = 'pending';
+    await response.save();
+    console.log(`Response status updated to 'pending'`);
+    console.log('=== RESPONSE REVOCATION PROCESS COMPLETED ===');
+
+    res.status(200).json({
+      message: 'Response approval revoked and returned to pending status',
+      deletedCredits,
+      response: {
+        responseId: response._id,
+        status: response.status
+      }
+    });
+  } catch (error) {
+    console.error('Error revoking response:', error);
+    console.error('Error stack:', error.stack);
+    res.status(500).json({ message: 'Error revoking response', error: error.message });
+  }
+};
+
 module.exports = {
   // Form CRUD operations
   createForm,
@@ -826,5 +912,6 @@ module.exports = {
 
   // Response approval
   approveResponse,
-  denyResponse
+  denyResponse,
+  revokeResponse
 };

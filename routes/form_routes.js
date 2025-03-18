@@ -19,6 +19,7 @@ router.get('/responses/:responseId', formController.getResponseById);
 // Response approval routes
 router.post('/responses/:responseId/approve', formController.approveResponse);
 router.post('/responses/:responseId/deny', formController.denyResponse);
+router.post('/responses/:responseId/revoke', formController.revokeResponse);
 
 // File upload route
 router.post('/upload-file', formController.handleFileUpload, formController.uploadFormFile);
