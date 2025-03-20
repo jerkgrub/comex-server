@@ -12,16 +12,47 @@ const ProgramSchema = new mongoose.Schema(
     // approval system
     isApproved: {
       // the 2 below are department-specific
-      byRepresentative: Boolean,
-      byDean: Boolean,
-
-      // the 5 below are universal
-      byGeneralAccountingSupervisor: Boolean, // General Accounting Supervisor
-      byComexCoordinator: Boolean, // Comex Coordinator
-      byAcademicServicesDirector: Boolean, // Academic Services Director
-      byAcademicDirector: Boolean, // Academic Director
-      byExecutiveDirector: Boolean // Executive Director
-    },
+      byRepresentative: {
+        approved: { type: Boolean, default: false },
+        approvedOn: String, // Date of approval
+        approvedBy: String // Name or ID of the approver
+      },
+      byDean: {
+        approved: { type: Boolean, default: false },
+        approvedOn: String,
+        approvedBy: String
+      },
+      byGeneralAccountingSupervisor: {
+        // General Accounting Supervisor
+        approved: { type: Boolean, default: false },
+        approvedOn: String,
+        approvedBy: String
+      },
+      byComexCoordinator: {
+        // Comex Coordinator
+        approved: { type: Boolean, default: false },
+        approvedOn: String,
+        approvedBy: String
+      },
+      byAcademicServicesDirector: {
+        // Academic Services Director
+        approved: { type: Boolean, default: false },
+        approvedOn: String,
+        approvedBy: String
+      },
+      byAcademicDirector: {
+        // Academic Director
+        approved: { type: Boolean, default: false },
+        approvedOn: String,
+        approvedBy: String
+      },
+      byExecutiveDirector: {
+        // Executive Director
+        approved: { type: Boolean, default: false },
+        approvedOn: String,
+        approvedBy: String
+      }
+    }
   },
   { timestamps: true }
 );

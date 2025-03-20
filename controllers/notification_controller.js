@@ -132,14 +132,6 @@ const notifyAdminsAboutNewUser = async (newUser) => {
   }
 };
 
-//  # FOR CLIENT SIDE NOTIFICATIONS
-// ... after successfully approving a user:
-// await Notification.create({
-//   recipient: user._id,
-//   message: "Your account has been approved!",
-//   type: "info"
-// });
-
 module.exports = {
   notifyAdminsAboutNewUser,
   getNotificationsForUser,
