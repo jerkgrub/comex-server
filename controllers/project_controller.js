@@ -1,5 +1,7 @@
 const Project = require('../models/project_model');
 
+const isFullyApproved = doc.isApproved.byExecutiveDirector.approved; //check if the project is fully approved
+
 // 1. Create a new project
 exports.createProject = async (req, res) => {
   try {
