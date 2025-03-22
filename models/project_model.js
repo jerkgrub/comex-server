@@ -80,59 +80,64 @@ const ProjectSchema = new mongoose.Schema(
         sourceOfFund: String // e.g., "Students & Teachers Donation"
       }
     ],
-
+    // ----------------------------------------------------------------------------------------------------------------------------
     // Approval System
     isApproved: {
       // the 2 below are department-specific
       byRepresentative: {
         approved: { type: Boolean, default: false },
         approvedOn: String,
-        approvedBy: String,
+        approvedBy: String, //userId
         signature: String
       },
       byDean: {
         approved: { type: Boolean, default: false },
         approvedOn: String,
-        approvedBy: String,
+        approvedBy: String, //userId
         signature: String
       },
       byGeneralAccountingSupervisor: {
         // General Accounting Supervisor
         approved: { type: Boolean, default: false },
         approvedOn: String,
-        approvedBy: String,
+        approvedBy: String, //userId
         signature: String
       },
       byComexCoordinator: {
         // Comex Coordinator
         approved: { type: Boolean, default: false },
         approvedOn: String,
-        approvedBy: String,
+        approvedBy: String, //userId
         signature: String
       },
       byAcademicServicesDirector: {
         // Academic Services Director
         approved: { type: Boolean, default: false },
         approvedOn: String,
-        approvedBy: String,
+        approvedBy: String, //userId
         signature: String
       },
       byAcademicDirector: {
         // Academic Director
         approved: { type: Boolean, default: false },
         approvedOn: String,
-        approvedBy: String,
+        approvedBy: String, //userId
         signature: String
       },
       byExecutiveDirector: {
         // Executive Director
         approved: { type: Boolean, default: false },
         approvedOn: String,
-        approvedBy: String,
+        approvedBy: String, //userId
         signature: String
       }
-    }
+    },
+    // ----------------------------------------------------------------------------------------------------------------------------
+    // Form Linking
+    registrationFormId: String, //formId of the registration form
+    evaluationFormId: String //formId of the evaluation form
   },
+
   { timestamps: true }
 );
 
