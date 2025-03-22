@@ -33,9 +33,11 @@ const projectRoutes = require('./routes/project_routes');
 const notificationRoutes = require('./routes/notification_routes');
 const contentRoutes = require('./routes/content_routes');
 const formRoutes = require('./routes/form_routes');
+const testRoutes = require('./practice/test_controller');
 
 // user
 app.use('/api', userRoutes);
+app.use('/api/test', testRoutes);
 app.use('/api/notification', notificationRoutes);
 
 // initiatives
