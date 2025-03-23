@@ -267,11 +267,11 @@
           "raw": "{\n  \"respondent\": {\n    \"email\": \"user@example.com\",\n    \"name\": \"John Doe\",\n    \"user\": \"{{userId}}\"\n  },\n  \"answers\": [\n    {\n      \"questionId\": \"{{questionId1}}\",\n      \"value\": \"John Doe\"\n    },\n    {\n      \"questionId\": \"{{questionId2}}\",\n      \"value\": 4\n    }\n  ]\n}"
         },
         "url": {
-          "raw": "http://localhost:0369/api/form/{{formId}}/submit/{{activityFormId}}",
+          "raw": "http://localhost:0369/api/form/{{formId}}/submit/{{projectFormId}}",
           "protocol": "http",
           "host": ["localhost"],
           "port": "0369",
-          "path": ["api", "form", "{{formId}}", "submit", "{{activityFormId}}"]
+          "path": ["api", "form", "{{formId}}", "submit", "{{projectFormId}}"]
         }
       }
     },

@@ -101,7 +101,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"response\": \"65fb6d2c1a91ae28cdcbf456\",\n  \"user\": \"65fb6d2c1a91ae28cdcbf123\",\n  \"activity\": \"65fb6d2c1a91ae28cdcbf789\",\n  \"activityForm\": \"65fb6d2c1a91ae28cdcbfabc\",\n  \"hours\": 2,\n  \"description\": \"Credit awarded manually for response\"\n}"
+          "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"projectId\": \"65fb6d2c1a91ae28cdcbf789\",\n  \"projectForm\": \"65fb6d2c1a91ae28cdcbfabc\",\n  \"hours\": 2,\n  \"description\": \"Credit awarded manually for response\"\n}"
         },
         "url": {
           "raw": "http://localhost:0369/api/credit/create",
@@ -134,7 +134,7 @@
           "port": "0369",
           "path": ["api", "credit", "create"]
         },
-        "description": "Creates a credit without requiring activity or activityForm."
+        "description": "Creates a credit without requiring activity or projectForm."
       }
     },
     {

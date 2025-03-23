@@ -275,9 +275,9 @@
               "raw": "{\n  \"projectId\": \"{{projectId}}\",\n  \"formId\": \"67c2de5b23f4977a0c96c920\",\n  \"formType\": \"registration\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/api/form/link",
+              "raw": "{{baseUrl}}/api/form/link-to-project",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "form", "link"]
+              "path": ["api", "form", "link-to-project"]
             },
             "description": "Link a registration form to a project"
           },
@@ -298,9 +298,9 @@
               "raw": "{\n  \"projectId\": \"{{projectId}}\",\n  \"formId\": \"67c2de5b23f4977a0c96c920\",\n  \"formType\": \"evaluation\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/api/form/link",
+              "raw": "{{baseUrl}}/api/form/link-to-project",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "form", "link"]
+              "path": ["api", "form", "link-to-project"]
             },
             "description": "Link an evaluation form to a project"
           },
@@ -312,9 +312,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/form/project/:projectId",
+              "raw": "{{baseUrl}}/api/form/project/:projectId/forms",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "form", "project", ":projectId"],
+              "path": ["api", "form", "project", ":projectId", "forms"],
               "variable": [
                 {
                   "key": "projectId",
