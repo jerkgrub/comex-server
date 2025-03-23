@@ -8,7 +8,7 @@ const ProgramSchema = new mongoose.Schema(
     department: String,
     title: String,
     description: String,
-    
+  },
   { timestamps: true }
 );
 
