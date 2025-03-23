@@ -1,7 +1,9 @@
-// controllers/credit_controller.js
-
-const { put } = require('@vercel/blob');
 const Credit = require('../models/credit_model');
+const Project = require('../models/project_model');
+const Response = require('../models/response_model');
+const Registration = require('../models/registration_model');
+const User = require('../models/user_model');
+const { put } = require('@vercel/blob');
 const multer = require('multer');
 
 // Set up Multer to store files in memory temporarily
@@ -14,375 +16,154 @@ const upload = multer({
   }
 });
 
-// Valid statuses and types for validation
-const VALID_STATUSES = ['Pending', 'Approved', 'Rejected'];
-const VALID_TYPES = ['Institutional', 'College Driven', 'Extension Services', 'Capacity Building'];
-
-// Helper function to capitalize first letter of each word
-const capitalizeWords = str => {
-  return str.replace(/\b\w/g, char => char.toUpperCase());
-};
-
-// Fetch approved credits of type "College Driven" or "Institutional" by User ID
-const getApprovedCollegeInstitutionalCredits = async (req, res) => {
-  const { id } = req.params;
-
+// Award credit based on form response
+exports.awardCreditFromResponse = async (req, res) => {
   try {
-    const approvedCredits = await Credit.find({
-      userId: id,
-      status: 'Approved',
-      type: { $in: ['College Driven', 'Institutional'] }
-    })
-      .populate('activityId')
-      .sort({ createdAt: -1 });
+    const { userId, projectId, responseId, hours, description } = req.body;
 
-    if (!approvedCredits || approvedCredits.length === 0) {
-      return res
-        .status(404)
-        .json({ message: 'No approved credits found for this user with the specified types' });
+    // Verify the user exists
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
     }
 
-    res.status(200).json({ approvedCredits });
-  } catch (err) {
-    console.error('Error fetching approved credits by user ID:', err);
-    res.status(500).json({ message: 'Failed to retrieve approved credits', error: err.message });
-  }
-};
+    // Verify the project exists
+    const project = await Project.findById(projectId);
+    if (!project) {
+      return res.status(404).json({ message: 'Project not found' });
+    }
 
-// Fetch credits by status and type
-const getCreditsByStatusAndType = async (req, res) => {
-  let { status, type } = req.params;
+    // Check if the project is approved
+    const isApproved = project.isApproved.byExecutiveDirector.approved;
+    if (!isApproved) {
+      return res.status(400).json({ message: 'Cannot award credits for unapproved projects' });
+    }
 
-  status = capitalizeWords(status.toLowerCase());
-  type = type
-    .toLowerCase()
-    .split('-')
-    .map(word => capitalizeWords(word))
-    .join(' ');
+    // If responseId is provided, verify it exists
+    if (responseId) {
+      const response = await Response.findById(responseId);
+      if (!response) {
+        return res.status(404).json({ message: 'Response not found' });
+      }
+    }
 
-  if (!VALID_STATUSES.includes(status)) {
-    return res.status(400).json({ message: `Invalid status: ${status}.` });
-  }
+    // Check if the user is registered for this project
+    const registration = await Registration.findOne({
+      user: userId,
+      project: projectId
+    });
 
-  if (!VALID_TYPES.includes(type)) {
-    return res.status(400).json({ message: `Invalid type: ${type}.` });
-  }
+    // Create the credit
+    const credit = new Credit({
+      user: userId,
+      project: projectId,
+      registration: registration ? registration._id : null,
+      response: responseId || null,
+      hours: hours,
+      description: description || `Credit for ${project.title}`,
+      source: responseId ? 'form' : 'manual'
+    });
 
-  try {
-    const credits = await Credit.find({ status, type })
-      .populate('userId', '-password')
-      .populate('activityId')
-      .sort({ createdAt: -1 });
+    const savedCredit = await credit.save();
 
-    res.status(200).json({ credits });
-  } catch (err) {
-    console.error('Error fetching credits:', err);
-    res.status(500).json({ message: 'Failed to retrieve credits', error: err.message });
+    res.status(201).json(savedCredit);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };
 
-// Fetch count of credits by status and type
-const getCreditsCountByStatusAndType = async (req, res) => {
-  let { status, type } = req.params;
-
-  status = capitalizeWords(status.toLowerCase());
-  type = type
-    .toLowerCase()
-    .split('-')
-    .map(word => capitalizeWords(word))
-    .join(' ');
-
-  if (!VALID_STATUSES.includes(status)) {
-    return res.status(400).json({ message: `Invalid status: ${status}.` });
-  }
-
-  if (!VALID_TYPES.includes(type)) {
-    return res.status(400).json({ message: `Invalid type: ${type}.` });
-  }
-
+// Get all credits for a user
+exports.getUserCredits = async (req, res) => {
   try {
-    const count = await Credit.countDocuments({ status, type });
-    res.status(200).json({ count });
-  } catch (err) {
-    console.error('Error counting credits:', err);
-    res.status(500).json({ message: 'Failed to retrieve credits count', error: err.message });
+    const credits = await Credit.find({ user: req.params.userId })
+      .populate('project', 'title')
+      .populate('response')
+      .sort({ awardedAt: -1 });
+
+    const totalHours = credits.reduce((sum, credit) => sum + credit.hours, 0);
+
+    res.status(200).json({
+      credits,
+      totalHours
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };
 
-// Create new crediting form
-const newCredit = async (req, res) => {
-  const isRegisteredEvent = req.body.isRegisteredEvent === 'true';
-  const isVoluntary = req.body.isVoluntary === 'true';
-
-  const {
-    activityId,
-    userId,
-    type,
-    title,
-    beneficiaries,
-    startDate,
-    endDate,
-    totalHoursRendered,
-    facultyReflection,
-    location,
-    organizer
-  } = req.body;
-  const supportingDocumentFile = req.file;
-
-  if (!userId || !totalHoursRendered || !facultyReflection || !type) {
-    return res.status(400).json({ message: 'Missing required fields' });
-  }
-
-  const normalizedType = type
-    .toLowerCase()
-    .split(' ')
-    .map(word => capitalizeWords(word))
-    .join(' ');
-
-  if (!VALID_TYPES.includes(normalizedType)) {
-    return res.status(400).json({ message: `Invalid type: ${type}.` });
-  }
-
+// Get all credits for a project
+exports.getProjectCredits = async (req, res) => {
   try {
-    let supportingDocumentUrl = '';
+    const credits = await Credit.find({ project: req.params.projectId })
+      .populate('user', 'name email')
+      .populate('response')
+      .sort({ awardedAt: -1 });
 
-    if (supportingDocumentFile) {
-      const { url } = await put(
-        `supporting-documents/${userId}-${Date.now()}.${
-          supportingDocumentFile.mimetype.split('/')[1]
-        }`,
-        supportingDocumentFile.buffer,
-        { access: 'public' }
-      );
-      supportingDocumentUrl = url;
-    }
+    const totalHours = credits.reduce((sum, credit) => sum + credit.hours, 0);
 
-    const creditData = {
-      isRegisteredEvent,
-      userId,
-      type: normalizedType,
-      totalHoursRendered,
-      supportingDocuments: supportingDocumentUrl,
-      facultyReflection,
-      location,
-      organizer
-    };
-
-    if (!isRegisteredEvent) {
-      creditData.title = title;
-      creditData.isVoluntary = isVoluntary;
-      creditData.beneficiaries = beneficiaries;
-      creditData.startDate = startDate;
-      creditData.endDate = endDate;
-    } else {
-      creditData.activityId = activityId;
-    }
-
-    const newCreditEntry = await Credit.create(creditData);
-
-    res
-      .status(201)
-      .json({ credit: newCreditEntry, status: 'Successfully submitted the crediting form' });
-  } catch (err) {
-    console.error('Error creating credit form:', err);
-    res.status(500).json({ message: 'Failed to create the credit form', error: err.message });
+    res.status(200).json({
+      credits,
+      totalHours
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };
 
-// Update credit by ID
-const updateCredit = async (req, res) => {
-  const { creditId } = req.params;
-  const {
-    isRegisteredEvent,
-    activityId,
-    type,
-    title,
-    isVoluntary,
-    beneficiaries,
-    startDate,
-    endDate,
-    totalHoursRendered,
-    facultyReflection,
-    location,
-    organizer
-  } = req.body;
-  const supportingDocumentFile = req.file;
-
-  if (!creditId) {
-    return res.status(400).json({ message: 'Credit ID is required' });
-  }
-
-  const isRegisteredEventBool = isRegisteredEvent === 'true';
-  const isVoluntaryBool = isVoluntary === 'true';
-
-  const normalizedType = type
-    .toLowerCase()
-    .split(' ')
-    .map(word => capitalizeWords(word))
-    .join(' ');
-
-  if (normalizedType && !VALID_TYPES.includes(normalizedType)) {
-    return res.status(400).json({ message: `Invalid type: ${type}.` });
-  }
-
+// Get credit by ID
+exports.getCreditById = async (req, res) => {
   try {
-    let supportingDocumentUrl = '';
-
-    if (supportingDocumentFile) {
-      const { url } = await put(
-        `supporting-documents/${req.userId}-${Date.now()}.${
-          supportingDocumentFile.mimetype.split('/')[1]
-        }`,
-        supportingDocumentFile.buffer,
-        { access: 'public' }
-      );
-      supportingDocumentUrl = url;
-    }
-
-    const creditData = {
-      location,
-      organizer
-    };
-
-    if (normalizedType) creditData.type = normalizedType;
-    if (totalHoursRendered !== undefined) creditData.totalHoursRendered = totalHoursRendered;
-    if (facultyReflection !== undefined) creditData.facultyReflection = facultyReflection;
-    if (supportingDocumentUrl) {
-      creditData.supportingDocuments = supportingDocumentUrl;
-    } else if (req.body.supportingDocuments) {
-      creditData.supportingDocuments = req.body.supportingDocuments;
-    }
-
-    if (!isRegisteredEventBool) {
-      if (title !== undefined) creditData.title = title;
-      if (isVoluntaryBool !== undefined) creditData.isVoluntary = isVoluntaryBool;
-      if (beneficiaries !== undefined) creditData.beneficiaries = beneficiaries;
-      if (startDate !== undefined) creditData.startDate = startDate;
-      if (endDate !== undefined) creditData.endDate = endDate;
-    } else {
-      if (activityId !== undefined) creditData.activityId = activityId;
-    }
-
-    const updatedCredit = await Credit.findByIdAndUpdate(creditId, creditData, {
-      new: true,
-      runValidators: true
-    })
-      .populate('userId', '-password')
-      .populate('activityId');
-
-    if (!updatedCredit) {
-      return res.status(404).json({ message: 'Credit form not found' });
-    }
-
-    res.json({ updatedCredit, status: 'Successfully updated the crediting form' });
-  } catch (err) {
-    console.error('Error updating credit form:', err);
-    res.status(500).json({ message: 'Failed to update the credit form', error: err.message });
-  }
-};
-
-// Fetch credit by ID
-const getCreditById = async (req, res) => {
-  const { id } = req.params;
-
-  if (!id.match(/^[0-9a-fA-F]{24}$/)) {
-    return res.status(400).json({ message: 'Invalid credit ID format' });
-  }
-
-  try {
-    const credit = await Credit.findById(id).populate('userId', '-password').populate('activityId');
+    const credit = await Credit.findById(req.params.id)
+      .populate('user', 'name email')
+      .populate('project', 'title')
+      .populate('response');
 
     if (!credit) {
       return res.status(404).json({ message: 'Credit not found' });
     }
 
-    res.status(200).json({ credit });
-  } catch (err) {
-    console.error('Error fetching credit by ID:', err);
-    res.status(500).json({ message: 'Failed to retrieve credit', error: err.message });
-  }
-};
-
-// Approve credit
-const approveCredit = async (req, res) => {
-  const { id } = req.params;
-
-  try {
-    const updatedCredit = await Credit.findByIdAndUpdate(id, { status: 'Approved' }, { new: true });
-
-    if (!updatedCredit) {
-      return res.status(404).json({ message: 'Credit not found' });
-    }
-
-    res.status(200).json({ message: 'Credit approved successfully', credit: updatedCredit });
-  } catch (err) {
-    console.error('Error approving credit:', err);
-    res.status(500).json({ message: 'Failed to approve credit', error: err.message });
-  }
-};
-
-// Reject credit
-const rejectCredit = async (req, res) => {
-  const { id } = req.params;
-
-  try {
-    const updatedCredit = await Credit.findByIdAndUpdate(id, { status: 'Rejected' }, { new: true });
-
-    if (!updatedCredit) {
-      return res.status(404).json({ message: 'Credit not found' });
-    }
-
-    res.status(200).json({ message: 'Credit rejected successfully', credit: updatedCredit });
-  } catch (err) {
-    console.error('Error rejecting credit:', err);
-    res.status(500).json({ message: 'Failed to reject credit', error: err.message });
-  }
-};
-
-// Fetch approved credits by user ID
-const getApprovedCreditsByUserId = async (req, res) => {
-  const { id } = req.params;
-
-  try {
-    const approvedCredits = await Credit.find({ userId: id, status: 'Approved' })
-      .populate('activityId')
-      .sort({ createdAt: -1 });
-
-    if (!approvedCredits || approvedCredits.length === 0) {
-      return res.status(404).json({ message: 'No approved credits found for this user' });
-    }
-
-    res.status(200).json({ approvedCredits });
-  } catch (err) {
-    console.error('Error fetching approved credits by user ID:', err);
-    res.status(500).json({ message: 'Failed to retrieve approved credits', error: err.message });
-  }
-};
-
-// User Credit Management
-const getUserCredits = async (req, res) => {
-  try {
-    const { userId } = req.params;
-    const credits = await Credit.find({ user: userId })
-      .populate('activity')
-      .sort({ createdAt: -1 });
-
-    if (!credits.length) {
-      return res.status(404).json({ message: 'No credits found for this user' });
-    }
-
-    res.status(200).json({ credits });
+    res.status(200).json(credit);
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching user credits', error: error.message });
+    res.status(500).json({ message: error.message });
   }
 };
 
-const getCreditDetails = async (req, res) => {
+// Update credit
+exports.updateCredit = async (req, res) => {
   try {
-    const { creditId } = req.params;
-    const credit = await Credit.findById(creditId)
-      .populate('userId', '-password')
-      .populate('activityId');
+    const updatedCredit = await Credit.findByIdAndUpdate(req.params.id, req.body, { new: true });
+
+    if (!updatedCredit) {
+      return res.status(404).json({ message: 'Credit not found' });
+    }
+
+    res.status(200).json(updatedCredit);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Delete credit
+exports.deleteCredit = async (req, res) => {
+  try {
+    const deletedCredit = await Credit.findByIdAndDelete(req.params.id);
+
+    if (!deletedCredit) {
+      return res.status(404).json({ message: 'Credit not found' });
+    }
+
+    res.status(200).json({ message: 'Credit deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Legacy functions maintained for compatibility
+exports.getCreditDetails = async (req, res) => {
+  try {
+    const credit = await Credit.findById(req.params.creditId)
+      .populate('user', 'name email')
+      .populate('project', 'title');
 
     if (!credit) {
       return res.status(404).json({ message: 'Credit not found' });
@@ -394,10 +175,9 @@ const getCreditDetails = async (req, res) => {
   }
 };
 
-const revokeCredit = async (req, res) => {
+exports.revokeCredit = async (req, res) => {
   try {
-    const { creditId } = req.params;
-    const credit = await Credit.findByIdAndDelete(creditId);
+    const credit = await Credit.findByIdAndDelete(req.params.creditId);
 
     if (!credit) {
       return res.status(404).json({ message: 'Credit not found' });
@@ -409,100 +189,29 @@ const revokeCredit = async (req, res) => {
   }
 };
 
-// Admin Credit Management
-const getActivityCredits = async (req, res) => {
+exports.getResponseCredits = async (req, res) => {
   try {
-    const { activityId } = req.params;
-    const credits = await Credit.find({ activityId })
-      .populate('userId', '-password')
-      .sort({ createdAt: -1 });
-
-    if (!credits.length) {
-      return res.status(404).json({ message: 'No credits found for this activity' });
-    }
-
-    res.status(200).json({ credits });
-  } catch (error) {
-    res.status(500).json({ message: 'Error fetching activity credits', error: error.message });
-  }
-};
-
-const getFormCredits = async (req, res) => {
-  try {
-    const { formId } = req.params;
-    const credits = await Credit.find({ formId })
-      .populate('userId', '-password')
-      .populate('activityId')
-      .sort({ createdAt: -1 });
-
-    if (!credits.length) {
-      return res.status(404).json({ message: 'No credits found for this form' });
-    }
-
-    res.status(200).json({ credits });
-  } catch (error) {
-    res.status(500).json({ message: 'Error fetching form credits', error: error.message });
-  }
-};
-
-// Get credits associated with a specific form response
-const getResponseCredits = async (req, res) => {
-  try {
-    const { responseId } = req.params;
-    console.log(`Looking up credits for response: ${responseId}`);
-
-    const credits = await Credit.find({ response: responseId })
+    const credits = await Credit.find({ response: req.params.responseId })
       .populate('user', 'name email')
-      .populate('activity', 'title')
-      .populate('activityForm');
-
-    console.log(`Found ${credits.length} credits for response ${responseId}`);
+      .populate('project', 'title');
 
     res.status(200).json({ credits });
   } catch (error) {
-    console.error('Error fetching response credits:', error);
     res.status(500).json({ message: 'Error fetching response credits', error: error.message });
   }
 };
 
-// Get credits by both userId and responseId
-const getUserResponseCredits = async (req, res) => {
-  try {
-    const { userId, responseId } = req.params;
-    console.log(`Looking up credits for user: ${userId} and response: ${responseId}`);
-
-    const credits = await Credit.find({ user: userId, response: responseId })
-      .populate('user', 'name email')
-      .populate('activity', 'title')
-      .populate('activityForm');
-
-    console.log(`Found ${credits.length} credits for user ${userId} and response ${responseId}`);
-
-    if (!credits.length) {
-      return res.status(404).json({ message: 'No credits found for this user and response' });
-    }
-
-    res.status(200).json({ credits });
-  } catch (error) {
-    console.error('Error fetching user response credits:', error);
-    res.status(500).json({ message: 'Error fetching user response credits', error: error.message });
-  }
-};
-
-// Manually create a credit (for testing)
-const createCreditManually = async (req, res) => {
+exports.createCreditManually = async (req, res) => {
   try {
     const {
       user,
-      activity,
-      activityForm,
+      project,
+      registration,
       response,
       hours,
       description,
       source = 'manual'
     } = req.body;
-
-    console.log('Creating credit manually with data:', req.body);
 
     if (!user) {
       return res.status(400).json({
@@ -522,8 +231,8 @@ const createCreditManually = async (req, res) => {
 
     const credit = new Credit({
       user,
-      activity, // Optional now
-      activityForm, // Optional now
+      project,
+      registration,
       response,
       hours: creditHours,
       description: description || 'Manually created credit',
@@ -532,36 +241,30 @@ const createCreditManually = async (req, res) => {
     });
 
     await credit.save();
-    console.log(`Manual credit created with ID: ${credit._id}`);
 
     res.status(201).json({
       message: 'Credit created successfully',
       credit
     });
   } catch (error) {
-    console.error('Error creating credit manually:', error);
     res.status(500).json({ message: 'Error creating credit', error: error.message });
   }
 };
 
-// Export Multer middleware for file uploads
-module.exports = {
-  newCredit,
-  updateCredit,
-  upload, // Export Multer middleware for file uploads
-  getCreditsByStatusAndType,
-  getCreditsCountByStatusAndType,
-  getCreditById,
-  approveCredit,
-  rejectCredit,
-  getApprovedCreditsByUserId,
-  getApprovedCollegeInstitutionalCredits,
-  getUserCredits,
-  getCreditDetails,
-  revokeCredit,
-  getActivityCredits,
-  getFormCredits,
-  getResponseCredits,
-  createCreditManually,
-  getUserResponseCredits
+exports.getUserResponseCredits = async (req, res) => {
+  try {
+    const { userId, responseId } = req.params;
+
+    const credits = await Credit.find({ user: userId, response: responseId })
+      .populate('user', 'name email')
+      .populate('project', 'title');
+
+    if (!credits.length) {
+      return res.status(404).json({ message: 'No credits found for this user and response' });
+    }
+
+    res.status(200).json({ credits });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching user response credits', error: error.message });
+  }
 };

@@ -1,114 +1,106 @@
-# COMEX Server Testing Guide
+# ComEx Project Registration Testing Guide
 
-This guide will help you test the COMEX server backend using the provided Postman collections.
+This guide will help you test the project registration flow in the ComEx system.
 
 ## Prerequisites
 
-1. Make sure you have [Postman](https://www.postman.com/downloads/) installed
-2. Ensure your MongoDB database is running
-3. Start the COMEX server locally
+1. Node.js and npm installed
+2. MongoDB running locally or a connection to a MongoDB instance
+3. Postman installed for API testing
+4. ComEx server running (default: http://localhost:0369)
 
-## Starting the Server
+## Postman Collection
 
-1. Clone the repository (if you haven't already)
-2. Install dependencies:
-   ```
-   npm install
-   ```
-3. Create a `.env` file with the following variables:
-   ```
-   PORT=0369
-   MONGODB_URI=your_mongodb_connection_string
-   JWT_SECRET=your_jwt_secret
-   ```
-4. Start the server:
-   ```
-   npm start
-   ```
-
-## Importing Postman Collections
-
-1. Open Postman
-2. Click on "Import" in the top left corner
-3. Select the JSON files from the `postman-collection` folder:
-   - `activities-collection.json`
-   - `programs-collection.json`
-   - `projects-collection.json`
-   - `forms-collection.json`
-   - `credits-collection.json`
+Import the Postman collection found in `postman-collection/project-registration-testing.json` to test the full flow.
 
 ## Testing Flow
 
-For a complete test of the system, follow this recommended testing flow:
+### 1. Project Creation
 
-### 1. User Authentication
+The first step is to create a project. There are two types of projects:
 
-1. Register a new user
-2. Login with the user credentials
-3. Save the JWT token for subsequent requests
+- **Institutional Projects**: Created within the ComEx office, no approval needed
+- **College-Driven Projects**: Created by college administration, requires approval
 
-### 2. Programs and Projects
+Use the "Create Project" or "Create College-Driven Project" endpoints to create a new project.
 
-1. Create a new program
-2. Get the program ID and create a project under it
-3. Verify the project was created successfully
+After creating a project, set the returned project ID in the Postman collection variables:
 
-### 3. Activities
+1. Click the "eye" icon in the top-right of Postman
+2. Set the `projectId` variable to the ID of the created project
 
-1. Create a new activity linked to a project
-2. Get all activities to verify it was created
-3. Test the various activity filters (approved, pending, etc.)
+### 2. Project Approval
 
-### 4. Forms
+College-Driven projects require approval before they can be used. The approval process has two layers:
 
-1. Create a new form
-2. Link the form to an activity
-3. Submit responses to the form
-4. View form analytics
+#### First Layer: Work Plan Signatures
 
-### 5. Credits
+College-Driven projects with people in the workPlan need signatures from all workPlan participants.
+Use the "Sign Work Plan Item" endpoint to add signatures to the workPlan items.
 
-1. Check user credits
-2. View activity credits
-3. View form credits
+#### Second Layer: Hierarchy Approval
 
-## Environment Variables
+The project needs approval from the following roles (in order):
 
-Set up the following environment variables in Postman:
+1. Department Representative
+2. Dean
+3. Executive Director
 
-- `baseUrl`: http://localhost:0369
-- `userId`: (after creating a user)
-- `programId`: (after creating a program)
-- `projectId`: (after creating a project)
-- `activityId`: (after creating an activity)
-- `formId`: (after creating a form)
-- `activityFormId`: (after linking a form to an activity)
-- `creditId`: (after credits are awarded)
+Use the corresponding approval endpoints to approve the project at each level.
 
-## Testing New Features
+### 3. Form Linking
 
-### Activity-Form Integration
+Once a project is approved, forms can be linked to it. A project typically has two types of linked forms:
 
-1. Create a form using the Forms API
-2. Create an activity using the Activities API
-3. Link the form to the activity using the "Link Form to Activity" endpoint
-4. Submit a form response with the activity context
-5. Verify credits are awarded based on the form submission
+- **Registration Form**: For participants to register for the project
+- **Evaluation Form**: For participants to evaluate the project after completion
 
-### Credit Management
+Use the "Link Form to Project" endpoints to link forms to your project.
 
-1. View user credits using the "Get user credits" endpoint
-2. View activity credits using the "Get activity credits" endpoint
-3. View form credits using the "Get form credits" endpoint
-4. Test revoking a credit using the "Revoke credit" endpoint
+### 4. Registration Process
+
+When a user completes a registration form:
+
+1. The response is saved (this happens automatically when a form is submitted)
+2. An admin approves the registration with the "Process Registration from Response" endpoint
+3. A registration record is created linking the user to the project
+
+### 5. Crediting Process
+
+When a project is complete and a user submits an evaluation form:
+
+1. The response is saved
+2. An admin awards credit based on the response using the "Award Credit from Response" endpoint
+3. A credit record is created with the user's participation hours
+
+## Sample IDs for Testing
+
+- User ID: 66fe9b3bfd0079f9f590327b
+- Form ID: 67c2de5b23f4977a0c96c920
+- Response ID: 67dbc909a8a27717e00d053b
 
 ## Troubleshooting
 
-- If you encounter connection issues, ensure MongoDB is running
-- Check that the server is running on port 0369
-- Verify your JWT token is valid and included in the Authorization header
-- Check the server logs for any error messages
+- Make sure your MongoDB connection is working
+- Check that all required fields are provided in your requests
+- Verify that the IDs used in your requests exist in the database
+- Ensure that projects are fully approved before attempting to register users
 
-## Complete API Documentation
+## Full Testing Workflow Example
 
-For a complete list of all available endpoints and their parameters, refer to the Postman collections or the route files in the `routes` directory.
+1. Create a College-Driven project
+2. Sign all work plan items
+3. Get approval from Representative
+4. Get approval from Dean
+5. Get approval from Executive Director
+6. Link a registration form to the project
+7. Process a registration from a form response
+8. Link an evaluation form to the project
+9. Award credit from an evaluation form response
+10. View the user's credits for the project
+
+Following this workflow will test the entire project registration and crediting process.
+
+## Note About System Structure
+
+The system has been redesigned to use projects directly instead of activities. All functionality previously handled by activities is now integrated into the project model for a more streamlined experience.

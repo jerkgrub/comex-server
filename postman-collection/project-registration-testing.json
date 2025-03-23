@@ -1,0 +1,558 @@
+{
+  "info": {
+    "_postman_id": "72a9b852-d37d-4c87-9a58-2bd45fc8c7ef",
+    "name": "ComEx Project Registration Testing",
+    "description": "Collection for testing ComEx project features including project creation, approval, form linking, registration, and credits.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Projects",
+      "item": [
+        {
+          "name": "Create Project",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Las Pinas Charity Event\",\n  \"engagementType\": \"Institutional\",\n  \"description\": \"A charity event to help the local community\",\n  \"startDate\": \"2024-04-15\",\n  \"endDate\": \"2024-04-16\",\n  \"startTime\": \"08:00\",\n  \"endTime\": \"17:00\",\n  \"venue\": \"Las Pinas Community Center\",\n  \"objectives\": [\"To promote community welfare\", \"To enhance social awareness\"],\n  \"implementingOffice\": \"ComEx Office\",\n  \"expectedParticipants\": \"30 students and faculty\",\n  \"proposedBy\": \"66fe9b3bfd0079f9f590327b\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/project/new",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "project", "new"]
+            },
+            "description": "Create a new institutional project"
+          },
+          "response": []
+        },
+        {
+          "name": "Create College-Driven Project",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Cycling with a Purpose, to Batangas\",\n  \"engagementType\": \"College-Driven\",\n  \"description\": \"Cycling event to promote fitness and environmental awareness\",\n  \"startDate\": \"2024-05-10\",\n  \"endDate\": \"2024-05-12\",\n  \"startTime\": \"06:00\",\n  \"endTime\": \"18:00\",\n  \"venue\": \"Batangas City\",\n  \"objectives\": [\"To promote fitness\", \"To raise environmental awareness\"],\n  \"implementingOffice\": \"College of Engineering\",\n  \"programId\": \"5f9d8a3b7e5f4c001f3d7a1c\",\n  \"expectedParticipants\": \"50 students and faculty\",\n  \"proposedBy\": \"66fe9b3bfd0079f9f590327b\",\n  \"workPlan\": [\n    {\n      \"activity\": \"Lead Organizer\",\n      \"espName\": \"John Doe\",\n      \"role\": \"Project Leader\",\n      \"hoursReceived\": 12\n    },\n    {\n      \"activity\": \"Support Staff\",\n      \"espName\": \"Jane Smith\",\n      \"role\": \"Logistics Coordinator\",\n      \"hoursReceived\": 8\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/project/new",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "project", "new"]
+            },
+            "description": "Create a new college-driven project"
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Projects",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/project",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "project"]
+            },
+            "description": "Get all active projects"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Project by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/project/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "project", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "{{projectId}}"
+                }
+              ]
+            },
+            "description": "Get a specific project by ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Project",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Updated Las Pinas Charity Event\",\n  \"description\": \"An updated charity event to help the local community\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/project/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "project", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "{{projectId}}"
+                }
+              ]
+            },
+            "description": "Update an existing project"
+          },
+          "response": []
+        }
+      ],
+      "description": "Project management endpoints"
+    },
+    {
+      "name": "Project Approvals",
+      "item": [
+        {
+          "name": "Sign Work Plan Item",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"workPlan\": [\n    {\n      \"activity\": \"Lead Organizer\",\n      \"espName\": \"John Doe\",\n      \"role\": \"Project Leader\",\n      \"hoursReceived\": 12,\n      \"signature\": \"john_doe_signature\",\n      \"signedAt\": \"{{$isoTimestamp}}\"\n    },\n    {\n      \"activity\": \"Support Staff\",\n      \"espName\": \"Jane Smith\",\n      \"role\": \"Logistics Coordinator\",\n      \"hoursReceived\": 8,\n      \"signature\": \"jane_smith_signature\",\n      \"signedAt\": \"{{$isoTimestamp}}\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/project/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "project", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "{{projectId}}"
+                }
+              ]
+            },
+            "description": "Sign work plan items to complete first layer of approval"
+          },
+          "response": []
+        },
+        {
+          "name": "Approve by Representative",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isApproved\": {\n    \"byRepresentative\": {\n      \"approved\": true,\n      \"approvedOn\": \"{{$isoTimestamp}}\",\n      \"approvedBy\": \"66fe9b3bfd0079f9f590327b\",\n      \"signature\": \"representative_signature\"\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/project/approve/by-representative/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "project", "approve", "by-representative", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "{{projectId}}"
+                }
+              ]
+            },
+            "description": "Approve project by department representative"
+          },
+          "response": []
+        },
+        {
+          "name": "Approve by Dean",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isApproved\": {\n    \"byDean\": {\n      \"approved\": true,\n      \"approvedOn\": \"{{$isoTimestamp}}\",\n      \"approvedBy\": \"66fe9b3bfd0079f9f590327b\",\n      \"signature\": \"dean_signature\"\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/project/approve/by-dean/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "project", "approve", "by-dean", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "{{projectId}}"
+                }
+              ]
+            },
+            "description": "Approve project by dean"
+          },
+          "response": []
+        },
+        {
+          "name": "Approve by Executive Director",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isApproved\": {\n    \"byExecutiveDirector\": {\n      \"approved\": true,\n      \"approvedOn\": \"{{$isoTimestamp}}\",\n      \"approvedBy\": \"66fe9b3bfd0079f9f590327b\",\n      \"signature\": \"executive_director_signature\"\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/project/approve/by-executive-director/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "project", "approve", "by-executive-director", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "{{projectId}}"
+                }
+              ]
+            },
+            "description": "Final approval by executive director"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Approved Projects",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/project/approved",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "project", "approved"]
+            },
+            "description": "Get all fully approved projects"
+          },
+          "response": []
+        }
+      ],
+      "description": "Project approval process endpoints"
+    },
+    {
+      "name": "Form Linking",
+      "item": [
+        {
+          "name": "Link Form to Project (Registration)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"projectId\": \"{{projectId}}\",\n  \"formId\": \"67c2de5b23f4977a0c96c920\",\n  \"formType\": \"registration\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/form/link",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "form", "link"]
+            },
+            "description": "Link a registration form to a project"
+          },
+          "response": []
+        },
+        {
+          "name": "Link Form to Project (Evaluation)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"projectId\": \"{{projectId}}\",\n  \"formId\": \"67c2de5b23f4977a0c96c920\",\n  \"formType\": \"evaluation\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/form/link",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "form", "link"]
+            },
+            "description": "Link an evaluation form to a project"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Project Forms",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/form/project/:projectId",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "form", "project", ":projectId"],
+              "variable": [
+                {
+                  "key": "projectId",
+                  "value": "{{projectId}}"
+                }
+              ]
+            },
+            "description": "Get all forms linked to a project"
+          },
+          "response": []
+        },
+        {
+          "name": "Unlink Form from Project",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/form/unlink/:projectFormId",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "form", "unlink", ":projectFormId"],
+              "variable": [
+                {
+                  "key": "projectFormId",
+                  "value": "{{projectFormId}}"
+                }
+              ]
+            },
+            "description": "Unlink a form from a project"
+          },
+          "response": []
+        }
+      ],
+      "description": "Form linking operations"
+    },
+    {
+      "name": "Registrations",
+      "item": [
+        {
+          "name": "Process Registration from Response",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"responseId\": \"67dbc909a8a27717e00d053b\",\n  \"projectId\": \"{{projectId}}\",\n  \"role\": \"Participant\",\n  \"hoursToRender\": 8,\n  \"addToWorkPlan\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/registration/fromResponse",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "registration", "fromResponse"]
+            },
+            "description": "Create a registration from an approved form response"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Project Registrations",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/registration/project/:projectId",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "registration", "project", ":projectId"],
+              "variable": [
+                {
+                  "key": "projectId",
+                  "value": "{{projectId}}"
+                }
+              ]
+            },
+            "description": "Get all registrations for a project"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Registration",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"Team Leader\",\n  \"hoursToRender\": 12\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/registration/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "registration", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "{{registrationId}}"
+                }
+              ]
+            },
+            "description": "Update a registration"
+          },
+          "response": []
+        },
+        {
+          "name": "Complete Registration",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/registration/complete/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "registration", "complete", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "{{registrationId}}"
+                }
+              ]
+            },
+            "description": "Mark a registration as completed"
+          },
+          "response": []
+        }
+      ],
+      "description": "Registration management endpoints"
+    },
+    {
+      "name": "Credits",
+      "item": [
+        {
+          "name": "Award Credit from Response",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"66fe9b3bfd0079f9f590327b\",\n  \"projectId\": \"{{projectId}}\",\n  \"responseId\": \"67dbc909a8a27717e00d053b\",\n  \"hours\": 8,\n  \"description\": \"Participation in Las Pinas Charity Event\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/credit/award",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "credit", "award"]
+            },
+            "description": "Award credit based on a form response"
+          },
+          "response": []
+        },
+        {
+          "name": "Get User Credits",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/credit/user/:userId",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "credit", "user", ":userId"],
+              "variable": [
+                {
+                  "key": "userId",
+                  "value": "66fe9b3bfd0079f9f590327b"
+                }
+              ]
+            },
+            "description": "Get all credits for a user"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Project Credits",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/credit/project/:projectId",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "credit", "project", ":projectId"],
+              "variable": [
+                {
+                  "key": "projectId",
+                  "value": "{{projectId}}"
+                }
+              ]
+            },
+            "description": "Get all credits awarded for a project"
+          },
+          "response": []
+        }
+      ],
+      "description": "Credit management endpoints"
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [""]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [""]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:0369",
+      "type": "string"
+    },
+    {
+      "key": "projectId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "registrationId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "projectFormId",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}

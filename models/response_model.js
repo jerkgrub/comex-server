@@ -14,10 +14,10 @@ const responseSchema = new mongoose.Schema(
       ref: 'Form',
       required: true
     },
-    activityForm: {
-      // New reference
+    projectForm: {
+      // Reference to project-form link
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'ActivityForm'
+      ref: 'ProjectForm'
     },
     respondent: {
       email: String,

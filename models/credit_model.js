@@ -7,14 +7,14 @@ const CreditSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
-  activity: {
+  project: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Activity',
+    ref: 'Project',
     required: false
   },
-  activityForm: {
+  registration: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'ActivityForm',
+    ref: 'Registration',
     required: false
   },
   response: {
@@ -32,13 +32,13 @@ const CreditSchema = new mongoose.Schema({
   },
   source: {
     type: String,
-    enum: ['activity', 'form', 'manual'],
+    enum: ['project', 'form', 'manual'],
     default: 'form'
   }
 });
 
 CreditSchema.index({ user: 1 });
-CreditSchema.index({ user: 1, activity: 1 }, { sparse: true });
+CreditSchema.index({ user: 1, project: 1 }, { sparse: true });
 
 const Credit = mongoose.model('Credit', CreditSchema);
 module.exports = Credit;

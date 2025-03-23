@@ -26,7 +26,6 @@ app.use(async (req, res, next) => {
 
 // Import routes
 const userRoutes = require('./routes/user_routes');
-const activityRoutes = require('./routes/activity_routes');
 const creditRoutes = require('./routes/credit_routes');
 const programRoutes = require('./routes/program_routes');
 const projectRoutes = require('./routes/project_routes');
@@ -41,7 +40,6 @@ app.use('/api/test', testRoutes);
 app.use('/api/notification', notificationRoutes);
 
 // initiatives
-app.use('/api/activity', activityRoutes);
 app.use('/api/program', programRoutes);
 app.use('/api/project', projectRoutes);
 app.use('/api/credit', creditRoutes);

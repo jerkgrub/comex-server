@@ -5,7 +5,11 @@ const ProjectSchema = new mongoose.Schema(
     isActivated: Boolean, //for soft-deletion
     proposedBy: String, // signed in user's id
     programId: String, // Foreign key reference to Program
-
+    approvalStatus: {
+      type: String,
+      enum: ['draft', 'layer1_pending', 'layer1_approved', 'layer2_pending', 'approved'],
+      default: 'draft'
+    },
     //This model mirrors the ComEx Project Proposal Form which is a microsoft document.
 
     // A. ComEx Engagement
@@ -47,7 +51,8 @@ const ProjectSchema = new mongoose.Schema(
         espName: String, // Name of Extension Service Provider (e.g., "Marilou Jamis")
         role: String, // Role (e.g., "Project Leader")
         hoursReceived: Number, // Number of Hours (e.g., 8)
-        noveltyActivitySignature: String // Optional signature (empty in the example)
+        signature: String, // Track signatures (e.g., image URL or hash)
+        signedAt: Date
       }
     ],
 
@@ -135,11 +140,16 @@ const ProjectSchema = new mongoose.Schema(
     // ----------------------------------------------------------------------------------------------------------------------------
     // Registration
     registrationStart: String,
-    registrationEnd: String,
+    registrationEnd: String
   },
 
   { timestamps: true }
 );
+
+ProjectSchema.methods.checkLayer1Approval = function () {
+  if (this.workPlan.length === 0) return 'skip'; // Institutional projects
+  return this.workPlan.every(entry => entry.signature) ? 'approved' : 'pending';
+};
 
 const Project = mongoose.model('Project', ProjectSchema);
 module.exports = Project;

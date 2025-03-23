@@ -16,11 +16,6 @@ router.get('/:formId/responses', formController.getFormResponses);
 router.post('/:formId/publish', formController.publishForm);
 router.get('/responses/:responseId', formController.getResponseById);
 
-// Response approval routes
-router.post('/responses/:responseId/approve', formController.approveResponse);
-router.post('/responses/:responseId/deny', formController.denyResponse);
-router.post('/responses/:responseId/revoke', formController.revokeResponse);
-
 // File upload route
 router.post('/upload-file', formController.handleFileUpload, formController.uploadFormFile);
 
@@ -34,10 +29,12 @@ router.post('/:formId/duplicate', formController.duplicateForm);
 // Form Categorization Routes
 router.get('/category/:category', formController.getFormsByCategory);
 
-// Form-Activity Linking Info
-router.get('/:formId/linked-activities', formController.getFormActivities);
+// Project-Form linking routes
+router.post('/link-to-project', formController.linkFormToProject);
+router.get('/project/:projectId/forms', formController.getProjectForms);
+router.delete('/unlink/:projectFormId', formController.unlinkForm);
 
-// Modified form submission route with activity context
-router.post('/:formId/submit', formController.submitFormWithContext);
+// Form submission with project context
+router.post('/:formId/submit/:projectFormId', formController.submitFormWithProjectContext);
 
 module.exports = router;

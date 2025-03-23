@@ -2,14 +2,19 @@ const express = require('express');
 const router = express.Router();
 const creditController = require('../controllers/credit_controller');
 
-// User Credit Routes
-router.get('/users/:userId/credits', creditController.getUserCredits);
-router.get('/:creditId', creditController.getCreditDetails);
-router.delete('/:creditId', creditController.revokeCredit);
+// Award credits
+router.post('/award', creditController.awardCreditFromResponse);
 
-// Admin Credit Management
-router.get('/activity/:activityId', creditController.getActivityCredits);
-router.get('/form/:formId', creditController.getFormCredits);
+// Get credits
+router.get('/user/:userId', creditController.getUserCredits);
+router.get('/project/:projectId', creditController.getProjectCredits);
+router.get('/:id', creditController.getCreditById);
+
+// Update and delete credits
+router.put('/:id', creditController.updateCredit);
+router.delete('/:id', creditController.deleteCredit);
+
+// Response-related credits (these are still implemented in the controller)
 router.get('/response/:responseId', creditController.getResponseCredits);
 router.post('/create', creditController.createCreditManually);
 router.get('/users/:userId/response/:responseId', creditController.getUserResponseCredits);

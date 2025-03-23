@@ -4,9 +4,9 @@ const Response = require('../models/response_model');
 const mongoose = require('mongoose');
 const { put } = require('@vercel/blob');
 const multer = require('multer');
-const Activity = require('../models/activity_model');
 const Credit = require('../models/credit_model');
-const ActivityForm = require('../models/activity_form_model');
+const ProjectForm = require('../models/project_form_model');
+const Project = require('../models/project_model');
 
 // Set up Multer to store files in memory temporarily
 const storage = multer.memoryStorage();
@@ -550,332 +550,149 @@ const getFormsByCategory = async (req, res) => {
   }
 };
 
-// Form-Activity Linking
-const getFormActivities = async (req, res) => {
+// Form-Project Linking
+const getFormProjects = async (req, res) => {
   try {
     const { formId } = req.params;
-    const activities = await Activity.find({ 'linkedForms.formId': formId }).populate(
-      'linkedForms.formId'
-    );
 
-    if (!activities.length) {
-      return res.status(404).json({ message: 'No activities linked to this form' });
+    const projectForms = await ProjectForm.find({ formId }).populate({
+      path: 'projectId',
+      select: 'title description engagementType'
+    });
+
+    if (!projectForms.length) {
+      return res.status(404).json({ message: 'No projects linked to this form' });
     }
 
-    res.status(200).json({ activities });
+    res.status(200).json({ projectForms });
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching form activities', error: error.message });
+    res.status(500).json({ message: 'Error fetching linked projects', error: error.message });
   }
 };
 
-// Modified form submission with activity context
-const submitFormWithContext = async (req, res) => {
+// Modified form submission with project context
+const submitFormWithProjectContext = async (req, res) => {
   try {
-    const { formId } = req.params;
-    const { answers, respondent } = req.body;
+    const { formId, projectFormId } = req.params;
+    const { answers, respondentInfo } = req.body;
 
-    console.log(`Submitting form: formId=${formId}`);
-
+    // Validate form exists
     const form = await Form.findById(formId);
     if (!form) {
-      console.log(`Form not found: ${formId}`);
       return res.status(404).json({ message: 'Form not found' });
     }
 
-    // Create response with just the form reference
+    // Validate project form link exists
+    let projectForm = null;
+    let projectId = null;
+
+    if (projectFormId) {
+      projectForm = await ProjectForm.findById(projectFormId);
+      if (!projectForm) {
+        return res.status(404).json({ message: 'Project-Form link not found' });
+      }
+
+      if (projectForm.formId.toString() !== formId) {
+        return res.status(400).json({ message: 'Form ID does not match the Project-Form link' });
+      }
+
+      projectId = projectForm.projectId;
+    }
+
+    // Create new response
     const response = new Response({
       form: formId,
+      projectForm: projectFormId,
+      respondent: respondentInfo,
       answers,
-      respondent,
-      status: 'pending'
-    });
-
-    console.log('Saving response');
-    await response.save();
-
-    console.log(`Response created: ${response._id}`);
-    res.status(201).json({
-      message: 'Response submitted successfully',
-      response: {
-        id: response._id,
-        formId: response.form,
-        status: response.status
+      metadata: {
+        completionDate: new Date()
       }
     });
+
+    const savedResponse = await response.save();
+
+    res.status(201).json({
+      message: 'Form submitted successfully',
+      response: savedResponse
+    });
   } catch (error) {
-    console.error('Error submitting form response:', error);
-    res.status(500).json({ message: 'Error submitting form response', error: error.message });
+    res
+      .status(500)
+      .json({ message: 'Error submitting form with project context', error: error.message });
   }
 };
 
-// Approve a form response
-const approveResponse = async (req, res) => {
+// Project-Form linking
+const linkFormToProject = async (req, res) => {
   try {
-    console.log('=== RESPONSE APPROVAL PROCESS STARTED ===');
-    const { responseId } = req.params;
-    const { userId, hours } = req.body; // Get userId and hours from request body if provided
+    const { projectId, formId, formType } = req.body;
 
-    console.log(
-      `Processing approval for responseId: ${responseId}, userId from request: ${
-        userId || 'not provided'
-      }, hours from request: ${hours || 'not provided'}`
-    );
-
-    // Validate MongoDB ObjectId
-    if (userId && !mongoose.Types.ObjectId.isValid(userId)) {
-      console.log(`ERROR: Invalid userId format: ${userId}`);
-      return res.status(400).json({
-        message: 'Invalid userId format. Must be a valid MongoDB ObjectId.',
-        providedId: userId
-      });
+    // Verify project exists
+    const project = await Project.findById(projectId);
+    if (!project) {
+      return res.status(404).json({ message: 'Project not found' });
     }
 
-    // Validate hours if provided
-    const creditHours = hours !== undefined ? parseFloat(hours) : null;
-    if (hours !== undefined && (isNaN(creditHours) || creditHours < 0)) {
-      console.log(`ERROR: Invalid hours value: ${hours}`);
-      return res.status(400).json({
-        message: 'Invalid hours value. Must be a positive number.',
-        providedValue: hours
-      });
-    }
-
-    // Find the response
-    const response = await Response.findById(responseId);
-    if (!response) {
-      console.log(`ERROR: Response with ID ${responseId} not found`);
-      return res.status(404).json({ message: 'Response not found' });
-    }
-    console.log(`Found response: ${response._id}, form: ${response.form}`);
-
-    // Find the form to get credit value
-    const form = await Form.findById(response.form);
+    // Verify form exists
+    const form = await Form.findById(formId);
     if (!form) {
-      console.log(`ERROR: Form with ID ${response.form} not found`);
       return res.status(404).json({ message: 'Form not found' });
     }
-    console.log(`Found form: ${form._id}, title: ${form.title}, credits: ${form.credits || 0}`);
 
-    // Check if response has user association
-    let userIdToAward = null;
-
-    if (response.respondent && response.respondent.user) {
-      // Use existing user association if available
-      userIdToAward = response.respondent.user;
-      console.log(`Using existing user association from response: ${userIdToAward}`);
-    } else if (userId) {
-      // Use the user ID from request body if provided
-      userIdToAward = userId;
-      console.log(`Using userId from request body: ${userIdToAward}`);
-
-      // Update the response with the user association
-      if (!response.respondent) {
-        response.respondent = { user: userId };
-        console.log(`Created new respondent object with userId: ${userId}`);
-      } else {
-        response.respondent.user = userId;
-        console.log(`Updated existing respondent object with userId: ${userId}`);
-      }
-
-      await response.save();
-      console.log('Response updated with user association');
-    } else {
-      console.log('WARNING: No user ID available to award credits to');
-    }
-
-    let creditCreated = false;
-    let credit = null;
-
-    // If we have a user to award credits to and either the form has credits or admin provided hours
-    const formHasCredits = form.credits && form.credits > 0;
-    const adminProvidedHours = creditHours !== null && creditHours > 0;
-
-    if (userIdToAward && (formHasCredits || adminProvidedHours)) {
-      // Use admin-provided hours if available, otherwise fall back to form.credits
-      const hoursToAward = adminProvidedHours ? creditHours : form.credits || 0;
-
-      console.log(
-        `Attempting to create credit: user=${userIdToAward}, credits=${hoursToAward} (${
-          adminProvidedHours ? 'admin-provided' : 'from form'
-        })`
-      );
-      try {
-        // NEW APPROACH: Look up any ActivityForm documents that link to this form
-        console.log(`Looking up ActivityForm links for formId: ${form._id}`);
-        const activityFormLink = await ActivityForm.findOne({
-          formId: form._id,
-          status: 'approved'
-        });
-
-        let activityId = null;
-        let activityFormId = null;
-
-        if (activityFormLink) {
-          activityId = activityFormLink.activityId;
-          activityFormId = activityFormLink._id;
-          console.log(
-            `Found approved ActivityForm link: activityId=${activityId}, activityFormId=${activityFormId}`
-          );
-
-          // Create a credit with activity association
-          credit = new Credit({
-            user: userIdToAward,
-            activity: activityId,
-            activityForm: activityFormId,
-            response: response._id,
-            hours: hoursToAward,
-            description: `Credit awarded for completing ${form.title}`,
-            awardedAt: new Date(),
-            source: 'activity'
-          });
-        } else {
-          console.log(`No approved ActivityForm link found for form: ${form._id}`);
-
-          // Create a standalone credit without activity association
-          credit = new Credit({
-            user: userIdToAward,
-            response: response._id,
-            hours: hoursToAward,
-            description: `Credit awarded for passing verification for ${form.title}`,
-            awardedAt: new Date(),
-            source: 'form'
-          });
-        }
-
-        console.log('Credit object created, about to save:', JSON.stringify(credit, null, 2));
-        await credit.save();
-        creditCreated = true;
-        console.log(`SUCCESS: Credit created with ID: ${credit._id}`);
-      } catch (creditError) {
-        console.error('ERROR creating credit:', creditError);
-        console.error('Credit error stack:', creditError.stack);
-        // Continue with response approval even if credit creation fails
-      }
-    } else {
-      console.log(`Skipping credit creation - conditions not met:
-        - userIdToAward exists: ${!!userIdToAward}
-        - form.credits exists: ${!!form.credits}
-        - form.credits > 0: ${form.credits > 0}
-        - adminProvidedHours: ${adminProvidedHours}`);
-    }
-
-    // Update response status
-    response.status = 'approved';
-    await response.save();
-    console.log(`Response status updated to 'approved'`);
-    console.log('=== RESPONSE APPROVAL PROCESS COMPLETED ===');
-
-    res.status(200).json({
-      message:
-        'Response approved' + (creditCreated ? ' and credit awarded' : ' (no credits awarded)'),
-      hasUser: !!userIdToAward,
-      creditCreated,
-      creditDetails: credit
-        ? {
-            creditId: credit._id,
-            hours: credit.hours,
-            user: credit.user,
-            activity: credit.activity,
-            source: credit.source
-          }
-        : null
+    // Check if this link already exists
+    const existingLink = await ProjectForm.findOne({
+      projectId,
+      formId,
+      formType
     });
+
+    if (existingLink) {
+      return res
+        .status(400)
+        .json({ message: 'This form is already linked to the project with this type' });
+    }
+
+    // Create the link
+    const projectForm = new ProjectForm({
+      projectId,
+      formId,
+      formType,
+      status: 'approved' // Auto-approve the link for now
+    });
+
+    const savedLink = await projectForm.save();
+    res.status(201).json(savedLink);
   } catch (error) {
-    console.error('Error approving response:', error);
-    console.error('Error stack:', error.stack);
-    res.status(500).json({ message: 'Error approving response', error: error.message });
+    res.status(500).json({ message: error.message });
   }
 };
 
-// Deny a form response
-const denyResponse = async (req, res) => {
+// Get all forms linked to a project
+const getProjectForms = async (req, res) => {
   try {
-    const { responseId } = req.params;
-    const { reason } = req.body;
+    const projectForms = await ProjectForm.find({ projectId: req.params.projectId })
+      .populate('formId', 'title description')
+      .sort({ createdAt: -1 });
 
-    // Find the response
-    const response = await Response.findById(responseId);
-    if (!response) {
-      return res.status(404).json({ message: 'Response not found' });
-    }
-
-    // Update response status
-    response.status = 'denied';
-    response.denialReason = reason || 'Response was denied';
-    await response.save();
-
-    res.status(200).json({
-      message: 'Response denied',
-      response
-    });
+    res.status(200).json(projectForms);
   } catch (error) {
-    console.error('Error denying response:', error);
-    res.status(500).json({ message: 'Error denying response', error: error.message });
+    res.status(500).json({ message: error.message });
   }
 };
 
-// Revoke an approved response
-const revokeResponse = async (req, res) => {
+// Unlink a form from a project
+const unlinkForm = async (req, res) => {
   try {
-    console.log('=== RESPONSE REVOCATION PROCESS STARTED ===');
-    const { responseId } = req.params;
+    const result = await ProjectForm.findByIdAndDelete(req.params.projectFormId);
 
-    console.log(`Processing revocation for responseId: ${responseId}`);
-
-    // Find the response
-    const response = await Response.findById(responseId);
-    if (!response) {
-      console.log(`ERROR: Response with ID ${responseId} not found`);
-      return res.status(404).json({ message: 'Response not found' });
+    if (!result) {
+      return res.status(404).json({ message: 'Project-Form link not found' });
     }
 
-    if (response.status !== 'approved' && response.status !== 'denied') {
-      console.log(`ERROR: Cannot revoke response with status: ${response.status}`);
-      return res.status(400).json({
-        message: 'Only approved or denied responses can be revoked',
-        currentStatus: response.status
-      });
-    }
-
-    console.log(`Found approved response: ${response._id}`);
-
-    // Find and delete any associated credits
-    let deletedCredits = [];
-    try {
-      const credits = await Credit.find({ response: responseId });
-      console.log(`Found ${credits.length} credits associated with this response`);
-
-      if (credits.length > 0) {
-        for (const credit of credits) {
-          console.log(`Deleting credit: ${credit._id}`);
-          await Credit.findByIdAndDelete(credit._id);
-          deletedCredits.push(credit._id);
-        }
-        console.log(`Successfully deleted ${deletedCredits.length} credits`);
-      }
-    } catch (creditError) {
-      console.error('ERROR deleting associated credits:', creditError);
-      // Continue with response revocation even if credit deletion fails
-    }
-
-    // Update response status back to pending
-    response.status = 'pending';
-    await response.save();
-    console.log(`Response status updated to 'pending'`);
-    console.log('=== RESPONSE REVOCATION PROCESS COMPLETED ===');
-
-    res.status(200).json({
-      message: 'Response approval revoked and returned to pending status',
-      deletedCredits,
-      response: {
-        responseId: response._id,
-        status: response.status
-      }
-    });
+    res.status(200).json({ message: 'Form unlinked successfully' });
   } catch (error) {
-    console.error('Error revoking response:', error);
-    console.error('Error stack:', error.stack);
-    res.status(500).json({ message: 'Error revoking response', error: error.message });
+    res.status(500).json({ message: error.message });
   }
 };
 
@@ -905,13 +722,13 @@ module.exports = {
   uploadFormFile,
   upload,
 
-  // Form categorization and activity linking
+  // Form categorization and project linking
   getFormsByCategory,
-  getFormActivities,
-  submitFormWithContext,
+  getFormProjects,
+  submitFormWithProjectContext,
 
-  // Response approval
-  approveResponse,
-  denyResponse,
-  revokeResponse
+  // Project-Form linking
+  linkFormToProject,
+  getProjectForms,
+  unlinkForm
 };
