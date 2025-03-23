@@ -29,5 +29,12 @@ router.put(
   userController.upload.single('avatar'),
   userController.uploadAvatar
 );
+router.put(
+  '/users/upload-signature/:id',
+  userController.upload.single('signature'),
+  userController.uploadSignature
+);
+
+
 
 module.exports = router;

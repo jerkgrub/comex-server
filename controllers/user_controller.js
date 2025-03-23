@@ -17,6 +17,33 @@ const upload = multer({
     cb(null, true);
   }
 });
+// Controller to handle signature upload
+const uploadSignature = async (req, res) => {
+  const signatureFile = req.file; // Multer provides the file as req.file
+  const userId = req.params.id; // Assuming signature is tied to the user ID
+
+  if (!signatureFile) {
+    return res.status(400).json({ message: 'No file uploaded' });
+  }
+
+  try {
+    // Upload the image to Vercel Blob
+    const { url } = await put(`signatures/${userId}-${Date.now()}.png`, signatureFile.buffer, {
+      access: 'public'
+    });
+
+    // Update MongoDB with the new signature URL
+    const user = await User.findByIdAndUpdate(userId, { signature: url }, { new: true });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.status(200).json({ message: 'Signature uploaded successfully', signatureUrl: url, user });
+  } catch (error) {
+    res.status(500).json({ message: 'Error uploading signature', error });
+  }
+};
 
 // Controller to handle avatar upload
 const uploadAvatar = async (req, res) => {
