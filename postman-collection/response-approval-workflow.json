@@ -1,0 +1,263 @@
+{
+  "info": {
+    "name": "Response Approval Workflow",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Tests for the response approval workflow including getting linked form responses, approving, denying, and revoking responses"
+  },
+  "item": [
+    {
+      "name": "1. Setup - Link Form to Project",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"projectId\": \"{{projectId}}\",\n  \"formId\": \"{{formId}}\",\n  \"formType\": \"evaluation\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/form/link-to-project",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "form", "link-to-project"]
+        },
+        "description": "Links an evaluation form to a project. Save the returned _id as projectFormId in your variables."
+      }
+    },
+    {
+      "name": "2. Submit Form with Project Context",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"respondent\": {\n    \"email\": \"test@example.com\",\n    \"name\": \"Test User\"\n  },\n  \"answers\": [\n    {\n      \"questionId\": \"{{questionId1}}\",\n      \"value\": \"Answer 1\"\n    },\n    {\n      \"questionId\": \"{{questionId2}}\",\n      \"value\": \"Answer 2\"\n    }\n  ]\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/form/{{formId}}/submit/{{projectFormId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "form", "{{formId}}", "submit", "{{projectFormId}}"]
+        },
+        "description": "Submits a form with project context. Save the returned response._id as responseId in your variables."
+      }
+    },
+    {
+      "name": "3. Get Linked Form Responses",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/form/linked-form/{{projectFormId}}/responses",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "form", "linked-form", "{{projectFormId}}", "responses"]
+        },
+        "description": "Gets all responses for a linked form-project"
+      }
+    },
+    {
+      "name": "4. Approve Response",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"hours\": 5,\n  \"description\": \"Credit for completing evaluation form\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/form/responses/{{responseId}}/approve",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "form", "responses", "{{responseId}}", "approve"]
+        },
+        "description": "Approves a response and creates a credit for it"
+      }
+    },
+    {
+      "name": "5. Check Credit Created",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/credit/response/{{responseId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "credit", "response", "{{responseId}}"]
+        },
+        "description": "Verifies that a credit was created for the approved response"
+      }
+    },
+    {
+      "name": "6. Revoke Approval",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/form/responses/{{responseId}}/revoke",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "form", "responses", "{{responseId}}", "revoke"]
+        },
+        "description": "Revokes the approval, sets status back to pending and deletes the credit"
+      }
+    },
+    {
+      "name": "7. Verify Credit Deleted",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/credit/response/{{responseId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "credit", "response", "{{responseId}}"]
+        },
+        "description": "Verifies that the credit was deleted after revoking"
+      }
+    },
+    {
+      "name": "8. Deny Response",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"reason\": \"Incomplete information provided\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/form/responses/{{responseId}}/deny",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "form", "responses", "{{responseId}}", "deny"]
+        },
+        "description": "Denies a response"
+      }
+    },
+    {
+      "name": "9. Verify Response is Denied",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/form/responses/{{responseId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "form", "responses", "{{responseId}}"]
+        },
+        "description": "Verifies that the response status is now denied"
+      }
+    },
+    {
+      "name": "10. Revoke Denial",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/form/responses/{{responseId}}/revoke",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "form", "responses", "{{responseId}}", "revoke"]
+        },
+        "description": "Revokes the denial, setting status back to pending"
+      }
+    },
+    {
+      "name": "11. Approve Again",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"hours\": 8,\n  \"description\": \"Credit for evaluation - reconsidered\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/form/responses/{{responseId}}/approve",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "form", "responses", "{{responseId}}", "approve"]
+        },
+        "description": "Approves the response again after previously denying it"
+      }
+    },
+    {
+      "name": "12. Verify Credit Created Again",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/credit/response/{{responseId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "credit", "response", "{{responseId}}"]
+        },
+        "description": "Verifies that a new credit was created after approving again"
+      }
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [""]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [""]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:0369",
+      "type": "string"
+    },
+    {
+      "key": "projectId",
+      "value": "",
+      "description": "Set this to your project ID"
+    },
+    {
+      "key": "formId",
+      "value": "",
+      "description": "Set this to your form ID"
+    },
+    {
+      "key": "projectFormId",
+      "value": "",
+      "description": "This will be set after linking form to project"
+    },
+    {
+      "key": "responseId",
+      "value": "",
+      "description": "This will be set after submitting the form"
+    },
+    {
+      "key": "questionId1",
+      "value": "",
+      "description": "ID of the first question in your form"
+    },
+    {
+      "key": "questionId2",
+      "value": "",
+      "description": "ID of the second question in your form"
+    }
+  ]
+}

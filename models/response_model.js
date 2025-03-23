@@ -2,8 +2,14 @@
 const mongoose = require('mongoose');
 
 const answerSchema = new mongoose.Schema({
-  questionId: { type: mongoose.Schema.Types.ObjectId, required: true },
-  value: mongoose.Schema.Types.Mixed,
+  questionId: {
+    type: mongoose.Schema.Types.ObjectId,
+    required: true
+  },
+  value: {
+    type: mongoose.Schema.Types.Mixed,
+    required: true
+  },
   fileUrl: String
 });
 
@@ -15,31 +21,37 @@ const responseSchema = new mongoose.Schema(
       required: true
     },
     projectForm: {
-      // Reference to project-form link
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'ProjectForm'
+      ref: 'ProjectForm',
+      required: false
     },
     respondent: {
-      email: String,
-      name: String,
       user: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
-      }
+      },
+      name: String,
+      email: String
     },
     answers: [answerSchema],
     metadata: {
       ipAddress: String,
       userAgent: String,
       timeSpent: Number,
-      completionDate: { type: Date, default: Date.now }
+      completionDate: {
+        type: Date,
+        default: Date.now
+      }
     },
     status: {
       type: String,
-      enum: ['complete', 'partial', 'approved', 'denied', 'pending'],
+      enum: ['pending', 'approved', 'denied'],
       default: 'pending'
     },
-    denialReason: String
+    deniedReason: {
+      type: String,
+      default: null
+    }
   },
   { timestamps: true }
 );

@@ -37,4 +37,10 @@ router.delete('/unlink/:projectFormId', formController.unlinkForm);
 // Form submission with project context
 router.post('/:formId/submit/:projectFormId', formController.submitFormWithProjectContext);
 
+// Linked form response approval workflow
+router.get('/linked-form/:projectFormId/responses', formController.getLinkedFormResponses);
+router.post('/responses/:responseId/approve', formController.approveResponse);
+router.post('/responses/:responseId/deny', formController.denyResponse);
+router.post('/responses/:responseId/revoke', formController.revokeResponse);
+
 module.exports = router;

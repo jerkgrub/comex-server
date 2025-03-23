@@ -7,6 +7,7 @@ const multer = require('multer');
 const Credit = require('../models/credit_model');
 const ProjectForm = require('../models/project_form_model');
 const Project = require('../models/project_model');
+const User = require('../models/user_model');
 
 // Set up Multer to store files in memory temporarily
 const storage = multer.memoryStorage();
@@ -574,52 +575,41 @@ const getFormProjects = async (req, res) => {
 const submitFormWithProjectContext = async (req, res) => {
   try {
     const { formId, projectFormId } = req.params;
-    const { answers, respondentInfo } = req.body;
+    const { respondent, answers } = req.body;
 
-    // Validate form exists
+    // Check if form exists
     const form = await Form.findById(formId);
     if (!form) {
       return res.status(404).json({ message: 'Form not found' });
     }
 
-    // Validate project form link exists
-    let projectForm = null;
-    let projectId = null;
-
-    if (projectFormId) {
-      projectForm = await ProjectForm.findById(projectFormId);
-      if (!projectForm) {
-        return res.status(404).json({ message: 'Project-Form link not found' });
-      }
-
-      if (projectForm.formId.toString() !== formId) {
-        return res.status(400).json({ message: 'Form ID does not match the Project-Form link' });
-      }
-
-      projectId = projectForm.projectId;
+    // Check if project-form link exists
+    const projectForm = await ProjectForm.findById(projectFormId);
+    if (!projectForm) {
+      return res.status(404).json({ message: 'Project-form link not found' });
     }
 
-    // Create new response
+    // Create a new response
     const response = new Response({
       form: formId,
       projectForm: projectFormId,
-      respondent: respondentInfo,
+      respondent,
       answers,
       metadata: {
+        ipAddress: req.ip || 'Unknown',
+        userAgent: req.headers['user-agent'] || 'Unknown',
         completionDate: new Date()
-      }
+      },
+      status: 'pending'
     });
 
     const savedResponse = await response.save();
-
     res.status(201).json({
-      message: 'Form submitted successfully',
+      message: 'Form submitted successfully with project context',
       response: savedResponse
     });
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: 'Error submitting form with project context', error: error.message });
+    res.status(500).json({ message: error.message });
   }
 };
 
@@ -696,6 +686,144 @@ const unlinkForm = async (req, res) => {
   }
 };
 
+// Get responses for a linked form-project
+const getLinkedFormResponses = async (req, res) => {
+  try {
+    const { projectFormId } = req.params;
+
+    // Verify the project-form link exists
+    const projectForm = await ProjectForm.findById(projectFormId);
+    if (!projectForm) {
+      return res.status(404).json({ message: 'Project-form link not found' });
+    }
+
+    // Get the responses that have this project form in context
+    const responses = await Response.find({
+      projectForm: projectFormId
+    }).sort({ createdAt: -1 });
+
+    res.status(200).json(responses);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Approve a response (create credit)
+const approveResponse = async (req, res) => {
+  try {
+    const { responseId } = req.params;
+    const { hours, description } = req.body;
+
+    // Find the response
+    const response = await Response.findById(responseId);
+    if (!response) {
+      return res.status(404).json({ message: 'Response not found' });
+    }
+
+    // Make sure the response has a project context
+    if (!response.projectForm) {
+      return res.status(400).json({ message: 'This response is not linked to a project' });
+    }
+
+    // Get the project-form link
+    const projectForm = await ProjectForm.findById(response.projectForm);
+    if (!projectForm) {
+      return res.status(404).json({ message: 'Project-form link not found' });
+    }
+
+    // Find user from response
+    let userId;
+    if (response.respondent && response.respondent.user) {
+      userId = response.respondent.user;
+    } else if (response.respondent && response.respondent.email) {
+      const user = await User.findOne({ email: response.respondent.email });
+      if (user) {
+        userId = user._id;
+      } else {
+        return res.status(404).json({ message: 'User not found for this response' });
+      }
+    } else {
+      return res.status(400).json({ message: 'Response does not have user information' });
+    }
+
+    // Create credit
+    const credit = new Credit({
+      user: userId,
+      project: projectForm.projectId,
+      response: responseId,
+      hours: hours || 1, // Default to 1 hour if not provided
+      description: description || `Credit for ${projectForm.formType} form submission`,
+      source: 'form'
+    });
+
+    await credit.save();
+
+    // Update response status
+    await Response.findByIdAndUpdate(responseId, {
+      status: 'approved'
+    });
+
+    res.status(200).json({
+      message: 'Response approved and credit created successfully',
+      credit
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Deny a response (without creating credit)
+const denyResponse = async (req, res) => {
+  try {
+    const { responseId } = req.params;
+    const { reason } = req.body;
+
+    // Find the response
+    const response = await Response.findById(responseId);
+    if (!response) {
+      return res.status(404).json({ message: 'Response not found' });
+    }
+
+    // Update response status
+    await Response.findByIdAndUpdate(responseId, {
+      status: 'denied',
+      deniedReason: reason || 'No reason provided'
+    });
+
+    res.status(200).json({ message: 'Response denied successfully' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Revoke a response (delete credit if exists)
+const revokeResponse = async (req, res) => {
+  try {
+    const { responseId } = req.params;
+
+    // Find the response
+    const response = await Response.findById(responseId);
+    if (!response) {
+      return res.status(404).json({ message: 'Response not found' });
+    }
+
+    // If response was approved, delete associated credit
+    if (response.status === 'approved') {
+      await Credit.deleteMany({ response: responseId });
+    }
+
+    // Update response status to pending
+    await Response.findByIdAndUpdate(responseId, {
+      status: 'pending',
+      deniedReason: null
+    });
+
+    res.status(200).json({ message: 'Response revoked successfully' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   // Form CRUD operations
   createForm,
@@ -730,5 +858,11 @@ module.exports = {
   // Project-Form linking
   linkFormToProject,
   getProjectForms,
-  unlinkForm
+  unlinkForm,
+
+  // Response approval workflow
+  getLinkedFormResponses,
+  approveResponse,
+  denyResponse,
+  revokeResponse
 };

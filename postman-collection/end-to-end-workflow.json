@@ -1,0 +1,361 @@
+{
+  "info": {
+    "name": "Complete End-to-End Workflow",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Test the complete workflow from project creation to credit awarding"
+  },
+  "item": [
+    {
+      "name": "1. Project Creation",
+      "item": [
+        {
+          "name": "Create New Project",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"End-to-End Test Project\",\n  \"description\": \"A project to test the full workflow\",\n  \"engagementType\": \"College-Driven\",\n  \"objectives\": \"Test all system components\",\n  \"beneficiaries\": \"System developers and testers\",\n  \"targetDates\": {\n    \"start\": \"2023-06-01\",\n    \"end\": \"2023-12-31\"\n  },\n  \"leadCollege\": \"College of Computer Studies\",\n  \"status\": \"active\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/projects",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "projects"]
+            },
+            "description": "Create a new project to use for the full workflow test"
+          }
+        },
+        {
+          "name": "Get Project Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/projects/{{projectId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "projects", "{{projectId}}"]
+            },
+            "description": "Verify that the project was created successfully"
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Form Creation",
+      "item": [
+        {
+          "name": "Create Evaluation Form",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Project Evaluation Form\",\n  \"description\": \"Form to evaluate project participation\",\n  \"questions\": [\n    {\n      \"text\": \"How would you rate the project organization?\",\n      \"type\": \"Multiple Choice\",\n      \"options\": [\"Excellent\", \"Good\", \"Fair\", \"Poor\"],\n      \"isRequired\": true\n    },\n    {\n      \"text\": \"What aspects of the project were most valuable?\",\n      \"type\": \"Paragraph\",\n      \"isRequired\": true\n    },\n    {\n      \"text\": \"Would you participate in future projects?\",\n      \"type\": \"Multiple Choice\",\n      \"options\": [\"Yes\", \"No\", \"Maybe\"],\n      \"isRequired\": true\n    }\n  ],\n  \"settings\": {\n    \"acceptingResponses\": true,\n    \"confirmationMessage\": \"Thank you for your feedback!\",\n    \"signInRequired\": false\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/form",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "form"]
+            },
+            "description": "Create an evaluation form to use in the project"
+          }
+        },
+        {
+          "name": "Publish Form",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/form/{{formId}}/publish",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "form", "{{formId}}", "publish"]
+            },
+            "description": "Publish the form so it can be used"
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Link Form to Project",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"projectId\": \"{{projectId}}\",\n  \"formId\": \"{{formId}}\",\n  \"formType\": \"evaluation\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/form/link-to-project",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "form", "link-to-project"]
+        },
+        "description": "Link the form to the project for evaluations"
+      }
+    },
+    {
+      "name": "4. Submit Form Response",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"respondent\": {\n    \"email\": \"participant@example.com\",\n    \"name\": \"Test Participant\"\n  },\n  \"answers\": [\n    {\n      \"questionId\": \"{{questionId1}}\",\n      \"value\": \"Excellent\"\n    },\n    {\n      \"questionId\": \"{{questionId2}}\",\n      \"value\": \"The collaboration and learning opportunities were most valuable.\"\n    },\n    {\n      \"questionId\": \"{{questionId3}}\",\n      \"value\": \"Yes\"\n    }\n  ]\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/form/{{formId}}/submit/{{projectFormId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "form", "{{formId}}", "submit", "{{projectFormId}}"]
+        },
+        "description": "Submit a response to the form with project context"
+      }
+    },
+    {
+      "name": "5. Get Form Responses",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/form/linked-form/{{projectFormId}}/responses",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "form", "linked-form", "{{projectFormId}}", "responses"]
+        },
+        "description": "Get all responses for the linked form"
+      }
+    },
+    {
+      "name": "6. Approve Response",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"hours\": 8,\n  \"description\": \"Credit for completing project evaluation\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/form/responses/{{responseId}}/approve",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "form", "responses", "{{responseId}}", "approve"]
+        },
+        "description": "Approve the response and create a credit"
+      }
+    },
+    {
+      "name": "7. Check Credit was Created",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/credit/response/{{responseId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "credit", "response", "{{responseId}}"]
+        },
+        "description": "Verify that a credit was created for the response"
+      }
+    },
+    {
+      "name": "8. Create Registration from Response",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"responseId\": \"{{responseId}}\",\n  \"projectId\": \"{{projectId}}\",\n  \"role\": \"Participant\",\n  \"hoursToRender\": 20,\n  \"addToWorkPlan\": true\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/registration/fromResponse",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "registration", "fromResponse"]
+        },
+        "description": "Create a registration from the response to participate in the project"
+      }
+    },
+    {
+      "name": "9. Check User Registrations",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/registration/user/{{userId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "registration", "user", "{{userId}}"]
+        },
+        "description": "Verify that the user was registered for the project"
+      }
+    },
+    {
+      "name": "10. Check User Credits",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/credit/user/{{userId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "credit", "user", "{{userId}}"]
+        },
+        "description": "Verify that the user has credits for the project"
+      }
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [""]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Store response data for use in subsequent requests",
+          "if (pm.response.code === 201 || pm.response.code === 200) {",
+          "    try {",
+          "        const jsonData = pm.response.json();",
+          "        ",
+          "        // Store project ID if created",
+          "        if (pm.info.requestName === 'Create New Project' && jsonData._id) {",
+          "            pm.environment.set('projectId', jsonData._id);",
+          "            console.log('Stored projectId:', jsonData._id);",
+          "        }",
+          "        ",
+          "        // Store form ID if created",
+          "        if (pm.info.requestName === 'Create Evaluation Form' && jsonData._id) {",
+          "            pm.environment.set('formId', jsonData._id);",
+          "            console.log('Stored formId:', jsonData._id);",
+          "            ",
+          "            // Store question IDs",
+          "            if (jsonData.questions && jsonData.questions.length >= 3) {",
+          "                pm.environment.set('questionId1', jsonData.questions[0]._id);",
+          "                pm.environment.set('questionId2', jsonData.questions[1]._id);",
+          "                pm.environment.set('questionId3', jsonData.questions[2]._id);",
+          "                console.log('Stored question IDs');",
+          "            }",
+          "        }",
+          "        ",
+          "        // Store project-form link ID if created",
+          "        if (pm.info.requestName === 'Link Form to Project' && jsonData._id) {",
+          "            pm.environment.set('projectFormId', jsonData._id);",
+          "            console.log('Stored projectFormId:', jsonData._id);",
+          "        }",
+          "        ",
+          "        // Store response ID if form submitted",
+          "        if (pm.info.requestName === 'Submit Form Response' && jsonData.responseId) {",
+          "            pm.environment.set('responseId', jsonData.responseId);",
+          "            console.log('Stored responseId:', jsonData.responseId);",
+          "        }",
+          "        ",
+          "        // Store user ID if available in response",
+          "        if (pm.info.requestName === 'Check Credit was Created' && jsonData.credits && jsonData.credits[0] && jsonData.credits[0].user) {",
+          "            pm.environment.set('userId', jsonData.credits[0].user._id || jsonData.credits[0].user);",
+          "            console.log('Stored userId from credit:', pm.environment.get('userId'));",
+          "        }",
+          "        ",
+          "        // Store credit ID if available",
+          "        if (pm.info.requestName === 'Check Credit was Created' && jsonData.credits && jsonData.credits[0]) {",
+          "            pm.environment.set('creditId', jsonData.credits[0]._id);",
+          "            console.log('Stored creditId:', jsonData.credits[0]._id);",
+          "        }",
+          "        ",
+          "        // Store registration ID if created",
+          "        if (pm.info.requestName === 'Create Registration from Response' && jsonData.registration && jsonData.registration._id) {",
+          "            pm.environment.set('registrationId', jsonData.registration._id);",
+          "            console.log('Stored registrationId:', jsonData.registration._id);",
+          "        }",
+          "    } catch (e) {",
+          "        console.error('Failed to process response JSON:', e);",
+          "    }",
+          "}"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:0369",
+      "type": "string"
+    },
+    {
+      "key": "projectId",
+      "value": "",
+      "description": "Will be set after creating a project"
+    },
+    {
+      "key": "formId",
+      "value": "",
+      "description": "Will be set after creating a form"
+    },
+    {
+      "key": "projectFormId",
+      "value": "",
+      "description": "Will be set after linking form to project"
+    },
+    {
+      "key": "responseId",
+      "value": "",
+      "description": "Will be set after submitting a form response"
+    },
+    {
+      "key": "userId",
+      "value": "",
+      "description": "Will be set after identifying the user"
+    },
+    {
+      "key": "creditId",
+      "value": "",
+      "description": "Will be set after creating a credit"
+    },
+    {
+      "key": "registrationId",
+      "value": "",
+      "description": "Will be set after creating a registration"
+    },
+    {
+      "key": "questionId1",
+      "value": "",
+      "description": "Will be set after creating a form"
+    },
+    {
+      "key": "questionId2",
+      "value": "",
+      "description": "Will be set after creating a form"
+    },
+    {
+      "key": "questionId3",
+      "value": "",
+      "description": "Will be set after creating a form"
+    }
+  ]
+}
