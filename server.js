@@ -32,6 +32,7 @@ const projectRoutes = require('./routes/project_routes');
 const notificationRoutes = require('./routes/notification_routes');
 const contentRoutes = require('./routes/content_routes');
 const formRoutes = require('./routes/form_routes');
+const registrationRoutes = require('./routes/registration_routes');
 const testRoutes = require('./practice/test_controller');
 
 // user
@@ -44,8 +45,9 @@ app.use('/api/program', programRoutes);
 app.use('/api/project', projectRoutes);
 app.use('/api/credit', creditRoutes);
 
-// forms
+// forms and registrations
 app.use('/api/form', formRoutes);
+app.use('/api/registration', registrationRoutes);
 
 // content
 app.use('/api/content', contentRoutes);
