@@ -133,9 +133,9 @@ const ProjectSchema = new mongoose.Schema(
       }
     },
     // ----------------------------------------------------------------------------------------------------------------------------
-    // Form Linking
-    registrationFormId: String, //formId of the registration form
-    evaluationFormId: String //formId of the evaluation form
+    // Registration
+    registrationStart: String,
+    registrationEnd: String,
   },
 
   { timestamps: true }
