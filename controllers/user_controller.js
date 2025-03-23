@@ -459,6 +459,7 @@ module.exports = {
   login, // Authentication
   uploadAvatar, // Upload avatar
   upload, // multer
+  uploadSignature, // Upload signature
   getApprovedUsers,
   getPendingUsers,
   approveUser,
