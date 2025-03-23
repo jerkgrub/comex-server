@@ -515,6 +515,151 @@
         }
       ],
       "description": "Credit management endpoints"
+    },
+    {
+      "name": "Credit Management",
+      "item": [
+        {
+          "name": "Award Credit from Response",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"projectId\": \"{{projectId}}\",\n  \"responseId\": \"{{responseId}}\",\n  \"hours\": 8,\n  \"description\": \"Credit awarded for project participation and evaluation\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/credit/award",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "credit", "award"]
+            },
+            "description": "Award credit to a user based on their form response for a project"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Credit Manually",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user\": \"{{userId}}\",\n  \"project\": \"{{projectId}}\",\n  \"hours\": 10,\n  \"description\": \"Manual credit award for project participation\",\n  \"source\": \"manual\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/credit/create",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "credit", "create"]
+            },
+            "description": "Manually create a credit entry for a user"
+          },
+          "response": []
+        },
+        {
+          "name": "Get User Credits",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/credit/user/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "credit", "user", "{{userId}}"]
+            },
+            "description": "Get all credits for a specific user"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Project Credits",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/credit/project/{{projectId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "credit", "project", "{{projectId}}"]
+            },
+            "description": "Get all credits awarded for a specific project"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Response Credits",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/credit/response/{{responseId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "credit", "response", "{{responseId}}"]
+            },
+            "description": "Get all credits awarded based on a specific form response"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Credit Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/credit/{{creditId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "credit", "{{creditId}}"]
+            },
+            "description": "Get details for a specific credit entry"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Credit",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"hours\": 12,\n  \"description\": \"Updated credit description\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/credit/{{creditId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "credit", "{{creditId}}"]
+            },
+            "description": "Update an existing credit entry"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Credit",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/credit/{{creditId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "credit", "{{creditId}}"]
+            },
+            "description": "Delete/revoke a credit entry"
+          },
+          "response": []
+        }
+      ],
+      "description": "Endpoints for managing user credits for project participation"
     }
   ],
   "event": [

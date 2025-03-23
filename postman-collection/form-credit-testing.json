@@ -253,6 +253,174 @@
         },
         "description": "Tests error handling when trying to revoke a response that is not in approved status. Replace {{pendingResponseId}} with an actual non-approved response ID."
       }
+    },
+    {
+      "name": "Project-Based Credit Testing",
+      "item": [
+        {
+          "name": "Setup - Link Form to Project",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"projectId\": \"{{projectId}}\",\n  \"formId\": \"{{formId}}\",\n  \"formType\": \"evaluation\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/form/link-to-project",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "form", "link-to-project"]
+            },
+            "description": "Links an evaluation form to a project"
+          }
+        },
+        {
+          "name": "Submit Form with Project Context",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"respondent\": {\n    \"email\": \"test@example.com\",\n    \"name\": \"Test User\",\n    \"user\": \"{{userId}}\"\n  },\n  \"answers\": [\n    {\n      \"questionId\": \"{{questionId1}}\",\n      \"value\": \"Test User\"\n    },\n    {\n      \"questionId\": \"{{questionId2}}\",\n      \"value\": \"This is my feedback for the project.\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/form/{{formId}}/submit/{{projectFormId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "form", "{{formId}}", "submit", "{{projectFormId}}"]
+            },
+            "description": "Submits a form response with project context. Replace the IDs with actual values."
+          }
+        },
+        {
+          "name": "Award Credit from Response",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"projectId\": \"{{projectId}}\",\n  \"responseId\": \"{{responseId}}\",\n  \"hours\": 5,\n  \"description\": \"Credit for completing project evaluation\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/credit/award",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "credit", "award"]
+            },
+            "description": "Awards credit to a user based on their project form response"
+          }
+        },
+        {
+          "name": "Get User Credits for Project",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/credit/user/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "credit", "user", "{{userId}}"]
+            },
+            "description": "Gets all credits awarded to a user, including for this project"
+          }
+        },
+        {
+          "name": "Get Project Credits",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/credit/project/{{projectId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "credit", "project", "{{projectId}}"]
+            },
+            "description": "Gets all credits awarded for this project"
+          }
+        },
+        {
+          "name": "Get Response Credits",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/credit/response/{{responseId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "credit", "response", "{{responseId}}"]
+            },
+            "description": "Gets credits awarded based on this response"
+          }
+        },
+        {
+          "name": "Update Credit",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"hours\": 8,\n  \"description\": \"Updated credit for project contribution\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/credit/{{creditId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "credit", "{{creditId}}"]
+            },
+            "description": "Updates an existing credit entry"
+          }
+        },
+        {
+          "name": "Delete Credit",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/credit/{{creditId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "credit", "{{creditId}}"]
+            },
+            "description": "Deletes/revokes a credit"
+          }
+        },
+        {
+          "name": "Create Manual Credit for Project Participation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user\": \"{{userId}}\",\n  \"project\": \"{{projectId}}\",\n  \"hours\": 10,\n  \"description\": \"Manual credit award for project organization\",\n  \"source\": \"manual\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/credit/create",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "credit", "create"]
+            },
+            "description": "Creates a manual credit entry for project participation without requiring a form response"
+          }
+        }
+      ],
+      "description": "Tests for the project-based credit system"
     }
   ],
   "event": [
