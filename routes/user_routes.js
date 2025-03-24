@@ -11,9 +11,10 @@ router.post('/users/new', userController.newAcc);
 // Protected Routes (Authentication Required)
 router.get('/users/approved', auth, userController.getApprovedUsers);
 router.get('/users/pending', auth, userController.getPendingUsers);
-router.get('/users/deactivated',userController.getDeactivatedUsers);
+router.get('/users/deactivated', userController.getDeactivatedUsers);
 router.put('/users/approve/:id', auth, userController.approveUser);
 router.get('/users/all', userController.findAllUser);
+router.get('/users/search', auth, userController.searchUsers);
 router.get('/users/:id', auth, userController.findOneUser);
 router.get('/users/email/:email', auth, userController.findOneUserByEmail);
 router.put('/users/update/:id', auth, userController.updateUser);
@@ -34,7 +35,5 @@ router.put(
   userController.upload.single('signature'),
   userController.uploadSignature
 );
-
-
 
 module.exports = router;

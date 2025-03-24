@@ -17,6 +17,35 @@ const upload = multer({
     cb(null, true);
   }
 });
+
+// Search users by name or email
+const searchUsers = async (req, res) => {
+  try {
+    const { query } = req.query;
+
+    if (!query) {
+      return res.status(400).json({ message: 'Search query is required' });
+    }
+
+    // Create a regex for case-insensitive partial matching
+    const searchRegex = new RegExp(query, 'i');
+
+    // Search for users matching the query in firstName, lastName, or email
+    const users = await User.find({
+      isActivated: true,
+      isApproved: true,
+      $or: [{ firstName: searchRegex }, { lastName: searchRegex }, { email: searchRegex }]
+    })
+      .select('_id firstName middleName lastName email usertype department') // Only return necessary fields
+      .limit(10) // Limit to 10 results for performance
+      .sort({ firstName: 1 }); // Sort by firstName
+
+    res.json({ users });
+  } catch (err) {
+    res.status(500).json({ message: 'Error searching users', error: err.message });
+  }
+};
+
 // Controller to handle signature upload
 const uploadSignature = async (req, res) => {
   const signatureFile = req.file; // Multer provides the file as req.file
@@ -471,5 +500,6 @@ module.exports = {
   approveUser,
   deactivateUser, // Deactivate user
   restoreUser, // Restore user
-  getDeactivatedUsers // Get deactivated users
+  getDeactivatedUsers, // Get deactivated users
+  searchUsers // Search users
 };
