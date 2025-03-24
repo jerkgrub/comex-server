@@ -49,6 +49,7 @@ const ProjectSchema = new mongoose.Schema(
       {
         activity: String, // e.g., "Volunteer"
         espName: String, // Name of Extension Service Provider (e.g., "Marilou Jamis")
+        userId: String, // User ID of the person signing the work plan
         role: String, // Role (e.g., "Project Leader")
         hoursReceived: Number, // Number of Hours (e.g., 8)
         signature: String, // Track signatures (e.g., image URL or hash)
