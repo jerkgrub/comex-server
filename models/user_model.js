@@ -27,6 +27,7 @@ const UserSchema = new mongoose.Schema(
     lastName: String,
     department: String,
     usertype: String,
+    secondaryUsertype: String,
     secondaryRole: String,
     mobileNumber: String,
     idNumber: String,
