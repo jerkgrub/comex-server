@@ -25,7 +25,7 @@ const ProjectSchema = new mongoose.Schema(
     description: String, //long paragraph
     objectives: [String], //ex. To improve the quality of life of the community, To promote sustainable development, To enhance the skills of the community, To promote peace and security, To promote good health and well-being, To ensure inclusive and equitable quality education and promote lifelong learning opportunities for all
     methodology: [String], //ex. Action Research, Action Learning, Action Research and Action Learning, Action Research and Action Learning and Action Research, Action Research and Action Learning and Action Research and Action Learning
-    sdg: String, //SDG 17
+    sdg: [String], //SDG 17, SDG 18
 
     // C. Project Proponents Information
     implementingOffice: String, // NU-MOA School of Information Technology
