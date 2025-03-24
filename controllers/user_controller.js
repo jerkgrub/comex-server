@@ -329,6 +329,12 @@ const updateUser = (req, res) => {
     updateData.usertype = req.body.usertype;
   }
 
+  // Add support for secondaryUsertype
+  if (req.body.hasOwnProperty('secondaryUsertype')) {
+    // Allow null/empty string to clear the field
+    updateData.secondaryUsertype = req.body.secondaryUsertype || null;
+  }
+
   // Update dateHired if provided
   if (req.body.dateHired) {
     updateData.dateHired = req.body.dateHired;
