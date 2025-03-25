@@ -69,7 +69,8 @@ const getFormById = async (req, res) => {
 
 const updateForm = async (req, res) => {
   try {
-    const { title, description, questions, settings, isPublished, credits } = req.body;
+    const { title, description, questions, settings, isPublished, credits, isActivated, formType } =
+      req.body;
 
     const form = await Form.findById(req.params.formId);
 
@@ -86,6 +87,8 @@ const updateForm = async (req, res) => {
     if (settings) form.settings = { ...form.settings, ...settings };
     if (isPublished !== undefined) form.isPublished = isPublished;
     if (credits !== undefined) form.credits = credits;
+    if (isActivated !== undefined) form.isActivated = isActivated;
+    if (formType) form.formType = formType;
 
     await form.save();
     res.status(200).json(form);
