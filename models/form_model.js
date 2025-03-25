@@ -56,6 +56,11 @@ const questionSchema = new mongoose.Schema({
 
 const formSchema = new mongoose.Schema(
   {
+    formType: { 
+      type: String, 
+      enum: ['ORIGINAL', 'CLONED'], 
+      default: 'ORIGINAL' 
+    },
     title: { type: String, required: true },
     description: String,
     isPublished: { type: Boolean, default: false },
