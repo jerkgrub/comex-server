@@ -835,6 +835,55 @@ const revokeResponse = async (req, res) => {
   }
 };
 
+// Clone a form specifically for a project (creating a new instance)
+const cloneFormForProject = async (req, res) => {
+  try {
+    const { formId, projectId, projectTitle } = req.body;
+
+    if (!formId || !projectId) {
+      return res.status(400).json({ message: 'Form ID and Project ID are required' });
+    }
+
+    // Fetch the original form to clone
+    const originalForm = await Form.findById(formId);
+    if (!originalForm) {
+      return res.status(404).json({ message: 'Form template not found' });
+    }
+
+    // Create a new form based on the original, with changes
+    const newForm = new Form({
+      ...originalForm.toObject(),
+      _id: undefined, // Let MongoDB create a new ID
+      title: `${originalForm.title} - ${projectTitle || 'Project Form'}`,
+      formType: 'CLONED',
+      isPublished: true, // Make it available immediately
+      createdAt: undefined,
+      updatedAt: undefined
+    });
+
+    const savedForm = await newForm.save();
+
+    // Create a link between the new form and the project
+    const projectForm = new ProjectForm({
+      projectId,
+      formId: savedForm._id,
+      formType: 'evaluation', // Default to evaluation, can be changed if needed
+      status: 'approved'
+    });
+
+    await projectForm.save();
+
+    res.status(201).json({
+      message: 'Form cloned and linked to project successfully',
+      form: savedForm,
+      projectForm
+    });
+  } catch (error) {
+    console.error('Error cloning form for project:', error);
+    res.status(500).json({ message: 'Error cloning form', error: error.message });
+  }
+};
+
 module.exports = {
   // Form CRUD operations
   createForm,
@@ -875,5 +924,8 @@ module.exports = {
   getLinkedFormResponses,
   approveResponse,
   denyResponse,
-  revokeResponse
+  revokeResponse,
+
+  // Clone a form specifically for a project
+  cloneFormForProject
 };
