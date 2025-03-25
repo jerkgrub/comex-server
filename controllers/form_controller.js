@@ -23,13 +23,21 @@ const upload = multer({
 // Form CRUD operations
 const createForm = async (req, res) => {
   try {
-    const { title, description, questions = [] } = req.body;
+    const {
+      title,
+      description,
+      questions = [],
+      isActivated = true,
+      formType = 'ORIGINAL'
+    } = req.body;
 
     // No need to generate IDs for questions as MongoDB will do it
     const form = new Form({
       title,
       description,
-      questions
+      questions,
+      isActivated,
+      formType
       // Removed author field since there's only one admin
     });
 
@@ -43,7 +51,7 @@ const createForm = async (req, res) => {
 const getAllForms = async (req, res) => {
   try {
     const forms = await Form.find()
-      .select('title description isPublished createdAt updatedAt')
+      .select('title description isPublished isActivated formType createdAt updatedAt')
       .sort({ updatedAt: -1 });
 
     res.status(200).json(forms);
