@@ -725,39 +725,59 @@ const approveResponse = async (req, res) => {
     const { responseId } = req.params;
     const { hours, description } = req.body;
 
+    console.log(`[DEBUG] approveResponse starting for responseId: ${responseId}`);
+    console.log(`[DEBUG] Request body:`, req.body);
+
     // Find the response
     const response = await Response.findById(responseId);
     if (!response) {
+      console.log(`[DEBUG] Response not found: ${responseId}`);
       return res.status(404).json({ message: 'Response not found' });
     }
 
+    console.log(`[DEBUG] Response found:`, {
+      id: response._id,
+      form: response.form,
+      projectForm: response.projectForm,
+      status: response.status,
+      respondent: response.respondent
+    });
+
     // Make sure the response has a project context
     if (!response.projectForm) {
-      console.log('Response is not linked to a project, but proceeding anyway');
+      console.log('[DEBUG] Response is not linked to a project, but proceeding anyway');
       // If no project form, we need to handle this case differently
 
       // Find user from response
       let userId;
       if (response.respondent && response.respondent.user) {
         userId = response.respondent.user;
+        console.log(`[DEBUG] Found userId from response.respondent.user: ${userId}`);
       } else if (response.respondent && response.respondent.email) {
+        console.log(`[DEBUG] Looking up user by email: ${response.respondent.email}`);
         const user = await User.findOne({ email: response.respondent.email });
         if (user) {
           userId = user._id;
+          console.log(`[DEBUG] Found user by email: ${userId}`);
         } else {
+          console.log(`[DEBUG] No user found with email: ${response.respondent.email}`);
           return res.status(404).json({ message: 'User not found for this response' });
         }
       } else {
+        console.log('[DEBUG] Response has no user or email information');
         return res.status(400).json({ message: 'Response does not have user information' });
       }
 
       // If no project form, try to get the form and determine project from form's context
       const formId = response.form;
       if (!formId) {
+        console.log('[DEBUG] Response has no form information');
         return res.status(400).json({ message: 'Response has no form information' });
       }
+      console.log(`[DEBUG] Form ID found: ${formId}`);
 
       // Create credit without project context
+      console.log('[DEBUG] Creating credit without project context');
       const credit = new Credit({
         user: userId,
         response: responseId,
@@ -766,13 +786,36 @@ const approveResponse = async (req, res) => {
         source: 'form'
       });
 
-      await credit.save();
+      console.log('[DEBUG] About to save credit:', {
+        user: userId,
+        response: responseId,
+        hours: hours || 1,
+        description: description || `Credit for form submission`,
+        source: 'form'
+      });
+
+      try {
+        await credit.save();
+        console.log('[DEBUG] Credit saved successfully:', credit._id);
+      } catch (creditError) {
+        console.error('[DEBUG] Error saving credit:', creditError);
+        return res.status(500).json({
+          message: 'Error creating credit',
+          error: creditError.message
+        });
+      }
 
       // Update response status
-      await Response.findByIdAndUpdate(responseId, {
-        status: 'approved',
-        hours: hours || 1 // Store hours in the response too
-      });
+      try {
+        await Response.findByIdAndUpdate(responseId, {
+          status: 'approved',
+          hours: hours || 1 // Store hours in the response too
+        });
+        console.log('[DEBUG] Response status updated to approved');
+      } catch (updateError) {
+        console.error('[DEBUG] Error updating response status:', updateError);
+        // Continue anyway since credit was created
+      }
 
       return res.status(200).json({
         message: 'Response approved and credit created successfully (no project context)',
@@ -781,26 +824,33 @@ const approveResponse = async (req, res) => {
     }
 
     // Get the project-form link
+    console.log(`[DEBUG] Response has projectForm: ${response.projectForm}, fetching details`);
     const projectForm = await ProjectForm.findById(response.projectForm);
     if (!projectForm) {
-      console.log('Project-form link not found, but proceeding anyway');
+      console.log('[DEBUG] Project-form link not found, but proceeding anyway');
 
       // Similar handling as above for missing project form
       let userId;
       if (response.respondent && response.respondent.user) {
         userId = response.respondent.user;
+        console.log(`[DEBUG] Found userId from response.respondent.user: ${userId}`);
       } else if (response.respondent && response.respondent.email) {
+        console.log(`[DEBUG] Looking up user by email: ${response.respondent.email}`);
         const user = await User.findOne({ email: response.respondent.email });
         if (user) {
           userId = user._id;
+          console.log(`[DEBUG] Found user by email: ${userId}`);
         } else {
+          console.log(`[DEBUG] No user found with email: ${response.respondent.email}`);
           return res.status(404).json({ message: 'User not found for this response' });
         }
       } else {
+        console.log('[DEBUG] Response has no user or email information');
         return res.status(400).json({ message: 'Response does not have user information' });
       }
 
       // Create credit without project context
+      console.log('[DEBUG] Creating credit without project context (projectForm missing)');
       const credit = new Credit({
         user: userId,
         response: responseId,
@@ -809,13 +859,28 @@ const approveResponse = async (req, res) => {
         source: 'form'
       });
 
-      await credit.save();
+      try {
+        await credit.save();
+        console.log('[DEBUG] Credit saved successfully:', credit._id);
+      } catch (creditError) {
+        console.error('[DEBUG] Error saving credit:', creditError);
+        return res.status(500).json({
+          message: 'Error creating credit',
+          error: creditError.message
+        });
+      }
 
       // Update response status
-      await Response.findByIdAndUpdate(responseId, {
-        status: 'approved',
-        hours: hours || 1
-      });
+      try {
+        await Response.findByIdAndUpdate(responseId, {
+          status: 'approved',
+          hours: hours || 1
+        });
+        console.log('[DEBUG] Response status updated to approved');
+      } catch (updateError) {
+        console.error('[DEBUG] Error updating response status:', updateError);
+        // Continue anyway since credit was created
+      }
 
       return res.status(200).json({
         message: 'Response approved and credit created successfully (project link missing)',
@@ -823,23 +888,36 @@ const approveResponse = async (req, res) => {
       });
     }
 
+    console.log('[DEBUG] ProjectForm found:', {
+      id: projectForm._id,
+      projectId: projectForm.projectId,
+      formId: projectForm.formId,
+      formType: projectForm.formType
+    });
+
     // If projectForm was found - regular flow
     // Find user from response
     let userId;
     if (response.respondent && response.respondent.user) {
       userId = response.respondent.user;
+      console.log(`[DEBUG] Found userId from response.respondent.user: ${userId}`);
     } else if (response.respondent && response.respondent.email) {
+      console.log(`[DEBUG] Looking up user by email: ${response.respondent.email}`);
       const user = await User.findOne({ email: response.respondent.email });
       if (user) {
         userId = user._id;
+        console.log(`[DEBUG] Found user by email: ${userId}`);
       } else {
+        console.log(`[DEBUG] No user found with email: ${response.respondent.email}`);
         return res.status(404).json({ message: 'User not found for this response' });
       }
     } else {
+      console.log('[DEBUG] Response has no user or email information');
       return res.status(400).json({ message: 'Response does not have user information' });
     }
 
     // Create credit with project context
+    console.log('[DEBUG] Creating credit with project context');
     const credit = new Credit({
       user: userId,
       project: projectForm.projectId,
@@ -849,19 +927,44 @@ const approveResponse = async (req, res) => {
       source: 'form'
     });
 
-    await credit.save();
+    console.log('[DEBUG] About to save credit:', {
+      user: userId,
+      project: projectForm.projectId,
+      response: responseId,
+      hours: hours || 1,
+      description: description || `Credit for ${projectForm.formType} form submission`,
+      source: 'form'
+    });
+
+    try {
+      await credit.save();
+      console.log('[DEBUG] Credit saved successfully:', credit._id);
+    } catch (creditError) {
+      console.error('[DEBUG] Error saving credit:', creditError);
+      return res.status(500).json({
+        message: 'Error creating credit',
+        error: creditError.message
+      });
+    }
 
     // Update response status
-    await Response.findByIdAndUpdate(responseId, {
-      status: 'approved',
-      hours: hours || 1
-    });
+    try {
+      await Response.findByIdAndUpdate(responseId, {
+        status: 'approved',
+        hours: hours || 1
+      });
+      console.log('[DEBUG] Response status updated to approved');
+    } catch (updateError) {
+      console.error('[DEBUG] Error updating response status:', updateError);
+      // Continue anyway since credit was created
+    }
 
     res.status(200).json({
       message: 'Response approved and credit created successfully',
       credit
     });
   } catch (error) {
+    console.error('[DEBUG] Error in approveResponse:', error);
     res.status(500).json({ message: error.message });
   }
 };
