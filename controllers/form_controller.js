@@ -733,15 +733,97 @@ const approveResponse = async (req, res) => {
 
     // Make sure the response has a project context
     if (!response.projectForm) {
-      return res.status(400).json({ message: 'This response is not linked to a project' });
+      console.log('Response is not linked to a project, but proceeding anyway');
+      // If no project form, we need to handle this case differently
+
+      // Find user from response
+      let userId;
+      if (response.respondent && response.respondent.user) {
+        userId = response.respondent.user;
+      } else if (response.respondent && response.respondent.email) {
+        const user = await User.findOne({ email: response.respondent.email });
+        if (user) {
+          userId = user._id;
+        } else {
+          return res.status(404).json({ message: 'User not found for this response' });
+        }
+      } else {
+        return res.status(400).json({ message: 'Response does not have user information' });
+      }
+
+      // If no project form, try to get the form and determine project from form's context
+      const formId = response.form;
+      if (!formId) {
+        return res.status(400).json({ message: 'Response has no form information' });
+      }
+
+      // Create credit without project context
+      const credit = new Credit({
+        user: userId,
+        response: responseId,
+        hours: hours || 1, // Default to 1 hour if not provided
+        description: description || `Credit for form submission`,
+        source: 'form'
+      });
+
+      await credit.save();
+
+      // Update response status
+      await Response.findByIdAndUpdate(responseId, {
+        status: 'approved',
+        hours: hours || 1 // Store hours in the response too
+      });
+
+      return res.status(200).json({
+        message: 'Response approved and credit created successfully (no project context)',
+        credit
+      });
     }
 
     // Get the project-form link
     const projectForm = await ProjectForm.findById(response.projectForm);
     if (!projectForm) {
-      return res.status(404).json({ message: 'Project-form link not found' });
+      console.log('Project-form link not found, but proceeding anyway');
+
+      // Similar handling as above for missing project form
+      let userId;
+      if (response.respondent && response.respondent.user) {
+        userId = response.respondent.user;
+      } else if (response.respondent && response.respondent.email) {
+        const user = await User.findOne({ email: response.respondent.email });
+        if (user) {
+          userId = user._id;
+        } else {
+          return res.status(404).json({ message: 'User not found for this response' });
+        }
+      } else {
+        return res.status(400).json({ message: 'Response does not have user information' });
+      }
+
+      // Create credit without project context
+      const credit = new Credit({
+        user: userId,
+        response: responseId,
+        hours: hours || 1,
+        description: description || `Credit for form submission`,
+        source: 'form'
+      });
+
+      await credit.save();
+
+      // Update response status
+      await Response.findByIdAndUpdate(responseId, {
+        status: 'approved',
+        hours: hours || 1
+      });
+
+      return res.status(200).json({
+        message: 'Response approved and credit created successfully (project link missing)',
+        credit
+      });
     }
 
+    // If projectForm was found - regular flow
     // Find user from response
     let userId;
     if (response.respondent && response.respondent.user) {
@@ -757,7 +839,7 @@ const approveResponse = async (req, res) => {
       return res.status(400).json({ message: 'Response does not have user information' });
     }
 
-    // Create credit
+    // Create credit with project context
     const credit = new Credit({
       user: userId,
       project: projectForm.projectId,
@@ -771,7 +853,8 @@ const approveResponse = async (req, res) => {
 
     // Update response status
     await Response.findByIdAndUpdate(responseId, {
-      status: 'approved'
+      status: 'approved',
+      hours: hours || 1
     });
 
     res.status(200).json({
