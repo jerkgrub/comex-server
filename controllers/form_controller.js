@@ -838,7 +838,7 @@ const revokeResponse = async (req, res) => {
 // Clone a form specifically for a project (creating a new instance)
 const cloneFormForProject = async (req, res) => {
   try {
-    const { formId, projectId, projectTitle } = req.body;
+    const { formId, projectId, projectTitle, formType = 'evaluation' } = req.body;
 
     if (!formId || !projectId) {
       return res.status(400).json({ message: 'Form ID and Project ID are required' });
@@ -867,7 +867,7 @@ const cloneFormForProject = async (req, res) => {
     const projectForm = new ProjectForm({
       projectId,
       formId: savedForm._id,
-      formType: 'evaluation', // Default to evaluation, can be changed if needed
+      formType: formType, // Use the formType from the request body
       status: 'approved'
     });
 
