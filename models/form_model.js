@@ -57,6 +57,7 @@ const questionSchema = new mongoose.Schema({
 const formSchema = new mongoose.Schema(
   {
     isActivated: Boolean,
+    projectId: String,
     formType: { 
       type: String, 
       enum: ['ORIGINAL', 'CLONED'], 
