@@ -278,8 +278,8 @@ const submitForm = async (req, res) => {
       })
     );
 
-    // Create response
-    const response = new Response({
+    // Create response and include projectId if the form has one
+    const responseData = {
       form: formId,
       answers: processedAnswers,
       respondent,
@@ -287,7 +287,14 @@ const submitForm = async (req, res) => {
         ipAddress: req.ip,
         userAgent: req.headers['user-agent']
       }
-    });
+    };
+
+    // Add projectId to the response if the form has one
+    if (form.projectId) {
+      responseData.projectId = form.projectId;
+    }
+
+    const response = new Response(responseData);
 
     await response.save();
 
@@ -600,10 +607,14 @@ const submitFormWithProjectContext = async (req, res) => {
       return res.status(404).json({ message: 'Project-form link not found' });
     }
 
+    // Get the project ID either from the form or from the projectForm
+    const projectId = form.projectId || projectForm.projectId;
+
     // Create a new response
     const response = new Response({
       form: formId,
       projectForm: projectFormId,
+      projectId: projectId, // Include projectId in the response
       respondent,
       answers,
       metadata: {
