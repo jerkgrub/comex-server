@@ -7,11 +7,7 @@ const CreditSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
-  project: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Project',
-    required: false
-  },
+  projectId: String, //newly added
   registration: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Registration',
