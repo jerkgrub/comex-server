@@ -756,7 +756,8 @@ const approveResponse = async (req, res) => {
       form: response.form,
       projectForm: response.projectForm,
       status: response.status,
-      respondent: response.respondent
+      respondent: response.respondent,
+      projectId: response.projectId
     });
 
     // Make sure the response has a project context
@@ -792,25 +793,26 @@ const approveResponse = async (req, res) => {
       }
       console.log(`[DEBUG] Form ID found: ${formId}`);
 
-      // Create credit without project context
+      // Create credit without project context, but include projectId if the response has one
       console.log('[DEBUG] Creating credit without project context');
-      const credit = new Credit({
+      const creditData = {
         user: userId,
         response: responseId,
         hours: hours || 1, // Default to 1 hour if not provided
         description: description || `Credit for form submission`,
         source: 'form'
-      });
+      };
 
-      console.log('[DEBUG] About to save credit:', {
-        user: userId,
-        response: responseId,
-        hours: hours || 1,
-        description: description || `Credit for form submission`,
-        source: 'form'
-      });
+      // Add projectId to credit if the response has one
+      if (response.projectId) {
+        creditData.projectId = response.projectId;
+        console.log(`[DEBUG] Adding projectId ${response.projectId} to credit`);
+      }
+
+      console.log('[DEBUG] About to save credit:', creditData);
 
       try {
+        const credit = new Credit(creditData);
         await credit.save();
         console.log('[DEBUG] Credit saved successfully:', credit._id);
       } catch (creditError) {
@@ -865,17 +867,24 @@ const approveResponse = async (req, res) => {
         return res.status(400).json({ message: 'Response does not have user information' });
       }
 
-      // Create credit without project context
+      // Create credit without project context, but include projectId if response has one
       console.log('[DEBUG] Creating credit without project context (projectForm missing)');
-      const credit = new Credit({
+      const creditData = {
         user: userId,
         response: responseId,
         hours: hours || 1,
         description: description || `Credit for form submission`,
         source: 'form'
-      });
+      };
+
+      // Add projectId to credit if the response has one
+      if (response.projectId) {
+        creditData.projectId = response.projectId;
+        console.log(`[DEBUG] Adding projectId ${response.projectId} to credit`);
+      }
 
       try {
+        const credit = new Credit(creditData);
         await credit.save();
         console.log('[DEBUG] Credit saved successfully:', credit._id);
       } catch (creditError) {
@@ -934,25 +943,28 @@ const approveResponse = async (req, res) => {
 
     // Create credit with project context
     console.log('[DEBUG] Creating credit with project context');
-    const credit = new Credit({
+
+    // Get the project ID either from the response or from projectForm
+    const projectId = response.projectId || projectForm.projectId;
+
+    const creditData = {
       user: userId,
-      project: projectForm.projectId,
       response: responseId,
       hours: hours || 1, // Default to 1 hour if not provided
       description: description || `Credit for ${projectForm.formType} form submission`,
       source: 'form'
-    });
+    };
 
-    console.log('[DEBUG] About to save credit:', {
-      user: userId,
-      project: projectForm.projectId,
-      response: responseId,
-      hours: hours || 1,
-      description: description || `Credit for ${projectForm.formType} form submission`,
-      source: 'form'
-    });
+    // Add projectId to the credit
+    if (projectId) {
+      creditData.projectId = projectId;
+      console.log(`[DEBUG] Adding projectId ${projectId} to credit`);
+    }
+
+    console.log('[DEBUG] About to save credit:', creditData);
 
     try {
+      const credit = new Credit(creditData);
       await credit.save();
       console.log('[DEBUG] Credit saved successfully:', credit._id);
     } catch (creditError) {
