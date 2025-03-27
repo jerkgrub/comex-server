@@ -43,6 +43,7 @@ const responseSchema = new mongoose.Schema(
         default: Date.now
       }
     },
+    projectId: String, //newly added
     status: {
       type: String,
       enum: ['pending', 'approved', 'denied'],
