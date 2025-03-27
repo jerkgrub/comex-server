@@ -811,8 +811,9 @@ const approveResponse = async (req, res) => {
 
       console.log('[DEBUG] About to save credit:', creditData);
 
+      let credit; // Define credit variable outside try block
       try {
-        const credit = new Credit(creditData);
+        credit = new Credit(creditData);
         await credit.save();
         console.log('[DEBUG] Credit saved successfully:', credit._id);
       } catch (creditError) {
@@ -883,8 +884,9 @@ const approveResponse = async (req, res) => {
         console.log(`[DEBUG] Adding projectId ${response.projectId} to credit`);
       }
 
+      let credit; // Define credit variable outside try block
       try {
-        const credit = new Credit(creditData);
+        credit = new Credit(creditData);
         await credit.save();
         console.log('[DEBUG] Credit saved successfully:', credit._id);
       } catch (creditError) {
@@ -963,8 +965,9 @@ const approveResponse = async (req, res) => {
 
     console.log('[DEBUG] About to save credit:', creditData);
 
+    let credit; // Define credit variable outside try block
     try {
-      const credit = new Credit(creditData);
+      credit = new Credit(creditData);
       await credit.save();
       console.log('[DEBUG] Credit saved successfully:', credit._id);
     } catch (creditError) {
