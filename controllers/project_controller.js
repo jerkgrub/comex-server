@@ -178,7 +178,11 @@ exports.updateProject = async (req, res) => {
 // Approval functions
 exports.approveProjectByRepresentative = async (req, res) => {
   try {
-    const project = await Project.findByIdAndUpdate(req.params.id, { 'isApproved.byRepresentative': true }, { new: true });
+    const project = await Project.findByIdAndUpdate(
+      req.params.id,
+      { 'isApproved.byRepresentative': true },
+      { new: true }
+    );
 
     if (!project) {
       return res.status(404).json({ message: 'Project not found' });
@@ -192,7 +196,11 @@ exports.approveProjectByRepresentative = async (req, res) => {
 
 exports.approveProjectByDean = async (req, res) => {
   try {
-    const project = await Project.findByIdAndUpdate(req.params.id, { 'isApproved.byDean': true }, { new: true });
+    const project = await Project.findByIdAndUpdate(
+      req.params.id,
+      { 'isApproved.byDean': true },
+      { new: true }
+    );
 
     if (!project) {
       return res.status(404).json({ message: 'Project not found' });
@@ -206,7 +214,11 @@ exports.approveProjectByDean = async (req, res) => {
 
 exports.approveProjectByGeneralAccountingSupervisor = async (req, res) => {
   try {
-    const project = await Project.findByIdAndUpdate(req.params.id, { 'isApproved.byGeneralAccountingSupervisor': true }, { new: true });
+    const project = await Project.findByIdAndUpdate(
+      req.params.id,
+      { 'isApproved.byGeneralAccountingSupervisor': true },
+      { new: true }
+    );
 
     if (!project) {
       return res.status(404).json({ message: 'Project not found' });
@@ -220,7 +232,11 @@ exports.approveProjectByGeneralAccountingSupervisor = async (req, res) => {
 
 exports.approveProjectByComexCoordinator = async (req, res) => {
   try {
-    const project = await Project.findByIdAndUpdate(req.params.id, { 'isApproved.byComexCoordinator': true }, { new: true });
+    const project = await Project.findByIdAndUpdate(
+      req.params.id,
+      { 'isApproved.byComexCoordinator': true },
+      { new: true }
+    );
 
     if (!project) {
       return res.status(404).json({ message: 'Project not found' });
@@ -234,7 +250,11 @@ exports.approveProjectByComexCoordinator = async (req, res) => {
 
 exports.approveProjectByAcademicServicesDirector = async (req, res) => {
   try {
-    const project = await Project.findByIdAndUpdate(req.params.id, { 'isApproved.byAcademicServicesDirector': true }, { new: true });
+    const project = await Project.findByIdAndUpdate(
+      req.params.id,
+      { 'isApproved.byAcademicServicesDirector': true },
+      { new: true }
+    );
 
     if (!project) {
       return res.status(404).json({ message: 'Project not found' });
@@ -248,7 +268,11 @@ exports.approveProjectByAcademicServicesDirector = async (req, res) => {
 
 exports.approveProjectByAcademicDirector = async (req, res) => {
   try {
-    const project = await Project.findByIdAndUpdate(req.params.id, { 'isApproved.byAcademicDirector': true }, { new: true });
+    const project = await Project.findByIdAndUpdate(
+      req.params.id,
+      { 'isApproved.byAcademicDirector': true },
+      { new: true }
+    );
 
     if (!project) {
       return res.status(404).json({ message: 'Project not found' });
@@ -262,7 +286,11 @@ exports.approveProjectByAcademicDirector = async (req, res) => {
 
 exports.approveProjectByExecutiveDirector = async (req, res) => {
   try {
-    const project = await Project.findByIdAndUpdate(req.params.id, { 'isApproved.byExecutiveDirector': true }, { new: true });
+    const project = await Project.findByIdAndUpdate(
+      req.params.id,
+      { 'isApproved.byExecutiveDirector': true },
+      { new: true }
+    );
 
     if (!project) {
       return res.status(404).json({ message: 'Project not found' });
@@ -277,7 +305,11 @@ exports.approveProjectByExecutiveDirector = async (req, res) => {
 // 4. Soft-delete operations
 exports.deactivateProject = async (req, res) => {
   try {
-    const project = await Project.findByIdAndUpdate(req.params.id, { isActivated: false }, { new: true });
+    const project = await Project.findByIdAndUpdate(
+      req.params.id,
+      { isActivated: false },
+      { new: true }
+    );
 
     if (!project) {
       return res.status(404).json({ message: 'Project not found' });
@@ -291,11 +323,78 @@ exports.deactivateProject = async (req, res) => {
 
 exports.restoreProject = async (req, res) => {
   try {
-    const project = await Project.findByIdAndUpdate(req.params.id, { isActivated: true }, { new: true });
+    const project = await Project.findByIdAndUpdate(
+      req.params.id,
+      { isActivated: true },
+      { new: true }
+    );
 
     if (!project) {
       return res.status(404).json({ message: 'Project not found' });
     }
+
+    res.status(200).json(project);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Get projects where user is in workplan but hasn't signed
+exports.getPendingWorkplanApprovals = async (req, res) => {
+  try {
+    const userId = req.params.userId;
+
+    // Find projects where:
+    // 1. Project is active
+    // 2. User is in the workPlan array (by espUserId)
+    // 3. The signature field is not present or null for that user's entry
+    const projects = await Project.find({
+      isActivated: true,
+      workPlan: {
+        $elemMatch: {
+          espUserId: userId,
+          $or: [{ signature: { $exists: false } }, { signature: null }]
+        }
+      }
+    });
+
+    res.status(200).json(projects);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Add workplan signature
+exports.signWorkplanEntry = async (req, res) => {
+  try {
+    const projectId = req.params.projectId;
+    const userId = req.params.userId;
+    const { signature } = req.body;
+
+    if (!signature) {
+      return res.status(400).json({ message: 'Signature is required' });
+    }
+
+    // Find the project
+    const project = await Project.findById(projectId);
+
+    if (!project) {
+      return res.status(404).json({ message: 'Project not found' });
+    }
+
+    // Find the user's entry in the workPlan
+    const workPlanEntry = project.workPlan.find(entry => entry.espUserId === userId);
+
+    if (!workPlanEntry) {
+      return res.status(404).json({ message: 'User not found in work plan' });
+    }
+
+    // Update the signature and signedAt
+    workPlanEntry.signature = signature;
+    workPlanEntry.signedAt = new Date();
+
+    // Save the project
+    await project.save();
 
     res.status(200).json(project);
   } catch (error) {
