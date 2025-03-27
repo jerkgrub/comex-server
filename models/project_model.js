@@ -5,6 +5,7 @@ const ProjectSchema = new mongoose.Schema(
     isActivated: Boolean, //for soft-deletion
     proposedBy: String, // signed in user's id
     programId: String, // Foreign key reference to Program
+    department: String, //must be same department as the program
     approvalStatus: {
       type: String,
       enum: ['draft', 'layer1_pending', 'layer1_approved', 'layer2_pending', 'approved'],
