@@ -307,6 +307,7 @@ const findOneUser = (req, res) => {
 // Find user by Email
 const findOneUserByEmail = (req, res) => {
   User.findOne({ email: req.params.email })
+    .select('-password') // Exclude password field
     .then(user => {
       if (user) {
         res.json({ User: user });
