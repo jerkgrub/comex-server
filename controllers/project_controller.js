@@ -364,6 +364,31 @@ exports.getPendingWorkplanApprovals = async (req, res) => {
   }
 };
 
+// Get projects where user is in workplan and has already signed
+exports.getSignedWorkplanApprovals = async (req, res) => {
+  try {
+    const userId = req.params.userId;
+
+    // Find projects where:
+    // 1. Project is active
+    // 2. User is in the workPlan array (by espUserId)
+    // 3. The signature field exists and is not null for that user's entry
+    const projects = await Project.find({
+      isActivated: true,
+      workPlan: {
+        $elemMatch: {
+          espUserId: userId,
+          signature: { $exists: true, $ne: null }
+        }
+      }
+    });
+
+    res.status(200).json(projects);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 // Add workplan signature
 exports.signWorkplanEntry = async (req, res) => {
   try {

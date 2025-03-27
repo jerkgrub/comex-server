@@ -20,6 +20,7 @@ router.get('/program/deactivated/:programId', projectController.getDeactivatedPr
 
 // Work plan approvals
 router.get('/workplan/pending/:userId', projectController.getPendingWorkplanApprovals); // Get projects where user is in workplan but hasn't signed
+router.get('/workplan/signed/:userId', projectController.getSignedWorkplanApprovals); // Get projects where user has already signed
 router.post('/workplan/sign/:projectId/:userId', projectController.signWorkplanEntry); // Add signature to workplan entry
 
 router.get('/:id', projectController.getProjectById); // get a single project by id
