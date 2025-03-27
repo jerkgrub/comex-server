@@ -806,6 +806,18 @@ const approveResponse = async (req, res) => {
       // Add projectId to credit if the response has one
       if (response.projectId) {
         creditData.projectId = response.projectId;
+        // Try to convert projectId string to ObjectId for the 'project' field
+        try {
+          creditData.project = new mongoose.Types.ObjectId(response.projectId);
+          console.log(
+            `[DEBUG] Added projectId as ObjectId to project field: ${response.projectId}`
+          );
+        } catch (err) {
+          console.log(
+            `[DEBUG] Could not convert projectId to ObjectId: ${response.projectId}`,
+            err
+          );
+        }
         console.log(`[DEBUG] Adding projectId ${response.projectId} to credit`);
       }
 
@@ -881,6 +893,18 @@ const approveResponse = async (req, res) => {
       // Add projectId to credit if the response has one
       if (response.projectId) {
         creditData.projectId = response.projectId;
+        // Try to convert projectId string to ObjectId for the 'project' field
+        try {
+          creditData.project = new mongoose.Types.ObjectId(response.projectId);
+          console.log(
+            `[DEBUG] Added projectId as ObjectId to project field: ${response.projectId}`
+          );
+        } catch (err) {
+          console.log(
+            `[DEBUG] Could not convert projectId to ObjectId: ${response.projectId}`,
+            err
+          );
+        }
         console.log(`[DEBUG] Adding projectId ${response.projectId} to credit`);
       }
 
@@ -957,10 +981,35 @@ const approveResponse = async (req, res) => {
       source: 'form'
     };
 
-    // Add projectId to the credit
+    // Add project/projectId to the credit
     if (projectId) {
+      // Add projectId as a string
       creditData.projectId = projectId;
+
+      // Try to convert projectId string to ObjectId for 'project' field
+      try {
+        creditData.project = new mongoose.Types.ObjectId(projectId);
+        console.log(`[DEBUG] Added projectId as ObjectId to project field: ${projectId}`);
+      } catch (err) {
+        console.log(`[DEBUG] Could not convert projectId to ObjectId: ${projectId}`, err);
+      }
+
       console.log(`[DEBUG] Adding projectId ${projectId} to credit`);
+    }
+
+    // If we have the actual projectForm, use its projectId as a reference
+    if (projectForm && projectForm.projectId) {
+      try {
+        creditData.project = new mongoose.Types.ObjectId(projectForm.projectId);
+        console.log(
+          `[DEBUG] Using projectForm.projectId for project field: ${projectForm.projectId}`
+        );
+      } catch (err) {
+        console.log(
+          `[DEBUG] Could not convert projectForm.projectId to ObjectId: ${projectForm.projectId}`,
+          err
+        );
+      }
     }
 
     console.log('[DEBUG] About to save credit:', creditData);
