@@ -16,7 +16,7 @@ router.put('/users/approve/:id', auth, userController.approveUser);
 router.get('/users/all', userController.findAllUser);
 router.get('/users/search', auth, userController.searchUsers);
 router.get('/users/:id', auth, userController.findOneUser);
-router.get('/users/email/:email', auth, userController.findOneUserByEmail);
+router.get('/users/email/:email', userController.findOneUserByEmail);
 router.put('/users/update/:id', auth, userController.updateUser);
 
 // New routes for user activation management
