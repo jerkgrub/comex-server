@@ -654,6 +654,11 @@ const linkFormToProject = async (req, res) => {
         .json({ message: 'This form is already linked to the project with this type' });
     }
 
+    // Update the form's projectId if it's not already set
+    if (!form.projectId) {
+      await Form.findByIdAndUpdate(formId, { projectId });
+    }
+
     // Create the link
     const projectForm = new ProjectForm({
       projectId,
@@ -1042,6 +1047,7 @@ const cloneFormForProject = async (req, res) => {
       _id: undefined, // Let MongoDB create a new ID
       title: `${originalForm.title} - ${projectTitle || 'Project Form'}`,
       formType: 'CLONED',
+      projectId: projectId, // Store the projectId in the form document
       isPublished: true, // Make it available immediately
       createdAt: undefined,
       updatedAt: undefined
