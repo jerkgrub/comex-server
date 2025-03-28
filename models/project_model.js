@@ -153,5 +153,134 @@ ProjectSchema.methods.checkLayer1Approval = function () {
   return this.workPlan.every(entry => entry.signature) ? 'approved' : 'pending';
 };
 
+// Add a pre-update hook to handle preserving signatures in workPlan
+
+// This method will be called before updating a project
+ProjectSchema.statics.updateWithSignaturePreservation = async function (projectId, projectData) {
+  try {
+    // Check if we should preserve signatures
+    const shouldPreserveSignatures = projectData._preserveSignatures;
+
+    console.log('====== SIGNATURE PRESERVATION DEBUGGER ======');
+    console.log('ProjectID:', projectId);
+    console.log('Preserve signatures flag:', shouldPreserveSignatures);
+    console.log('Incoming workPlan items:', projectData.workPlan?.length || 0);
+
+    // Remove the flag from the update data
+    if (shouldPreserveSignatures) {
+      delete projectData._preserveSignatures;
+      console.log('Removed _preserveSignatures flag from update data');
+    }
+
+    // First, get the current project to have access to all its data
+    const currentProject = await this.findById(projectId);
+
+    if (!currentProject) {
+      console.log('WARNING: Project not found with ID:', projectId);
+      throw new Error('Project not found');
+    }
+
+    // Log the original workplan before any changes
+    console.log(
+      'ORIGINAL PROJECT WORKPLAN:',
+      currentProject.workPlan.map(item => ({
+        espUserId: item.espUserId,
+        espName: item.espName,
+        activity: item.activity,
+        hasSignature: !!item.signature,
+        signedAt: item.signedAt
+      }))
+    );
+
+    // If we need to preserve signatures and there's workPlan data
+    if (
+      shouldPreserveSignatures &&
+      projectData.workPlan &&
+      projectData.workPlan.length > 0 &&
+      currentProject.workPlan
+    ) {
+      console.log('Preserving signatures during update...');
+
+      // Create a map of workPlan items by espUserId for easy lookup
+      const signatureMap = {};
+
+      currentProject.workPlan.forEach(item => {
+        if (item.espUserId && (item.signature || item.signedAt)) {
+          signatureMap[item.espUserId] = {
+            signature: item.signature,
+            signedAt: item.signedAt
+          };
+          console.log(`Found existing signature for ESP ID ${item.espUserId} (${item.espName})`);
+        }
+      });
+
+      console.log('Signature map keys:', Object.keys(signatureMap));
+
+      // Update the incoming workPlan data to keep signatures
+      projectData.workPlan = projectData.workPlan.map(item => {
+        // If the ESP user already signed this workplan item, preserve the signature
+        if (item.espUserId && signatureMap[item.espUserId]) {
+          console.log(`Preserving signature for ESP ID ${item.espUserId} (${item.espName})`);
+          return {
+            ...item,
+            signature: signatureMap[item.espUserId].signature,
+            signedAt: signatureMap[item.espUserId].signedAt
+          };
+        }
+        console.log(`No existing signature found for ESP ID ${item.espUserId} (${item.espName})`);
+        return item;
+      });
+
+      console.log(
+        'UPDATED WORKPLAN WITH PRESERVED SIGNATURES:',
+        projectData.workPlan.map(item => ({
+          espUserId: item.espUserId,
+          espName: item.espName,
+          hasSignature: !!item.signature,
+          signedAt: item.signedAt
+        }))
+      );
+    } else {
+      console.log('Skipping signature preservation - condition not met');
+      if (!shouldPreserveSignatures) console.log('Reason: preserveSignatures flag not set');
+      if (!projectData.workPlan) console.log('Reason: workPlan is not defined');
+      if (projectData.workPlan && projectData.workPlan.length === 0)
+        console.log('Reason: workPlan is empty');
+    }
+
+    // Instead of using findByIdAndUpdate, we'll directly update the current project object
+    // and save it to ensure all data is properly merged
+
+    // Update all fields from projectData
+    Object.keys(projectData).forEach(key => {
+      currentProject[key] = projectData[key];
+    });
+
+    // Save the updated project
+    console.log('Saving updated project with preserved signatures...');
+    await currentProject.save();
+
+    // Reload the project to verify the changes
+    const finalProject = await this.findById(projectId);
+
+    // Verify signatures were preserved
+    if (finalProject.workPlan && finalProject.workPlan.length > 0) {
+      const signedItems = finalProject.workPlan.filter(item => item.signature);
+      console.log('VERIFICATION: Items with signatures after save:', signedItems.length);
+      signedItems.forEach(item => {
+        console.log(`Verified signature for ${item.espName} (${item.espUserId})`);
+      });
+    }
+
+    console.log('Update complete. Workplan items in result:', finalProject.workPlan.length);
+    console.log('====== END SIGNATURE PRESERVATION DEBUGGER ======');
+
+    return finalProject;
+  } catch (error) {
+    console.error('ERROR in updateWithSignaturePreservation:', error);
+    throw error;
+  }
+};
+
 const Project = mongoose.model('Project', ProjectSchema);
 module.exports = Project;

@@ -163,14 +163,71 @@ exports.getDeactivatedProjects = async (req, res) => {
 // 3. Update operations
 exports.updateProject = async (req, res) => {
   try {
-    const updatedProject = await Project.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    console.log('====== PROJECT UPDATE CONTROLLER DEBUGGER ======');
+    console.log('Project ID:', req.params.id);
+    console.log('Has _preserveSignatures flag:', !!req.body._preserveSignatures);
+    console.log('Request body keys:', Object.keys(req.body));
+    console.log('WorkPlan items in request:', req.body.workPlan?.length || 0);
+
+    if (req.body.workPlan && req.body.workPlan.length > 0) {
+      // Show a sample workplan item to check structure
+      console.log('Sample workplan item (first item):', req.body.workPlan[0]);
+
+      // Check if any workplan items already have signatures (should be none)
+      const itemsWithSignatures = req.body.workPlan.filter(item => item.signature);
+      console.log('Items with signatures in request (should be 0):', itemsWithSignatures.length);
+    }
+
+    let updatedProject;
+
+    // Check if we should preserve signatures
+    if (req.body._preserveSignatures) {
+      console.log('Using custom updateWithSignaturePreservation method');
+
+      try {
+        // Use the custom method that preserves signatures
+        updatedProject = await Project.updateWithSignaturePreservation(req.params.id, req.body);
+        console.log('Successfully executed updateWithSignaturePreservation');
+      } catch (error) {
+        console.error('Error in updateWithSignaturePreservation:', error);
+        // Fallback to regular update if custom method fails
+        console.log('Falling back to standard update method');
+        updatedProject = await Project.findByIdAndUpdate(req.params.id, req.body, { new: true });
+      }
+    } else {
+      console.log('Using standard findByIdAndUpdate method');
+      // Use the standard update method
+      updatedProject = await Project.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    }
 
     if (!updatedProject) {
+      console.log('Project not found with ID:', req.params.id);
       return res.status(404).json({ message: 'Project not found' });
     }
 
+    // Check the resulting workplan to see if any signatures were preserved
+    if (updatedProject.workPlan && updatedProject.workPlan.length > 0) {
+      const signedItems = updatedProject.workPlan.filter(item => item.signature);
+      console.log('Items with signatures in result:', signedItems.length);
+      if (signedItems.length > 0) {
+        console.log('Signature preservation SUCCESS!');
+        signedItems.forEach(item => {
+          console.log('Preserved signature for:', {
+            espName: item.espName,
+            espUserId: item.espUserId,
+            hasSignature: !!item.signature,
+            signedAt: item.signedAt
+          });
+        });
+      } else {
+        console.log('WARNING: No signed items found after update!');
+      }
+    }
+
+    console.log('====== END PROJECT UPDATE CONTROLLER DEBUGGER ======');
     res.status(200).json(updatedProject);
   } catch (error) {
+    console.error('ERROR updating project:', error);
     res.status(500).json({ message: error.message });
   }
 };
