@@ -1,4 +1,19 @@
 const Content = require('../models/content_model');
+const { put } = require('@vercel/blob');
+const multer = require('multer');
+
+// Set up Multer to store files in memory temporarily
+const storage = multer.memoryStorage();
+const upload = multer({
+  storage: storage,
+  limits: { fileSize: 10000000 }, // 10MB limit
+  fileFilter: (req, file, cb) => {
+    if (!file.originalname.match(/\.(jpg|jpeg|png)$/)) {
+      return cb(new Error('Only image files are allowed!'), false);
+    }
+    cb(null, true);
+  }
+});
 
 // Create new content
 const createContent = async (req, res) => {
@@ -86,6 +101,48 @@ const updateContent = async (req, res) => {
   }
 };
 
+// Upload hero background image
+const uploadHeroBackground = async (req, res) => {
+  const imageFile = req.file; // Multer provides the file as req.file
+  const contentId = req.params.id;
+
+  if (!imageFile) {
+    return res.status(400).json({ message: 'No file uploaded' });
+  }
+
+  try {
+    // Upload the image to Vercel Blob
+    const { url } = await put(`hero-backgrounds/${contentId}-${Date.now()}.png`, imageFile.buffer, {
+      access: 'public'
+    });
+
+    // Update MongoDB with the new image URL
+    const content = await Content.findById(contentId);
+
+    if (!content) {
+      return res.status(404).json({ message: 'Content not found' });
+    }
+
+    // Update the hero backgroundImage property
+    if (!content.hero) {
+      content.hero = { backgroundImage: url };
+    } else {
+      content.hero.backgroundImage = url;
+    }
+
+    await content.save();
+
+    res.status(200).json({
+      message: 'Hero background image uploaded successfully',
+      backgroundImageUrl: url,
+      content
+    });
+  } catch (error) {
+    console.error('Error uploading hero background image:', error);
+    res.status(500).json({ message: 'Error uploading hero background image', error });
+  }
+};
+
 // Delete content by ID
 const deleteContent = async (req, res) => {
   try {
@@ -114,5 +171,7 @@ module.exports = {
   getAllContent,
   getContentById,
   updateContent,
-  deleteContent
+  deleteContent,
+  uploadHeroBackground,
+  upload
 };

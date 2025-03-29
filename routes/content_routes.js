@@ -15,6 +15,13 @@ router.get('/:id', contentController.getContentById);
 // Update content by ID
 router.put('/:id', contentController.updateContent);
 
+// Upload hero background image
+router.put(
+  '/upload-hero-background/:id',
+  contentController.upload.single('backgroundImage'),
+  contentController.uploadHeroBackground
+);
+
 // Delete content by ID
 router.delete('/:id', contentController.deleteContent);
 

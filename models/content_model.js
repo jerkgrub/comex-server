@@ -9,13 +9,15 @@ const contentSchema = new mongoose.Schema(
       mobileNumber: { type: String },
       email: { type: String },
       coordinatorName: { type: String },
-      coordinatorAvatar: { type: String }
+      coordinatorAvatar: { type: String },
+      backgroundImage: { type: String }
     },
     hero: {
       tagline: { type: String },
       tagline2: { type: String },
       description: { type: String },
-      caption: { type: String }
+      caption: { type: String },
+      backgroundImage: { type: String }
     }
   },
   { timestamps: true }
