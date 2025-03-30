@@ -1158,7 +1158,11 @@ const revokeResponse = async (req, res) => {
       }
       // If it's a registration form, delete associated registration
       else if (form.formType === 'registration') {
-        await Registration.deleteMany({ response: responseId });
+        // Delete registration using both response and projectId for safety
+        await Registration.deleteMany({
+          response: responseId,
+          project: response.projectId
+        });
       }
     }
 
@@ -1170,6 +1174,7 @@ const revokeResponse = async (req, res) => {
 
     res.status(200).json({ message: 'Response revoked successfully' });
   } catch (error) {
+    console.error('Error in revokeResponse:', error);
     res.status(500).json({ message: error.message });
   }
 };
