@@ -123,6 +123,49 @@ const notifyAdminsAboutNewUser = async newUser => {
   }
 };
 
+// Notify existing users with a usertype of "Admin" & "ComEx Coordinator" about form response
+const notifyAdminsAboutFormResponse = async (formResponse, form, user, projectTitle = null) => {
+  try {
+    // Find all users with usertype Admin or ComEx Coordinator
+    const adminsAndCoordinators = await User.find({
+      usertype: { $in: ['Admin', 'ComEx Coordinator'] },
+      isApproved: true,
+      isActivated: true
+    });
+
+    let message = '';
+    if (projectTitle) {
+      message = `New form response: ${user.firstName} ${user.lastName} submitted "${form.name}" for project "${projectTitle}"`;
+    } else {
+      message = `New form response: ${user.firstName} ${user.lastName} submitted "${form.name}"`;
+    }
+
+    // Create notifications for each admin/coordinator
+    const notifications = adminsAndCoordinators.map(admin => ({
+      recipient: admin._id,
+      message: message,
+      type: 'info',
+      data: {
+        responseId: formResponse._id,
+        formId: form._id,
+        formName: form.name,
+        userId: user._id,
+        userName: `${user.firstName} ${user.lastName}`,
+        projectId: formResponse.projectId || null,
+        projectTitle: projectTitle || null,
+        notificationType: 'form_response'
+      }
+    }));
+
+    // Insert all notifications
+    if (notifications.length > 0) {
+      await Notification.insertMany(notifications);
+    }
+  } catch (error) {
+    console.error('Error creating form response notifications:', error);
+  }
+};
+
 // Notify project creator about workplan signing
 const notifyProjectCreatorAboutWorkplanSigning = async (project, signerName, activity, role) => {
   try {
@@ -187,6 +230,7 @@ const notifyProjectCreatorAboutApproval = async (project, approvalType, approver
 
 module.exports = {
   notifyAdminsAboutNewUser,
+  notifyAdminsAboutFormResponse,
   getNotificationsForUser,
   getUnreadNotificationsForUser,
   getUnreadNotificationsCountForUser,
