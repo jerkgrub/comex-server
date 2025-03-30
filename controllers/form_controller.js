@@ -1137,6 +1137,9 @@ const denyResponse = async (req, res) => {
 const revokeResponse = async (req, res) => {
   try {
     const { responseId } = req.params;
+    const { formType } = req.body; // Get the formType from the request body
+
+    console.log(`Revoking response ${responseId}, formType provided: ${formType}`);
 
     // Find the response
     const response = await Response.findById(responseId);
@@ -1146,26 +1149,20 @@ const revokeResponse = async (req, res) => {
 
     // If response was approved, handle cleanup based on form type
     if (response.status === 'approved') {
-      // Get the form to determine its type
-      const form = await Form.findById(response.form);
-      if (!form) {
-        return res.status(404).json({ message: 'Associated form not found' });
-      }
+      // Override form type from the request if provided, otherwise fetch it from DB
+      const providedFormType = formType; // Save it for later
 
-      // If it's an evaluation form, delete associated credit
-      if (form.formType === 'evaluation') {
-        console.log(`Deleting credits for response: ${responseId}`);
+      if (providedFormType === 'evaluation') {
+        // If frontend explicitly says it's an evaluation, delete credits
+        console.log(`Deleting credits for evaluation response: ${responseId}`);
         await Credit.deleteMany({ response: responseId });
-      }
-      // If it's a registration form, delete associated registration
-      else if (form.formType === 'registration') {
+      } else if (providedFormType === 'registration') {
+        // If frontend explicitly says it's a registration, delete registrations
         if (response.respondent && response.respondent.user && response.projectId) {
           const userId = response.respondent.user;
           const projectId = response.projectId;
 
-          console.log(
-            `Attempting to delete registration for user ${userId} and project ${projectId}`
-          );
+          console.log(`Deleting registration for user ${userId} and project ${projectId}`);
 
           // Get all registrations that match this user and project
           const registrations = await Registration.find({
@@ -1180,16 +1177,45 @@ const revokeResponse = async (req, res) => {
             console.log(`Deleting registration with ID: ${reg._id}`);
             await Registration.findByIdAndDelete(reg._id);
           }
-
-          // As a backup, also try to delete by response ID
-          await Registration.deleteMany({ response: responseId });
         } else {
           console.log(`Cannot delete registration: missing user or project information`);
+        }
+      } else {
+        // If no specific form type provided, try to determine from the form
+        const form = await Form.findById(response.form);
+        if (form) {
+          if (form.formType === 'evaluation') {
+            console.log(`Deleting credits for response based on form type: ${responseId}`);
+            await Credit.deleteMany({ response: responseId });
+          } else if (form.formType === 'registration') {
+            if (response.respondent && response.respondent.user && response.projectId) {
+              const userId = response.respondent.user;
+              const projectId = response.projectId;
+
+              console.log(
+                `Deleting registration based on form type for user ${userId} and project ${projectId}`
+              );
+
+              // Get all registrations that match this user and project
+              const registrations = await Registration.find({
+                user: userId,
+                project: projectId
+              });
+
+              console.log(`Found ${registrations.length} registration(s) to delete`);
+
+              // Delete each registration individually to ensure it works
+              for (const reg of registrations) {
+                console.log(`Deleting registration with ID: ${reg._id}`);
+                await Registration.findByIdAndDelete(reg._id);
+              }
+            }
+          }
         }
       }
     }
 
-    // Update response status to pending (not denied)
+    // Update response status to pending
     await Response.findByIdAndUpdate(responseId, {
       status: 'pending',
       deniedReason: null
