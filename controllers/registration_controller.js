@@ -2,6 +2,8 @@ const Registration = require('../models/registration_model');
 const Project = require('../models/project_model');
 const Response = require('../models/response_model');
 const User = require('../models/user_model');
+const mongoose = require('mongoose');
+const { notifyUserAboutWorkplanAssignment } = require('./notification_controller');
 
 // Helper function to create a new user if they don't exist
 const ensureUserExists = async (email, name) => {
@@ -93,16 +95,25 @@ exports.createRegistrationFromResponse = async (req, res) => {
 
     // Update the project's workPlan if needed
     if (addToWorkPlan) {
-      await Project.findByIdAndUpdate(projectId, {
-        $push: {
-          workPlan: {
-            activity: 'Participant',
-            espName: user.name || response.respondent.name || 'Unknown',
-            role: role || 'Participant',
-            hoursReceived: hoursToRender || 0
-          }
+      const workplanItem = {
+        activity: 'Participant',
+        espName: user.name || response.respondent.name || user.firstName + ' ' + user.lastName || 'Unknown',
+        espUserId: user._id.toString(), // Make sure we store the user ID for notifications
+        role: role || 'Participant',
+        hoursReceived: hoursToRender || 0
+      };
+
+      const updatedProject = await Project.findByIdAndUpdate(projectId, { $push: { workPlan: workplanItem } }, { new: true });
+
+      // Notify the user they've been added to the workplan
+      try {
+        if (updatedProject) {
+          await notifyUserAboutWorkplanAssignment(updatedProject, workplanItem);
         }
-      });
+      } catch (notificationError) {
+        console.error('Error sending workplan assignment notification:', notificationError);
+        // Don't fail the registration if notification fails
+      }
     }
 
     res.status(201).json(savedRegistration);
@@ -114,10 +125,7 @@ exports.createRegistrationFromResponse = async (req, res) => {
 // Get all registrations
 exports.getAllRegistrations = async (req, res) => {
   try {
-    const registrations = await Registration.find()
-      .populate('user', 'name email')
-      .populate('project', 'title')
-      .populate('response');
+    const registrations = await Registration.find().populate('user', 'name email').populate('project', 'title').populate('response');
 
     res.status(200).json(registrations);
   } catch (error) {
@@ -128,9 +136,7 @@ exports.getAllRegistrations = async (req, res) => {
 // Get registrations by project
 exports.getRegistrationsByProject = async (req, res) => {
   try {
-    const registrations = await Registration.find({ project: req.params.projectId })
-      .populate('user', 'name email')
-      .populate('response');
+    const registrations = await Registration.find({ project: req.params.projectId }).populate('user', 'name email').populate('response');
 
     res.status(200).json(registrations);
   } catch (error) {
@@ -141,9 +147,7 @@ exports.getRegistrationsByProject = async (req, res) => {
 // Get registrations by user
 exports.getRegistrationsByUser = async (req, res) => {
   try {
-    const registrations = await Registration.find({ user: req.params.userId })
-      .populate('project', 'title')
-      .populate('response');
+    const registrations = await Registration.find({ user: req.params.userId }).populate('project', 'title').populate('response');
 
     res.status(200).json(registrations);
   } catch (error) {
@@ -186,11 +190,7 @@ exports.deleteRegistration = async (req, res) => {
 // Mark registration as completed
 exports.completeRegistration = async (req, res) => {
   try {
-    const registration = await Registration.findByIdAndUpdate(
-      req.params.id,
-      { status: 'completed' },
-      { new: true }
-    );
+    const registration = await Registration.findByIdAndUpdate(req.params.id, { status: 'completed' }, { new: true });
 
     if (!registration) {
       return res.status(404).json({ message: 'Registration not found' });

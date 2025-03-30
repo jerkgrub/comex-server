@@ -135,7 +135,7 @@ const notifyAdminsAboutFormResponse = async (formResponse, form, user, projectTi
 
     let message = '';
     if (projectTitle) {
-      message = `New form response: ${user.firstName} ${user.lastName} submitted a response for project "${projectTitle}"`;
+      message = `New form response: ${user.firstName} ${user.lastName} submitted "${form.name}" for project "${projectTitle}"`;
     } else {
       message = `New form response: ${user.firstName} ${user.lastName} submitted "${form.name}"`;
     }
@@ -163,6 +163,40 @@ const notifyAdminsAboutFormResponse = async (formResponse, form, user, projectTi
     }
   } catch (error) {
     console.error('Error creating form response notifications:', error);
+  }
+};
+
+// Notify users when added to a project workplan
+const notifyUserAboutWorkplanAssignment = async (project, workplanItem) => {
+  try {
+    if (!workplanItem.espUserId) {
+      console.error('No user ID provided for workplan notification');
+      return;
+    }
+
+    const user = await User.findById(workplanItem.espUserId);
+    if (!user) {
+      console.error(`User not found with ID: ${workplanItem.espUserId}`);
+      return;
+    }
+
+    const notification = {
+      recipient: workplanItem.espUserId,
+      message: `You've been added to the workplan for project "${project.title}" as ${workplanItem.role} (${workplanItem.activity}). Please sign the workplan.`,
+      type: 'info',
+      data: {
+        projectId: project._id,
+        title: project.title,
+        role: workplanItem.role,
+        activity: workplanItem.activity,
+        hoursReceived: workplanItem.hoursReceived,
+        notificationType: 'workplan_assignment'
+      }
+    };
+
+    await Notification.create(notification);
+  } catch (error) {
+    console.error('Error creating workplan assignment notification:', error);
   }
 };
 
@@ -231,6 +265,7 @@ const notifyProjectCreatorAboutApproval = async (project, approvalType, approver
 module.exports = {
   notifyAdminsAboutNewUser,
   notifyAdminsAboutFormResponse,
+  notifyUserAboutWorkplanAssignment,
   getNotificationsForUser,
   getUnreadNotificationsForUser,
   getUnreadNotificationsCountForUser,

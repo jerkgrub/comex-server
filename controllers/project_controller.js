@@ -1,6 +1,6 @@
 const Project = require('../models/project_model');
 const User = require('../models/user_model');
-const { notifyProjectCreatorAboutWorkplanSigning, notifyProjectCreatorAboutApproval } = require('./notification_controller');
+const { notifyProjectCreatorAboutWorkplanSigning, notifyProjectCreatorAboutApproval, notifyUserAboutWorkplanAssignment } = require('./notification_controller');
 
 // const isFullyApproved = doc.isApproved.byExecutiveDirector.approved; //check if the project is fully approved
 
@@ -171,6 +171,13 @@ exports.updateProject = async (req, res) => {
     console.log('Request body keys:', Object.keys(req.body));
     console.log('WorkPlan items in request:', req.body.workPlan?.length || 0);
 
+    // Store original project workplan to compare after update
+    let originalWorkPlan = [];
+    const originalProject = await Project.findById(req.params.id);
+    if (originalProject && originalProject.workPlan) {
+      originalWorkPlan = originalProject.workPlan.map(item => item.espUserId).filter(Boolean);
+    }
+
     if (req.body.workPlan && req.body.workPlan.length > 0) {
       // Show a sample workplan item to check structure
       console.log('Sample workplan item (first item):', req.body.workPlan[0]);
@@ -223,6 +230,22 @@ exports.updateProject = async (req, res) => {
         });
       } else {
         console.log('WARNING: No signed items found after update!');
+      }
+
+      // Send notifications to users who were added to the workplan
+      try {
+        const newWorkPlanUsers = updatedProject.workPlan
+          .filter(item => item.espUserId && !originalWorkPlan.includes(item.espUserId))
+          .filter(item => !item.signature); // Only notify users who haven't already signed
+
+        console.log(`Sending notifications to ${newWorkPlanUsers.length} new workplan users`);
+
+        for (const workplanItem of newWorkPlanUsers) {
+          await notifyUserAboutWorkplanAssignment(updatedProject, workplanItem);
+        }
+      } catch (notificationError) {
+        console.error('Error sending workplan assignment notifications:', notificationError);
+        // Don't fail the update if notifications fail
       }
     }
 
