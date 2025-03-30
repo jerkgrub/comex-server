@@ -34,6 +34,7 @@ const contentRoutes = require('./routes/content_routes');
 const formRoutes = require('./routes/form_routes');
 const registrationRoutes = require('./routes/registration_routes');
 const testRoutes = require('./practice/test_controller');
+const externalCreditingRoutes = require('./routes/external_crediting_routes');
 
 // user
 app.use('/api', userRoutes);
@@ -51,6 +52,9 @@ app.use('/api/registration', registrationRoutes);
 
 // content
 app.use('/api/content', contentRoutes);
+
+// External crediting routes
+app.use('/api/external-crediting', externalCreditingRoutes);
 
 // OTP Routes
 app.post('/api/auth/forgot-password', async (req, res) => {
