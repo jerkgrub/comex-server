@@ -1,4 +1,6 @@
 const Project = require('../models/project_model');
+const User = require('../models/user_model');
+const { notifyProjectCreatorAboutWorkplanSigning, notifyProjectCreatorAboutApproval } = require('./notification_controller');
 
 // const isFullyApproved = doc.isApproved.byExecutiveDirector.approved; //check if the project is fully approved
 
@@ -235,126 +237,245 @@ exports.updateProject = async (req, res) => {
 // Approval functions
 exports.approveProjectByRepresentative = async (req, res) => {
   try {
-    const project = await Project.findByIdAndUpdate(
-      req.params.id,
-      { 'isApproved.byRepresentative': true },
-      { new: true }
-    );
+    // Get current user info (if any)
+    const userId = req.user ? req.user._id : null;
+    let approverName = 'Representative';
+
+    if (req.user) {
+      approverName = `${req.user.firstName || ''} ${req.user.lastName || ''}`.trim();
+      if (!approverName) approverName = 'Representative';
+    }
+
+    const project = await Project.findById(req.params.id);
 
     if (!project) {
       return res.status(404).json({ message: 'Project not found' });
     }
 
+    // Update approval data
+    project.isApproved.byRepresentative.approved = true;
+    project.isApproved.byRepresentative.approvedOn = new Date();
+    project.isApproved.byRepresentative.approvedBy = userId;
+
+    // Save changes
+    await project.save();
+
+    // Notify project creator
+    await notifyProjectCreatorAboutApproval(project, 'byRepresentative', approverName);
+
     res.status(200).json(project);
   } catch (error) {
+    console.error('Error approving project by representative:', error);
     res.status(500).json({ message: error.message });
   }
 };
 
 exports.approveProjectByDean = async (req, res) => {
   try {
-    const project = await Project.findByIdAndUpdate(
-      req.params.id,
-      { 'isApproved.byDean': true },
-      { new: true }
-    );
+    // Get current user info (if any)
+    const userId = req.user ? req.user._id : null;
+    let approverName = 'Dean';
+
+    if (req.user) {
+      approverName = `${req.user.firstName || ''} ${req.user.lastName || ''}`.trim();
+      if (!approverName) approverName = 'Dean';
+    }
+
+    const project = await Project.findById(req.params.id);
 
     if (!project) {
       return res.status(404).json({ message: 'Project not found' });
     }
 
+    // Update approval data
+    project.isApproved.byDean.approved = true;
+    project.isApproved.byDean.approvedOn = new Date();
+    project.isApproved.byDean.approvedBy = userId;
+
+    // Save changes
+    await project.save();
+
+    // Notify project creator
+    await notifyProjectCreatorAboutApproval(project, 'byDean', approverName);
+
     res.status(200).json(project);
   } catch (error) {
+    console.error('Error approving project by dean:', error);
     res.status(500).json({ message: error.message });
   }
 };
 
 exports.approveProjectByGeneralAccountingSupervisor = async (req, res) => {
   try {
-    const project = await Project.findByIdAndUpdate(
-      req.params.id,
-      { 'isApproved.byGeneralAccountingSupervisor': true },
-      { new: true }
-    );
+    // Get current user info (if any)
+    const userId = req.user ? req.user._id : null;
+    let approverName = 'General Accounting Supervisor';
+
+    if (req.user) {
+      approverName = `${req.user.firstName || ''} ${req.user.lastName || ''}`.trim();
+      if (!approverName) approverName = 'General Accounting Supervisor';
+    }
+
+    const project = await Project.findById(req.params.id);
 
     if (!project) {
       return res.status(404).json({ message: 'Project not found' });
     }
 
+    // Update approval data
+    project.isApproved.byGeneralAccountingSupervisor.approved = true;
+    project.isApproved.byGeneralAccountingSupervisor.approvedOn = new Date();
+    project.isApproved.byGeneralAccountingSupervisor.approvedBy = userId;
+
+    // Save changes
+    await project.save();
+
+    // Notify project creator
+    await notifyProjectCreatorAboutApproval(project, 'byGeneralAccountingSupervisor', approverName);
+
     res.status(200).json(project);
   } catch (error) {
+    console.error('Error approving project by general accounting supervisor:', error);
     res.status(500).json({ message: error.message });
   }
 };
 
 exports.approveProjectByComexCoordinator = async (req, res) => {
   try {
-    const project = await Project.findByIdAndUpdate(
-      req.params.id,
-      { 'isApproved.byComexCoordinator': true },
-      { new: true }
-    );
+    // Get current user info (if any)
+    const userId = req.user ? req.user._id : null;
+    let approverName = 'ComEx Coordinator';
+
+    if (req.user) {
+      approverName = `${req.user.firstName || ''} ${req.user.lastName || ''}`.trim();
+      if (!approverName) approverName = 'ComEx Coordinator';
+    }
+
+    const project = await Project.findById(req.params.id);
 
     if (!project) {
       return res.status(404).json({ message: 'Project not found' });
     }
 
+    // Update approval data
+    project.isApproved.byComexCoordinator.approved = true;
+    project.isApproved.byComexCoordinator.approvedOn = new Date();
+    project.isApproved.byComexCoordinator.approvedBy = userId;
+
+    // Save changes
+    await project.save();
+
+    // Notify project creator
+    await notifyProjectCreatorAboutApproval(project, 'byComexCoordinator', approverName);
+
     res.status(200).json(project);
   } catch (error) {
+    console.error('Error approving project by ComEx coordinator:', error);
     res.status(500).json({ message: error.message });
   }
 };
 
 exports.approveProjectByAcademicServicesDirector = async (req, res) => {
   try {
-    const project = await Project.findByIdAndUpdate(
-      req.params.id,
-      { 'isApproved.byAcademicServicesDirector': true },
-      { new: true }
-    );
+    // Get current user info (if any)
+    const userId = req.user ? req.user._id : null;
+    let approverName = 'Academic Services Director';
+
+    if (req.user) {
+      approverName = `${req.user.firstName || ''} ${req.user.lastName || ''}`.trim();
+      if (!approverName) approverName = 'Academic Services Director';
+    }
+
+    const project = await Project.findById(req.params.id);
 
     if (!project) {
       return res.status(404).json({ message: 'Project not found' });
     }
 
+    // Update approval data
+    project.isApproved.byAcademicServicesDirector.approved = true;
+    project.isApproved.byAcademicServicesDirector.approvedOn = new Date();
+    project.isApproved.byAcademicServicesDirector.approvedBy = userId;
+
+    // Save changes
+    await project.save();
+
+    // Notify project creator
+    await notifyProjectCreatorAboutApproval(project, 'byAcademicServicesDirector', approverName);
+
     res.status(200).json(project);
   } catch (error) {
+    console.error('Error approving project by academic services director:', error);
     res.status(500).json({ message: error.message });
   }
 };
 
 exports.approveProjectByAcademicDirector = async (req, res) => {
   try {
-    const project = await Project.findByIdAndUpdate(
-      req.params.id,
-      { 'isApproved.byAcademicDirector': true },
-      { new: true }
-    );
+    // Get current user info (if any)
+    const userId = req.user ? req.user._id : null;
+    let approverName = 'Academic Director';
+
+    if (req.user) {
+      approverName = `${req.user.firstName || ''} ${req.user.lastName || ''}`.trim();
+      if (!approverName) approverName = 'Academic Director';
+    }
+
+    const project = await Project.findById(req.params.id);
 
     if (!project) {
       return res.status(404).json({ message: 'Project not found' });
     }
 
+    // Update approval data
+    project.isApproved.byAcademicDirector.approved = true;
+    project.isApproved.byAcademicDirector.approvedOn = new Date();
+    project.isApproved.byAcademicDirector.approvedBy = userId;
+
+    // Save changes
+    await project.save();
+
+    // Notify project creator
+    await notifyProjectCreatorAboutApproval(project, 'byAcademicDirector', approverName);
+
     res.status(200).json(project);
   } catch (error) {
+    console.error('Error approving project by academic director:', error);
     res.status(500).json({ message: error.message });
   }
 };
 
 exports.approveProjectByExecutiveDirector = async (req, res) => {
   try {
-    const project = await Project.findByIdAndUpdate(
-      req.params.id,
-      { 'isApproved.byExecutiveDirector': true },
-      { new: true }
-    );
+    // Get current user info (if any)
+    const userId = req.user ? req.user._id : null;
+    let approverName = 'Executive Director';
+
+    if (req.user) {
+      approverName = `${req.user.firstName || ''} ${req.user.lastName || ''}`.trim();
+      if (!approverName) approverName = 'Executive Director';
+    }
+
+    const project = await Project.findById(req.params.id);
 
     if (!project) {
       return res.status(404).json({ message: 'Project not found' });
     }
 
+    // Update approval data
+    project.isApproved.byExecutiveDirector.approved = true;
+    project.isApproved.byExecutiveDirector.approvedOn = new Date();
+    project.isApproved.byExecutiveDirector.approvedBy = userId;
+
+    // Save changes
+    await project.save();
+
+    // Notify project creator
+    await notifyProjectCreatorAboutApproval(project, 'byExecutiveDirector', approverName);
+
     res.status(200).json(project);
   } catch (error) {
+    console.error('Error approving project by executive director:', error);
     res.status(500).json({ message: error.message });
   }
 };
@@ -362,11 +483,7 @@ exports.approveProjectByExecutiveDirector = async (req, res) => {
 // 4. Soft-delete operations
 exports.deactivateProject = async (req, res) => {
   try {
-    const project = await Project.findByIdAndUpdate(
-      req.params.id,
-      { isActivated: false },
-      { new: true }
-    );
+    const project = await Project.findByIdAndUpdate(req.params.id, { isActivated: false }, { new: true });
 
     if (!project) {
       return res.status(404).json({ message: 'Project not found' });
@@ -380,11 +497,7 @@ exports.deactivateProject = async (req, res) => {
 
 exports.restoreProject = async (req, res) => {
   try {
-    const project = await Project.findByIdAndUpdate(
-      req.params.id,
-      { isActivated: true },
-      { new: true }
-    );
+    const project = await Project.findByIdAndUpdate(req.params.id, { isActivated: true }, { new: true });
 
     if (!project) {
       return res.status(404).json({ message: 'Project not found' });
@@ -475,8 +588,18 @@ exports.signWorkplanEntry = async (req, res) => {
     workPlanEntry.signature = signature;
     workPlanEntry.signedAt = new Date();
 
+    // Get the user info for notification
+    const signer = await User.findById(userId);
+    let signerName = workPlanEntry.espName;
+    if (signer) {
+      signerName = `${signer.firstName} ${signer.lastName}`;
+    }
+
     // Save the project
     await project.save();
+
+    // Send notification to project creator
+    await notifyProjectCreatorAboutWorkplanSigning(project, signerName, workPlanEntry.activity, workPlanEntry.role);
 
     res.status(200).json(project);
   } catch (error) {

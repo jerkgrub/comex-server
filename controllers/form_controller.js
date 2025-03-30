@@ -8,6 +8,9 @@ const Credit = require('../models/credit_model');
 const ProjectForm = require('../models/project_form_model');
 const Project = require('../models/project_model');
 const User = require('../models/user_model');
+const { Parser } = require('json2csv');
+const { format } = require('date-fns');
+const { notifyAdminsAboutFormResponse } = require('./notification_controller');
 
 // Set up Multer to store files in memory temporarily
 const storage = multer.memoryStorage();
@@ -23,13 +26,7 @@ const upload = multer({
 // Form CRUD operations
 const createForm = async (req, res) => {
   try {
-    const {
-      title,
-      description,
-      questions = [],
-      isActivated = true,
-      formType = 'ORIGINAL'
-    } = req.body;
+    const { title, description, questions = [], isActivated = true, formType = 'ORIGINAL' } = req.body;
 
     // No need to generate IDs for questions as MongoDB will do it
     const form = new Form({
@@ -50,9 +47,7 @@ const createForm = async (req, res) => {
 
 const getAllForms = async (req, res) => {
   try {
-    const forms = await Form.find()
-      .select('title description isPublished isActivated formType createdAt updatedAt')
-      .sort({ updatedAt: -1 });
+    const forms = await Form.find().select('title description isPublished isActivated formType createdAt updatedAt').sort({ updatedAt: -1 });
 
     res.status(200).json(forms);
   } catch (error) {
@@ -77,8 +72,7 @@ const getFormById = async (req, res) => {
 
 const updateForm = async (req, res) => {
   try {
-    const { title, description, questions, settings, isPublished, credits, isActivated, formType } =
-      req.body;
+    const { title, description, questions, settings, isPublished, credits, isActivated, formType } = req.body;
 
     const form = await Form.findById(req.params.formId);
 
@@ -202,9 +196,7 @@ const submitForm = async (req, res) => {
     if (form.settings?.maxResponses > 0) {
       const responseCount = await Response.countDocuments({ form: formId });
       if (responseCount >= form.settings.maxResponses) {
-        return res
-          .status(403)
-          .json({ message: 'This form has reached its maximum response limit' });
+        return res.status(403).json({ message: 'This form has reached its maximum response limit' });
       }
     }
 
@@ -214,9 +206,7 @@ const submitForm = async (req, res) => {
     // Convert string questionIds to ObjectIds for validation
     const answeredQuestions = answers.map(a => a.questionId);
 
-    const missingRequiredQuestions = requiredQuestions.filter(
-      qId => !answeredQuestions.includes(qId)
-    );
+    const missingRequiredQuestions = requiredQuestions.filter(qId => !answeredQuestions.includes(qId));
 
     if (missingRequiredQuestions.length > 0) {
       return res.status(400).json({
@@ -295,8 +285,35 @@ const submitForm = async (req, res) => {
     }
 
     const response = new Response(responseData);
-
     await response.save();
+
+    // Send notification to admins and coordinators
+    try {
+      let user = null;
+      let projectTitle = null;
+
+      // Try to get user info
+      if (respondent && respondent.user) {
+        user = await User.findById(respondent.user);
+      } else if (respondent && respondent.email) {
+        user = await User.findOne({ email: respondent.email });
+      }
+
+      // Try to get project info if this form is linked to a project
+      if (form.projectId) {
+        const project = await Project.findById(form.projectId);
+        if (project) {
+          projectTitle = project.title;
+        }
+      }
+
+      if (user) {
+        await notifyAdminsAboutFormResponse(response, form, user, projectTitle);
+      }
+    } catch (notificationError) {
+      console.error('Error sending form response notification:', notificationError);
+      // Continue processing - don't fail because of notification issue
+    }
 
     res.status(201).json({
       message: form.settings?.confirmationMessage || 'Your response has been recorded.',
@@ -511,11 +528,7 @@ const exportFormData = async (req, res) => {
       });
 
       const rows = responses.map(resp => {
-        const row = [
-          resp._id.toString(),
-          resp.createdAt.toISOString(),
-          resp.respondent?.email || ''
-        ];
+        const row = [resp._id.toString(), resp.createdAt.toISOString(), resp.respondent?.email || ''];
 
         // Add question answers
         form.questions.forEach(q => {
@@ -626,6 +639,35 @@ const submitFormWithProjectContext = async (req, res) => {
     });
 
     const savedResponse = await response.save();
+
+    // Send notification to admins and coordinators
+    try {
+      let user = null;
+      let projectTitle = null;
+
+      // Try to get user info
+      if (respondent && respondent.user) {
+        user = await User.findById(respondent.user);
+      } else if (respondent && respondent.email) {
+        user = await User.findOne({ email: respondent.email });
+      }
+
+      // Try to get project info
+      if (projectId) {
+        const project = await Project.findById(projectId);
+        if (project) {
+          projectTitle = project.title;
+        }
+      }
+
+      if (user) {
+        await notifyAdminsAboutFormResponse(savedResponse, form, user, projectTitle);
+      }
+    } catch (notificationError) {
+      console.error('Error sending form response notification:', notificationError);
+      // Continue processing - don't fail because of notification issue
+    }
+
     res.status(201).json({
       message: 'Form submitted successfully with project context',
       response: savedResponse
@@ -660,9 +702,7 @@ const linkFormToProject = async (req, res) => {
     });
 
     if (existingLink) {
-      return res
-        .status(400)
-        .json({ message: 'This form is already linked to the project with this type' });
+      return res.status(400).json({ message: 'This form is already linked to the project with this type' });
     }
 
     // Update the form's projectId if it's not already set
@@ -688,9 +728,7 @@ const linkFormToProject = async (req, res) => {
 // Get all forms linked to a project
 const getProjectForms = async (req, res) => {
   try {
-    const projectForms = await ProjectForm.find({ projectId: req.params.projectId })
-      .populate('formId', 'title description')
-      .sort({ createdAt: -1 });
+    const projectForms = await ProjectForm.find({ projectId: req.params.projectId }).populate('formId', 'title description').sort({ createdAt: -1 });
 
     res.status(200).json(projectForms);
   } catch (error) {
@@ -809,14 +847,9 @@ const approveResponse = async (req, res) => {
         // Try to convert projectId string to ObjectId for the 'project' field
         try {
           creditData.project = new mongoose.Types.ObjectId(response.projectId);
-          console.log(
-            `[DEBUG] Added projectId as ObjectId to project field: ${response.projectId}`
-          );
+          console.log(`[DEBUG] Added projectId as ObjectId to project field: ${response.projectId}`);
         } catch (err) {
-          console.log(
-            `[DEBUG] Could not convert projectId to ObjectId: ${response.projectId}`,
-            err
-          );
+          console.log(`[DEBUG] Could not convert projectId to ObjectId: ${response.projectId}`, err);
         }
         console.log(`[DEBUG] Adding projectId ${response.projectId} to credit`);
       }
@@ -896,14 +929,9 @@ const approveResponse = async (req, res) => {
         // Try to convert projectId string to ObjectId for the 'project' field
         try {
           creditData.project = new mongoose.Types.ObjectId(response.projectId);
-          console.log(
-            `[DEBUG] Added projectId as ObjectId to project field: ${response.projectId}`
-          );
+          console.log(`[DEBUG] Added projectId as ObjectId to project field: ${response.projectId}`);
         } catch (err) {
-          console.log(
-            `[DEBUG] Could not convert projectId to ObjectId: ${response.projectId}`,
-            err
-          );
+          console.log(`[DEBUG] Could not convert projectId to ObjectId: ${response.projectId}`, err);
         }
         console.log(`[DEBUG] Adding projectId ${response.projectId} to credit`);
       }
@@ -1001,14 +1029,9 @@ const approveResponse = async (req, res) => {
     if (projectForm && projectForm.projectId) {
       try {
         creditData.project = new mongoose.Types.ObjectId(projectForm.projectId);
-        console.log(
-          `[DEBUG] Using projectForm.projectId for project field: ${projectForm.projectId}`
-        );
+        console.log(`[DEBUG] Using projectForm.projectId for project field: ${projectForm.projectId}`);
       } catch (err) {
-        console.log(
-          `[DEBUG] Could not convert projectForm.projectId to ObjectId: ${projectForm.projectId}`,
-          err
-        );
+        console.log(`[DEBUG] Could not convert projectForm.projectId to ObjectId: ${projectForm.projectId}`, err);
       }
     }
 
