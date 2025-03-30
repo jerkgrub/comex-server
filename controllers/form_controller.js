@@ -1154,22 +1154,49 @@ const revokeResponse = async (req, res) => {
 
       // If it's an evaluation form, delete associated credit
       if (form.formType === 'evaluation') {
+        console.log(`Deleting credits for response: ${responseId}`);
         await Credit.deleteMany({ response: responseId });
       }
       // If it's a registration form, delete associated registration
       else if (form.formType === 'registration') {
-        // Delete registration using both response and projectId for safety
-        await Registration.deleteMany({
-          response: responseId,
-          project: response.projectId
-        });
+        // Convert string to ObjectId if needed
+        let projectObjId;
+        try {
+          projectObjId = new mongoose.Types.ObjectId(response.projectId);
+        } catch (err) {
+          console.error('Error converting projectId to ObjectId:', err);
+          projectObjId = response.projectId;
+        }
+
+        console.log(
+          `Attempting to delete registration with response: ${responseId}, project: ${response.projectId}`
+        );
+
+        // Try different query combinations to ensure we find the registration
+        const deletionResult = await Registration.deleteMany({ response: responseId });
+
+        console.log(`Registration deletion result:`, deletionResult);
+
+        if (deletionResult.deletedCount === 0) {
+          console.log(`No registrations found with response ID. Trying with user and project...`);
+
+          // If response has user info, try finding by user and project
+          if (response.respondent && response.respondent.user) {
+            const userResult = await Registration.deleteMany({
+              user: response.respondent.user,
+              project: projectObjId
+            });
+
+            console.log(`Secondary deletion by user result:`, userResult);
+          }
+        }
       }
     }
 
-    // Update response status to denied (not pending)
+    // Update response status to pending (not denied)
     await Response.findByIdAndUpdate(responseId, {
-      status: 'denied',
-      deniedReason: 'Response revoked by administrator'
+      status: 'pending',
+      deniedReason: null
     });
 
     res.status(200).json({ message: 'Response revoked successfully' });
