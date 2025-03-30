@@ -85,7 +85,6 @@ exports.createRegistrationFromResponse = async (req, res) => {
       project: projectId,
       response: responseId,
       role: role || 'Participant',
-      hoursToRender: hoursToRender || 0,
       status: 'active'
     });
 
