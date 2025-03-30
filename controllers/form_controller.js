@@ -1159,36 +1159,32 @@ const revokeResponse = async (req, res) => {
       }
       // If it's a registration form, delete associated registration
       else if (form.formType === 'registration') {
-        // Convert string to ObjectId if needed
-        let projectObjId;
-        try {
-          projectObjId = new mongoose.Types.ObjectId(response.projectId);
-        } catch (err) {
-          console.error('Error converting projectId to ObjectId:', err);
-          projectObjId = response.projectId;
-        }
+        if (response.respondent && response.respondent.user && response.projectId) {
+          const userId = response.respondent.user;
+          const projectId = response.projectId;
 
-        console.log(
-          `Attempting to delete registration with response: ${responseId}, project: ${response.projectId}`
-        );
+          console.log(
+            `Attempting to delete registration for user ${userId} and project ${projectId}`
+          );
 
-        // Try different query combinations to ensure we find the registration
-        const deletionResult = await Registration.deleteMany({ response: responseId });
+          // Get all registrations that match this user and project
+          const registrations = await Registration.find({
+            user: userId,
+            project: projectId
+          });
 
-        console.log(`Registration deletion result:`, deletionResult);
+          console.log(`Found ${registrations.length} registration(s) to delete`);
 
-        if (deletionResult.deletedCount === 0) {
-          console.log(`No registrations found with response ID. Trying with user and project...`);
-
-          // If response has user info, try finding by user and project
-          if (response.respondent && response.respondent.user) {
-            const userResult = await Registration.deleteMany({
-              user: response.respondent.user,
-              project: projectObjId
-            });
-
-            console.log(`Secondary deletion by user result:`, userResult);
+          // Delete each registration individually to ensure it works
+          for (const reg of registrations) {
+            console.log(`Deleting registration with ID: ${reg._id}`);
+            await Registration.findByIdAndDelete(reg._id);
           }
+
+          // As a backup, also try to delete by response ID
+          await Registration.deleteMany({ response: responseId });
+        } else {
+          console.log(`Cannot delete registration: missing user or project information`);
         }
       }
     }
