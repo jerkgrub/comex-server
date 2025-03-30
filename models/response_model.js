@@ -52,6 +52,36 @@ const responseSchema = new mongoose.Schema(
     deniedReason: {
       type: String,
       default: null
+    },
+    // External crediting fields
+    creditStatus: {
+      type: String,
+      enum: ['pending', 'approved', 'rejected'],
+      default: 'pending'
+    },
+    creditsAwarded: {
+      type: Number,
+      default: 0
+    },
+    creditComments: {
+      type: String,
+      default: ''
+    },
+    reviewedAt: {
+      type: Date
+    },
+    reviewedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    },
+    // To make it compatible with FormResponse references
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    },
+    formId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Form'
     }
   },
   { timestamps: true }
@@ -60,6 +90,7 @@ const responseSchema = new mongoose.Schema(
 responseSchema.index({ form: 1 });
 responseSchema.index({ 'respondent.email': 1, form: 1 });
 responseSchema.index({ createdAt: -1 });
+responseSchema.index({ formId: 1 });
 
 const Response = mongoose.model('Response', responseSchema);
 module.exports = Response;

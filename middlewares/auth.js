@@ -2,7 +2,8 @@
 const jwt = require('jsonwebtoken');
 require('dotenv').config(); // Load environment variables
 
-const auth = (req, res, next) => {
+// Authentication middleware
+exports.isAuthenticated = (req, res, next) => {
   // Get the token from the Authorization header
   const authHeader = req.headers['authorization'];
 
@@ -27,4 +28,21 @@ const auth = (req, res, next) => {
   }
 };
 
-module.exports = auth;
+// Authorization middleware
+exports.isAuthorized = allowedRoles => {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({ message: 'User not authenticated.' });
+    }
+
+    const { role } = req.user;
+
+    if (allowedRoles.includes(role)) {
+      next();
+    } else {
+      res.status(403).json({
+        message: 'Access denied. You do not have permission to perform this action.'
+      });
+    }
+  };
+};

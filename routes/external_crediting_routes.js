@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const externalCreditingController = require('../controllers/external_crediting_controller');
-const { isAuthenticated, isAuthorized } = require('../middlewares/auth_middleware');
+const { isAuthenticated, isAuthorized } = require('../middlewares/auth');
 
 // Link a form to a category
 router.post(

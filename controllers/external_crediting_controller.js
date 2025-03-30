@@ -1,6 +1,6 @@
 const ExternalCrediting = require('../models/external_crediting_model');
 const Form = require('../models/form_model');
-const FormResponse = require('../models/form_response_model');
+const FormResponse = require('../models/response_model');
 const mongoose = require('mongoose');
 
 // Link a form to a category
@@ -159,8 +159,8 @@ exports.getFormResponsesByCategory = async (req, res) => {
     }
 
     // Get all responses for this form
-    const responses = await FormResponse.find({ formId: linkedForm.formId })
-      .populate('userId', 'firstName lastName email department')
+    const responses = await FormResponse.find({ form: linkedForm.formId })
+      .populate('respondent.user', 'firstName lastName email department')
       .sort({ createdAt: -1 })
       .lean();
 
