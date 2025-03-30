@@ -1147,38 +1147,92 @@ const revokeResponse = async (req, res) => {
       return res.status(404).json({ message: 'Response not found' });
     }
 
+    // Log the response for debugging
+    console.log('Response data:', {
+      id: response._id,
+      status: response.status,
+      respondent: response.respondent,
+      projectId: response.projectId
+    });
+
     // If response was approved, handle cleanup based on form type
     if (response.status === 'approved') {
-      // Override form type from the request if provided, otherwise fetch it from DB
       const providedFormType = formType; // Save it for later
 
       if (providedFormType === 'evaluation') {
         // If frontend explicitly says it's an evaluation, delete credits
         console.log(`Deleting credits for evaluation response: ${responseId}`);
-        await Credit.deleteMany({ response: responseId });
+        const deleteResult = await Credit.deleteMany({ response: responseId });
+        console.log(`Credit deletion result: ${deleteResult.deletedCount} deleted`);
       } else if (providedFormType === 'registration') {
-        // If frontend explicitly says it's a registration, delete registrations
-        if (response.respondent && response.respondent.user && response.projectId) {
-          const userId = response.respondent.user;
-          const projectId = response.projectId;
+        // PRIMARY APPROACH: Try to find the registration by response ID first (most direct)
+        console.log(`Trying to delete registration by response ID: ${responseId}`);
+        const responseObjectId = new mongoose.Types.ObjectId(responseId);
+        const registrationsByResponse = await Registration.find({ response: responseObjectId });
 
-          console.log(`Deleting registration for user ${userId} and project ${projectId}`);
+        console.log(`Found ${registrationsByResponse.length} registrations by response ID`);
 
-          // Get all registrations that match this user and project
-          const registrations = await Registration.find({
-            user: userId,
-            project: projectId
-          });
-
-          console.log(`Found ${registrations.length} registration(s) to delete`);
-
-          // Delete each registration individually to ensure it works
-          for (const reg of registrations) {
+        if (registrationsByResponse.length > 0) {
+          // Delete each found registration
+          for (const reg of registrationsByResponse) {
             console.log(`Deleting registration with ID: ${reg._id}`);
             await Registration.findByIdAndDelete(reg._id);
           }
-        } else {
-          console.log(`Cannot delete registration: missing user or project information`);
+        } else if (response.respondent && response.projectId) {
+          // FALLBACK APPROACH: Try by user & project
+          let userId = response.respondent.user;
+          const projectId = response.projectId;
+
+          if (!userId && response.respondent.email) {
+            // Try to find user by email if no direct ID
+            console.log(`Looking up user by email: ${response.respondent.email}`);
+            try {
+              const user = await User.findOne({ email: response.respondent.email });
+              if (user) {
+                userId = user._id;
+                console.log(`Found user ${userId} by email`);
+              }
+            } catch (err) {
+              console.log(`Error finding user by email: ${err.message}`);
+            }
+          }
+
+          if (userId && projectId) {
+            console.log(`Deleting registration for user ${userId} and project ${projectId}`);
+
+            try {
+              // Ensure we're using ObjectIds
+              const userObjectId = new mongoose.Types.ObjectId(userId.toString());
+              const projectObjectId = new mongoose.Types.ObjectId(projectId.toString());
+
+              // Find all registrations that match this user and project
+              const registrations = await Registration.find({
+                user: userObjectId,
+                project: projectObjectId
+              });
+
+              console.log(`Found ${registrations.length} registration(s) by user/project`);
+
+              // Delete each registration individually
+              for (const reg of registrations) {
+                console.log(`Deleting registration with ID: ${reg._id}`);
+                await Registration.findByIdAndDelete(reg._id);
+              }
+
+              // Double-check deletion
+              const remainingRegs = await Registration.find({
+                user: userObjectId,
+                project: projectObjectId
+              });
+              console.log(`After deletion, ${remainingRegs.length} registrations remain`);
+            } catch (err) {
+              console.error(`Error in registration deletion: ${err.message}`);
+            }
+          } else {
+            console.log(
+              `Cannot delete registration: missing user (${userId}) or project (${projectId}) information`
+            );
+          }
         }
       } else {
         // If no specific form type provided, try to determine from the form
@@ -1188,26 +1242,38 @@ const revokeResponse = async (req, res) => {
             console.log(`Deleting credits for response based on form type: ${responseId}`);
             await Credit.deleteMany({ response: responseId });
           } else if (form.formType === 'registration') {
-            if (response.respondent && response.respondent.user && response.projectId) {
+            // Try the same registration deletion logic as above
+            console.log(`Using form-determined type 'registration' to delete registrations`);
+            const responseObjectId = new mongoose.Types.ObjectId(responseId);
+            const registrationsByResponse = await Registration.find({ response: responseObjectId });
+
+            if (registrationsByResponse.length > 0) {
+              for (const reg of registrationsByResponse) {
+                console.log(`Deleting registration with ID: ${reg._id}`);
+                await Registration.findByIdAndDelete(reg._id);
+              }
+            } else if (response.respondent && response.projectId) {
+              // Try by user & project as fallback
               const userId = response.respondent.user;
               const projectId = response.projectId;
 
-              console.log(
-                `Deleting registration based on form type for user ${userId} and project ${projectId}`
-              );
+              if (userId && projectId) {
+                const userObjectId = new mongoose.Types.ObjectId(userId);
+                const projectObjectId = new mongoose.Types.ObjectId(projectId);
 
-              // Get all registrations that match this user and project
-              const registrations = await Registration.find({
-                user: userId,
-                project: projectId
-              });
+                const registrations = await Registration.find({
+                  user: userObjectId,
+                  project: projectObjectId
+                });
 
-              console.log(`Found ${registrations.length} registration(s) to delete`);
+                console.log(
+                  `Found ${registrations.length} registration(s) to delete by user/project`
+                );
 
-              // Delete each registration individually to ensure it works
-              for (const reg of registrations) {
-                console.log(`Deleting registration with ID: ${reg._id}`);
-                await Registration.findByIdAndDelete(reg._id);
+                for (const reg of registrations) {
+                  console.log(`Deleting registration with ID: ${reg._id}`);
+                  await Registration.findByIdAndDelete(reg._id);
+                }
               }
             }
           }
