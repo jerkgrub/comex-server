@@ -135,7 +135,7 @@ const notifyAdminsAboutFormResponse = async (formResponse, form, user, projectTi
 
     let message = '';
     if (projectTitle) {
-      message = `New form response: ${user.firstName} ${user.lastName} submitted "${form.name}" for project "${projectTitle}"`;
+      message = `New form response: ${user.firstName} ${user.lastName} submitted a response for project "${projectTitle}"`;
     } else {
       message = `New form response: ${user.firstName} ${user.lastName} submitted "${form.name}"`;
     }
