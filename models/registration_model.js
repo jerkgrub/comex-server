@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+                       const mongoose = require('mongoose');
 
 const RegistrationSchema = new mongoose.Schema(
   {
@@ -19,10 +19,6 @@ const RegistrationSchema = new mongoose.Schema(
     role: {
       type: String,
       default: 'Participant'
-    },
-    hoursToRender: {
-      type: Number,
-      default: 0
     },
     registeredAt: {
       type: Date,
