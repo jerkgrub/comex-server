@@ -147,6 +147,7 @@ const ProjectSchema = new mongoose.Schema(
     // ----------------------------------------------------------------------------------------------------------------------------
     // these are now for projects that have engagementType "Institutional"
     // REMOVED: registrationStart, registrationEnd, it will just be common-sense that once the project has been created, it will be available for registration until startDate
+    thumbnail: String,
     // wait muna natin yung wireframe ni ban
     
   },
