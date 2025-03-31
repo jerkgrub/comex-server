@@ -79,7 +79,11 @@ const turnNotificationAsRead = async (req, res) => {
   try {
     const notificationId = req.params.notificationId;
 
-    const notification = await Notification.findByIdAndUpdate(notificationId, { read: true }, { new: true });
+    const notification = await Notification.findByIdAndUpdate(
+      notificationId,
+      { read: true },
+      { new: true }
+    );
 
     if (!notification) {
       return res.status(404).json({ message: 'Notification not found' });
@@ -110,7 +114,8 @@ const notifyAdminsAboutNewUser = async newUser => {
       data: {
         userId: newUser._id,
         userType: newUser.usertype,
-        name: `${newUser.firstName} ${newUser.lastName}`
+        name: `${newUser.firstName} ${newUser.lastName}`,
+        notificationType: 'new_user'
       }
     }));
 
@@ -250,15 +255,15 @@ const notifyProjectCreatorAboutApproval = async (project, approvalType, approver
       data: {
         projectId: project._id,
         title: project.title,
-        approvalType,
         approverName,
+        approvalType,
         notificationType: 'project_approval'
       }
     };
 
     await Notification.create(notification);
   } catch (error) {
-    console.error('Error creating project approval notification:', error);
+    console.error('Error creating approval notification:', error);
   }
 };
 
