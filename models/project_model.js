@@ -1,5 +1,10 @@
 const mongoose = require('mongoose');
 
+// READ ME!
+// projects mainly have 2 types, Institutional and College-Driven,
+// projects that are engagementType "Institutional" are called as projects in the backend, but in the frontend they are called as activities
+// projects that are engagementType "College-Driven" are called as projects in both frontend and backend
+
 const ProjectSchema = new mongoose.Schema(
   {
     isActivated: Boolean, //for soft-deletion
@@ -140,9 +145,10 @@ const ProjectSchema = new mongoose.Schema(
       }
     },
     // ----------------------------------------------------------------------------------------------------------------------------
-    // Registration
+    // these are now for projects that have engagementType "Institutional"
     registrationStart: String,
     registrationEnd: String
+    
   },
 
   { timestamps: true }
