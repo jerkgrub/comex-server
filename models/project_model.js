@@ -103,15 +103,15 @@ const ProjectSchema = new mongoose.Schema(
         approvedBy: String, //userId
         signature: String
       },
-      byGeneralAccountingSupervisor: {
-        // General Accounting Supervisor
+      byComexCoordinator: {
+        // Comex Coordinator
         approved: { type: Boolean, default: false },
         approvedOn: String,
         approvedBy: String, //userId
         signature: String
       },
-      byComexCoordinator: {
-        // Comex Coordinator
+      byGeneralAccountingSupervisor: {
+        // General Accounting Supervisor
         approved: { type: Boolean, default: false },
         approvedOn: String,
         approvedBy: String, //userId

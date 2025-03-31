@@ -1,6 +1,10 @@
 const Project = require('../models/project_model');
 const User = require('../models/user_model');
-const { notifyProjectCreatorAboutWorkplanSigning, notifyProjectCreatorAboutApproval, notifyUserAboutWorkplanAssignment } = require('./notification_controller');
+const {
+  notifyProjectCreatorAboutWorkplanSigning,
+  notifyProjectCreatorAboutApproval,
+  notifyUserAboutWorkplanAssignment
+} = require('./notification_controller');
 
 // const isFullyApproved = doc.isApproved.byExecutiveDirector.approved; //check if the project is fully approved
 
@@ -68,13 +72,13 @@ exports.getApprovedProjectsByProgram = async (req, res) => {
     const projects = await Project.find({
       programId: req.params.programId,
       isActivated: true,
-      'isApproved.byRepresentative': true,
-      'isApproved.byDean': true,
-      'isApproved.byGeneralAccountingSupervisor': true,
-      'isApproved.byComexCoordinator': true,
-      'isApproved.byAcademicServicesDirector': true,
-      'isApproved.byAcademicDirector': true,
-      'isApproved.byExecutiveDirector': true
+      'isApproved.byRepresentative.approved': true,
+      'isApproved.byDean.approved': true,
+      'isApproved.byComexCoordinator.approved': true,
+      'isApproved.byGeneralAccountingSupervisor.approved': true,
+      'isApproved.byAcademicServicesDirector.approved': true,
+      'isApproved.byAcademicDirector.approved': true,
+      'isApproved.byExecutiveDirector.approved': true
     });
     res.status(200).json(projects);
   } catch (error) {
@@ -88,13 +92,13 @@ exports.getPendingProjectsByProgram = async (req, res) => {
       programId: req.params.programId,
       isActivated: true,
       $or: [
-        { 'isApproved.byRepresentative': false },
-        { 'isApproved.byDean': false },
-        { 'isApproved.byGeneralAccountingSupervisor': false },
-        { 'isApproved.byComexCoordinator': false },
-        { 'isApproved.byAcademicServicesDirector': false },
-        { 'isApproved.byAcademicDirector': false },
-        { 'isApproved.byExecutiveDirector': false }
+        { 'isApproved.byRepresentative.approved': false },
+        { 'isApproved.byDean.approved': false },
+        { 'isApproved.byComexCoordinator.approved': false },
+        { 'isApproved.byGeneralAccountingSupervisor.approved': false },
+        { 'isApproved.byAcademicServicesDirector.approved': false },
+        { 'isApproved.byAcademicDirector.approved': false },
+        { 'isApproved.byExecutiveDirector.approved': false }
       ]
     });
     res.status(200).json(projects);
@@ -119,13 +123,13 @@ exports.getApprovedProjects = async (req, res) => {
   try {
     const projects = await Project.find({
       isActivated: true,
-      'isApproved.byRepresentative': true,
-      'isApproved.byDean': true,
-      'isApproved.byGeneralAccountingSupervisor': true,
-      'isApproved.byComexCoordinator': true,
-      'isApproved.byAcademicServicesDirector': true,
-      'isApproved.byAcademicDirector': true,
-      'isApproved.byExecutiveDirector': true
+      'isApproved.byRepresentative.approved': true,
+      'isApproved.byDean.approved': true,
+      'isApproved.byComexCoordinator.approved': true,
+      'isApproved.byGeneralAccountingSupervisor.approved': true,
+      'isApproved.byAcademicServicesDirector.approved': true,
+      'isApproved.byAcademicDirector.approved': true,
+      'isApproved.byExecutiveDirector.approved': true
     });
     res.status(200).json(projects);
   } catch (error) {
@@ -138,13 +142,13 @@ exports.getPendingProjects = async (req, res) => {
     const projects = await Project.find({
       isActivated: true,
       $or: [
-        { 'isApproved.byRepresentative': false },
-        { 'isApproved.byDean': false },
-        { 'isApproved.byGeneralAccountingSupervisor': false },
-        { 'isApproved.byComexCoordinator': false },
-        { 'isApproved.byAcademicServicesDirector': false },
-        { 'isApproved.byAcademicDirector': false },
-        { 'isApproved.byExecutiveDirector': false }
+        { 'isApproved.byRepresentative.approved': false },
+        { 'isApproved.byDean.approved': false },
+        { 'isApproved.byComexCoordinator.approved': false },
+        { 'isApproved.byGeneralAccountingSupervisor.approved': false },
+        { 'isApproved.byAcademicServicesDirector.approved': false },
+        { 'isApproved.byAcademicDirector.approved': false },
+        { 'isApproved.byExecutiveDirector.approved': false }
       ]
     });
     res.status(200).json(projects);
@@ -506,7 +510,11 @@ exports.approveProjectByExecutiveDirector = async (req, res) => {
 // 4. Soft-delete operations
 exports.deactivateProject = async (req, res) => {
   try {
-    const project = await Project.findByIdAndUpdate(req.params.id, { isActivated: false }, { new: true });
+    const project = await Project.findByIdAndUpdate(
+      req.params.id,
+      { isActivated: false },
+      { new: true }
+    );
 
     if (!project) {
       return res.status(404).json({ message: 'Project not found' });
@@ -520,7 +528,11 @@ exports.deactivateProject = async (req, res) => {
 
 exports.restoreProject = async (req, res) => {
   try {
-    const project = await Project.findByIdAndUpdate(req.params.id, { isActivated: true }, { new: true });
+    const project = await Project.findByIdAndUpdate(
+      req.params.id,
+      { isActivated: true },
+      { new: true }
+    );
 
     if (!project) {
       return res.status(404).json({ message: 'Project not found' });
@@ -622,7 +634,12 @@ exports.signWorkplanEntry = async (req, res) => {
     await project.save();
 
     // Send notification to project creator
-    await notifyProjectCreatorAboutWorkplanSigning(project, signerName, workPlanEntry.activity, workPlanEntry.role);
+    await notifyProjectCreatorAboutWorkplanSigning(
+      project,
+      signerName,
+      workPlanEntry.activity,
+      workPlanEntry.role
+    );
 
     res.status(200).json(project);
   } catch (error) {

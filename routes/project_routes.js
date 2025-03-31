@@ -30,11 +30,11 @@ router.put('/:id', projectController.updateProject);
 // Approval system (basically just setting their respective isApproved field to true)
 router.put('/approve/by-representative/:id', projectController.approveProjectByRepresentative);
 router.put('/approve/by-dean/:id', projectController.approveProjectByDean);
+router.put('/approve/by-comex-coordinator/:id', projectController.approveProjectByComexCoordinator);
 router.put(
   '/approve/by-general-accounting-supervisor/:id',
   projectController.approveProjectByGeneralAccountingSupervisor
 );
-router.put('/approve/by-comex-coordinator/:id', projectController.approveProjectByComexCoordinator);
 router.put(
   '/approve/by-academic-services-director/:id',
   projectController.approveProjectByAcademicServicesDirector
