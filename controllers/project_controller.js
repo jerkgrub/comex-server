@@ -524,8 +524,53 @@ exports.approveProjectByAcademicDirector = async (req, res) => {
   }
 };
 
+// Utility function to validate workPlan data
+const validateWorkPlan = workPlan => {
+  if (!workPlan || !Array.isArray(workPlan) || workPlan.length === 0) {
+    console.log('WorkPlan is empty or invalid');
+    return false;
+  }
+
+  let isValid = true;
+  const mongoose = require('mongoose');
+
+  // Check each workPlan item
+  workPlan.forEach((item, index) => {
+    console.log(`Validating workPlan item #${index + 1}:`, JSON.stringify(item));
+
+    // Required fields
+    if (!item.espUserId) {
+      console.log(`  - Missing espUserId in workPlan item #${index + 1}`);
+      isValid = false;
+    } else if (!mongoose.Types.ObjectId.isValid(item.espUserId)) {
+      console.log(`  - Invalid espUserId format in workPlan item #${index + 1}: ${item.espUserId}`);
+      isValid = false;
+    }
+
+    if (!item.espName) {
+      console.log(`  - Missing espName in workPlan item #${index + 1}`);
+    }
+
+    if (!item.activity) {
+      console.log(`  - Missing activity in workPlan item #${index + 1}`);
+    }
+
+    if (!item.role) {
+      console.log(`  - Missing role in workPlan item #${index + 1}`);
+    }
+
+    if (item.hoursReceived === undefined || item.hoursReceived === null) {
+      console.log(`  - Missing hoursReceived in workPlan item #${index + 1}`);
+    }
+  });
+
+  return isValid;
+};
+
 exports.approveProjectByExecutiveDirector = async (req, res) => {
   try {
+    console.log('====== EXECUTIVE DIRECTOR APPROVAL - STARTED ======');
+
     // Get current user info (if any)
     const userId = req.user ? req.user._id : null;
     let approverName = 'Executive Director';
@@ -535,11 +580,23 @@ exports.approveProjectByExecutiveDirector = async (req, res) => {
       if (!approverName) approverName = 'Executive Director';
     }
 
+    console.log(`Executing approval by ${approverName} (${userId || 'anonymous'})`);
+    console.log(`Project ID: ${req.params.id}`);
+
     const project = await Project.findById(req.params.id);
 
     if (!project) {
+      console.log('Project not found with ID:', req.params.id);
       return res.status(404).json({ message: 'Project not found' });
     }
+
+    console.log(`Found project: ${project.title}`);
+    console.log(`Current approval status: ${project.approvalStatus}`);
+    console.log(`WorkPlan items count: ${project.workPlan?.length || 0}`);
+
+    // Validate workPlan data
+    console.log('Validating workPlan data...');
+    validateWorkPlan(project.workPlan);
 
     // Update approval data
     project.isApproved.byExecutiveDirector.approved = true;
@@ -551,59 +608,109 @@ exports.approveProjectByExecutiveDirector = async (req, res) => {
 
     // Save changes
     await project.save();
+    console.log('Project updated with Executive Director approval');
 
     // Credit all users in the workPlan
-    if (project.workPlan && project.workPlan.length > 0) {
-      const Credit = require('../models/credit_model'); // Import Credit model
+    try {
+      if (!project.workPlan || !Array.isArray(project.workPlan) || project.workPlan.length === 0) {
+        console.log('No workPlan items found for crediting');
+      } else {
+        console.log(`Processing ${project.workPlan.length} workPlan items for crediting...`);
 
-      let newCreditsCount = 0;
+        const Credit = require('../models/credit_model'); // Import Credit model
 
-      // Process each workPlan entry and create credits
-      for (const workPlanItem of project.workPlan) {
-        // Skip if no user ID
-        if (!workPlanItem.espUserId) continue;
+        let newCreditsCount = 0;
 
-        try {
-          // Check if credit already exists for this user and project
-          const existingCredit = await Credit.findOne({
-            user: workPlanItem.espUserId,
-            project: project._id,
-            source: 'project'
-          });
+        // Process each workPlan entry and create credits
+        for (const workPlanItem of project.workPlan) {
+          console.log(`Processing workPlan item:`, JSON.stringify(workPlanItem));
 
-          // Skip if credit already exists
-          if (existingCredit) {
-            console.log(
-              `Credit already exists for user ${workPlanItem.espUserId} in project ${project.title}`
-            );
+          // Skip if no user ID
+          if (!workPlanItem.espUserId) {
+            console.log('Skipping workplan item - missing espUserId');
             continue;
           }
 
-          const credit = new Credit({
-            type: project.engagementType || 'College-Driven',
-            user: workPlanItem.espUserId,
-            project: project._id,
-            projectId: project._id.toString(), // For backward compatibility
-            hours: workPlanItem.hoursReceived || 0,
-            description: `Credit for ${project.title} - Role: ${
-              workPlanItem.role || 'Participant'
-            }`,
-            source: 'project'
-          });
+          try {
+            console.log(`Checking for existing credit for user ${workPlanItem.espUserId}`);
 
-          await credit.save();
-          newCreditsCount++;
-        } catch (err) {
-          console.error(`Error creating credit for user ${workPlanItem.espUserId}:`, err);
+            // Validate espUserId - it must be a valid MongoDB ObjectId
+            let validUserId = workPlanItem.espUserId;
+            const mongoose = require('mongoose');
+
+            // Check if the ID is valid, if not try to clean it
+            if (!mongoose.Types.ObjectId.isValid(validUserId)) {
+              console.warn(`Invalid user ID format: ${validUserId}. Attempting to clean...`);
+
+              // Try to clean the ID (remove quotes, trim, etc)
+              validUserId = validUserId.trim();
+              if (validUserId.startsWith('"') && validUserId.endsWith('"')) {
+                validUserId = validUserId.slice(1, -1);
+              }
+
+              if (!mongoose.Types.ObjectId.isValid(validUserId)) {
+                console.error(
+                  `Cannot create credit: Invalid user ID format even after cleaning: ${validUserId}`
+                );
+                continue; // Skip this workPlan item
+              }
+            }
+
+            console.log(`Using validated user ID: ${validUserId}`);
+
+            // Check if credit already exists for this user and project
+            const existingCredit = await Credit.findOne({
+              user: validUserId,
+              project: project._id,
+              source: 'project'
+            });
+
+            // Skip if credit already exists
+            if (existingCredit) {
+              console.log(
+                `Credit already exists for user ${validUserId} in project ${project.title}`
+              );
+              continue;
+            }
+
+            console.log(`Creating new credit for user ${validUserId} (${workPlanItem.espName})`);
+
+            // Create credit object
+            const credit = new Credit({
+              type: project.engagementType || 'College-Driven',
+              user: validUserId,
+              project: project._id,
+              projectId: project._id.toString(), // For backward compatibility
+              hours: workPlanItem.hoursReceived || 0,
+              description: `Credit for ${project.title} - Role: ${
+                workPlanItem.role || 'Participant'
+              }`,
+              source: 'project'
+            });
+
+            console.log(`Credit object created:`, JSON.stringify(credit));
+
+            // Save the credit
+            const savedCredit = await credit.save();
+            console.log(`Credit saved successfully with ID: ${savedCredit._id}`);
+
+            newCreditsCount++;
+          } catch (err) {
+            console.error(`Failed to create credit for user ${workPlanItem.espUserId}:`, err);
+          }
         }
-      }
 
-      console.log(`Created ${newCreditsCount} new credits for project ${project.title}`);
+        console.log(`Created ${newCreditsCount} new credits for project ${project.title}`);
+      }
+    } catch (creditError) {
+      console.error('Error in credit creation process:', creditError);
+      // Don't fail the approval process if crediting fails
     }
 
     // Notify project creator
     await notifyProjectCreatorAboutApproval(project, 'byExecutiveDirector', approverName);
 
+    console.log('====== EXECUTIVE DIRECTOR APPROVAL - COMPLETED ======');
     res.status(200).json(project);
   } catch (error) {
     console.error('Error approving project by executive director:', error);
@@ -754,48 +861,105 @@ exports.signWorkplanEntry = async (req, res) => {
 // Recalculate credits for an already approved project
 exports.recalculateProjectCredits = async (req, res) => {
   try {
+    console.log('====== RECALCULATE PROJECT CREDITS - STARTED ======');
+
     const projectId = req.params.id;
+    console.log(`Recalculating credits for project: ${projectId}`);
+
     const project = await Project.findById(projectId);
 
     if (!project) {
+      console.log('Project not found with ID:', projectId);
       return res.status(404).json({ message: 'Project not found' });
     }
 
+    console.log(`Found project: ${project.title}`);
+    console.log(`Current approval status: ${project.approvalStatus}`);
+    console.log(`WorkPlan items count: ${project.workPlan?.length || 0}`);
+
     // Check if project is approved by Executive Director
     if (!project.isApproved.byExecutiveDirector.approved) {
+      console.log('Project is not approved by Executive Director - cannot create credits');
       return res.status(400).json({
         message:
           'Cannot calculate credits for unapproved projects. Project must be approved by Executive Director first.'
       });
     }
 
+    // Validate workPlan data
+    console.log('Validating workPlan data...');
+    const isValid = validateWorkPlan(project.workPlan);
+
+    if (!isValid) {
+      console.log('WARNING: WorkPlan validation failed - will attempt to process anyway');
+    }
+
     const Credit = require('../models/credit_model');
+    const mongoose = require('mongoose');
     let newCreditsCount = 0;
+    let errorCount = 0;
 
     // Process each workPlan entry and create credits
-    for (const workPlanItem of project.workPlan || []) {
+    if (!project.workPlan || !Array.isArray(project.workPlan)) {
+      console.log('No valid workPlan array found');
+      return res.status(400).json({
+        message: 'No valid workPlan found in project'
+      });
+    }
+
+    console.log(`Processing ${project.workPlan.length} workPlan items...`);
+
+    for (const workPlanItem of project.workPlan) {
+      console.log(`Processing workPlan item:`, JSON.stringify(workPlanItem));
+
       // Skip if no user ID
-      if (!workPlanItem.espUserId) continue;
+      if (!workPlanItem.espUserId) {
+        console.log('Skipping workplan item - missing espUserId');
+        continue;
+      }
 
       try {
+        // Validate espUserId - it must be a valid MongoDB ObjectId
+        let validUserId = workPlanItem.espUserId;
+
+        // Check if the ID is valid, if not try to clean it
+        if (!mongoose.Types.ObjectId.isValid(validUserId)) {
+          console.warn(`Invalid user ID format: ${validUserId}. Attempting to clean...`);
+
+          // Try to clean the ID (remove quotes, trim, etc)
+          validUserId = validUserId.trim();
+          if (validUserId.startsWith('"') && validUserId.endsWith('"')) {
+            validUserId = validUserId.slice(1, -1);
+          }
+
+          if (!mongoose.Types.ObjectId.isValid(validUserId)) {
+            console.error(
+              `Cannot create credit: Invalid user ID format even after cleaning: ${validUserId}`
+            );
+            errorCount++;
+            continue; // Skip this workPlan item
+          }
+        }
+
+        console.log(`Checking for existing credit for user ${validUserId}`);
+
         // Check if credit already exists for this user and project
         const existingCredit = await Credit.findOne({
-          user: workPlanItem.espUserId,
+          user: validUserId,
           project: project._id,
           source: 'project'
         });
 
         // Skip if credit already exists
         if (existingCredit) {
-          console.log(
-            `Credit already exists for user ${workPlanItem.espUserId} in project ${project.title}`
-          );
+          console.log(`Credit already exists for user ${validUserId} in project ${project.title}`);
           continue;
         }
 
+        // Create credit object with validated data
         const credit = new Credit({
           type: project.engagementType || 'College-Driven',
-          user: workPlanItem.espUserId,
+          user: validUserId,
           project: project._id,
           projectId: project._id.toString(),
           hours: workPlanItem.hoursReceived || 0,
@@ -803,17 +967,27 @@ exports.recalculateProjectCredits = async (req, res) => {
           source: 'project'
         });
 
-        await credit.save();
+        console.log(`Credit object created:`, JSON.stringify(credit));
+
+        // Save the credit
+        const savedCredit = await credit.save();
+        console.log(`Credit saved successfully with ID: ${savedCredit._id}`);
+
         newCreditsCount++;
       } catch (err) {
         console.error(`Error creating credit for user ${workPlanItem.espUserId}:`, err);
+        errorCount++;
       }
     }
+
+    console.log('====== RECALCULATE PROJECT CREDITS - COMPLETED ======');
+    console.log(`Summary: Created ${newCreditsCount} credits, encountered ${errorCount} errors`);
 
     res.status(200).json({
       message: `Created ${newCreditsCount} new credits for project ${project.title}`,
       projectId: project._id,
-      newCreditsCount
+      newCreditsCount,
+      errorCount
     });
   } catch (error) {
     console.error('Error recalculating project credits:', error);
