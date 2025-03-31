@@ -49,4 +49,7 @@ router.put(
 router.put('/deactivate/:id', projectController.deactivateProject);
 router.put('/restore/:id', projectController.restoreProject);
 
+// 5. Credits
+router.post('/recalculate-credits/:id', projectController.recalculateProjectCredits);
+
 module.exports = router;

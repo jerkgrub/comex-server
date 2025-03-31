@@ -247,6 +247,58 @@ exports.updateProject = async (req, res) => {
         for (const workplanItem of newWorkPlanUsers) {
           await notifyUserAboutWorkplanAssignment(updatedProject, workplanItem);
         }
+
+        // If the project is already approved by the Executive Director, automatically credit new workplan users
+        if (updatedProject.isApproved.byExecutiveDirector.approved) {
+          console.log(
+            'Project is already approved by the Executive Director - awarding credits to new workplan users'
+          );
+
+          const Credit = require('../models/credit_model');
+          let newCreditsCount = 0;
+
+          // For each new user in the workplan
+          for (const workplanItem of newWorkPlanUsers) {
+            if (!workplanItem.espUserId) continue;
+
+            try {
+              // Check if credit already exists
+              const existingCredit = await Credit.findOne({
+                user: workplanItem.espUserId,
+                project: updatedProject._id,
+                source: 'project'
+              });
+
+              // Skip if credit already exists
+              if (existingCredit) {
+                console.log(
+                  `Credit already exists for user ${workplanItem.espUserId} in project ${updatedProject.title}`
+                );
+                continue;
+              }
+
+              // Create new credit
+              const credit = new Credit({
+                type: updatedProject.engagementType || 'College-Driven',
+                user: workplanItem.espUserId,
+                project: updatedProject._id,
+                projectId: updatedProject._id.toString(),
+                hours: workplanItem.hoursReceived || 0,
+                description: `Credit for ${updatedProject.title} - Role: ${
+                  workplanItem.role || 'Participant'
+                }`,
+                source: 'project'
+              });
+
+              await credit.save();
+              newCreditsCount++;
+            } catch (err) {
+              console.error(`Error creating credit for user ${workplanItem.espUserId}:`, err);
+            }
+          }
+
+          console.log(`Created ${newCreditsCount} new credits for project ${updatedProject.title}`);
+        }
       } catch (notificationError) {
         console.error('Error sending workplan assignment notifications:', notificationError);
         // Don't fail the update if notifications fail
@@ -494,8 +546,60 @@ exports.approveProjectByExecutiveDirector = async (req, res) => {
     project.isApproved.byExecutiveDirector.approvedOn = new Date();
     project.isApproved.byExecutiveDirector.approvedBy = userId;
 
+    // Set approvalStatus to 'approved'
+    project.approvalStatus = 'approved';
+
     // Save changes
     await project.save();
+
+    // Credit all users in the workPlan
+    if (project.workPlan && project.workPlan.length > 0) {
+      const Credit = require('../models/credit_model'); // Import Credit model
+
+      let newCreditsCount = 0;
+
+      // Process each workPlan entry and create credits
+      for (const workPlanItem of project.workPlan) {
+        // Skip if no user ID
+        if (!workPlanItem.espUserId) continue;
+
+        try {
+          // Check if credit already exists for this user and project
+          const existingCredit = await Credit.findOne({
+            user: workPlanItem.espUserId,
+            project: project._id,
+            source: 'project'
+          });
+
+          // Skip if credit already exists
+          if (existingCredit) {
+            console.log(
+              `Credit already exists for user ${workPlanItem.espUserId} in project ${project.title}`
+            );
+            continue;
+          }
+
+          const credit = new Credit({
+            type: project.engagementType || 'College-Driven',
+            user: workPlanItem.espUserId,
+            project: project._id,
+            projectId: project._id.toString(), // For backward compatibility
+            hours: workPlanItem.hoursReceived || 0,
+            description: `Credit for ${project.title} - Role: ${
+              workPlanItem.role || 'Participant'
+            }`,
+            source: 'project'
+          });
+
+          await credit.save();
+          newCreditsCount++;
+        } catch (err) {
+          console.error(`Error creating credit for user ${workPlanItem.espUserId}:`, err);
+        }
+      }
+
+      console.log(`Created ${newCreditsCount} new credits for project ${project.title}`);
+    }
 
     // Notify project creator
     await notifyProjectCreatorAboutApproval(project, 'byExecutiveDirector', approverName);
@@ -643,6 +747,76 @@ exports.signWorkplanEntry = async (req, res) => {
 
     res.status(200).json(project);
   } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Recalculate credits for an already approved project
+exports.recalculateProjectCredits = async (req, res) => {
+  try {
+    const projectId = req.params.id;
+    const project = await Project.findById(projectId);
+
+    if (!project) {
+      return res.status(404).json({ message: 'Project not found' });
+    }
+
+    // Check if project is approved by Executive Director
+    if (!project.isApproved.byExecutiveDirector.approved) {
+      return res.status(400).json({
+        message:
+          'Cannot calculate credits for unapproved projects. Project must be approved by Executive Director first.'
+      });
+    }
+
+    const Credit = require('../models/credit_model');
+    let newCreditsCount = 0;
+
+    // Process each workPlan entry and create credits
+    for (const workPlanItem of project.workPlan || []) {
+      // Skip if no user ID
+      if (!workPlanItem.espUserId) continue;
+
+      try {
+        // Check if credit already exists for this user and project
+        const existingCredit = await Credit.findOne({
+          user: workPlanItem.espUserId,
+          project: project._id,
+          source: 'project'
+        });
+
+        // Skip if credit already exists
+        if (existingCredit) {
+          console.log(
+            `Credit already exists for user ${workPlanItem.espUserId} in project ${project.title}`
+          );
+          continue;
+        }
+
+        const credit = new Credit({
+          type: project.engagementType || 'College-Driven',
+          user: workPlanItem.espUserId,
+          project: project._id,
+          projectId: project._id.toString(),
+          hours: workPlanItem.hoursReceived || 0,
+          description: `Credit for ${project.title} - Role: ${workPlanItem.role || 'Participant'}`,
+          source: 'project'
+        });
+
+        await credit.save();
+        newCreditsCount++;
+      } catch (err) {
+        console.error(`Error creating credit for user ${workPlanItem.espUserId}:`, err);
+      }
+    }
+
+    res.status(200).json({
+      message: `Created ${newCreditsCount} new credits for project ${project.title}`,
+      projectId: project._id,
+      newCreditsCount
+    });
+  } catch (error) {
+    console.error('Error recalculating project credits:', error);
     res.status(500).json({ message: error.message });
   }
 };

@@ -262,7 +262,13 @@
           "protocol": "http",
           "host": ["localhost"],
           "port": "0369",
-          "path": ["api", "project", "approve", "by-general-accounting-supervisor", "{{projectId}}"],
+          "path": [
+            "api",
+            "project",
+            "approve",
+            "by-general-accounting-supervisor",
+            "{{projectId}}"
+          ],
           "variable": [
             {
               "key": "projectId",
@@ -390,6 +396,27 @@
             }
           ]
         }
+      }
+    },
+    {
+      "name": "Recalculate credits for a project",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:0369/api/project/recalculate-credits/{{projectId}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "0369",
+          "path": ["api", "project", "recalculate-credits", "{{projectId}}"],
+          "variable": [
+            {
+              "key": "projectId",
+              "value": "replace_with_actual_project_id"
+            }
+          ]
+        },
+        "description": "Recalculates and creates credits for all users in the workplan who don't already have credits for this project. The project must be approved by the Executive Director first."
       }
     }
   ],
