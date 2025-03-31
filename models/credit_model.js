@@ -2,6 +2,7 @@
 const mongoose = require('mongoose');
 
 const CreditSchema = new mongoose.Schema({
+  type: String, // "Institutional" "College-Driven" "Extension Services" "Capacity Building"
   user: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
