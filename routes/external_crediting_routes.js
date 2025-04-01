@@ -3,11 +3,25 @@ const router = express.Router();
 const externalCreditingController = require('../controllers/external_crediting_controller');
 const { isAuthenticated, isAuthorized } = require('../middlewares/auth');
 
+// Debug middleware to log token and user info
+const logRequestInfo = (req, res, next) => {
+  console.log('External crediting request received:', {
+    path: req.path,
+    method: req.method,
+    hasAuthHeader: !!req.headers['authorization'],
+    headerLength: req.headers['authorization'] ? req.headers['authorization'].length : 0,
+    userId: req.user ? req.user.id || req.user._id : 'No user',
+    userRole: req.user ? req.user.role || req.user.usertype : 'No role'
+  });
+  next();
+};
+
 // Link a form to a category
 router.post(
   '/link',
   isAuthenticated,
-  isAuthorized(['Admin', 'ComEx Coordinator']),
+  logRequestInfo, // Added logging middleware
+  // We handle auth in the controller for better debugging
   externalCreditingController.linkForm
 );
 

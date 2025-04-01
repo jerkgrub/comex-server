@@ -22,8 +22,17 @@ exports.isAuthenticated = (req, res, next) => {
     // Verify the token using your secret key
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'COMEX2024'); // Use your secret key
     req.user = decoded; // Attach the decoded token data to the request object
+
+    // Log the user information for debugging
+    console.log('Auth middleware - User info:', {
+      id: decoded.id || decoded._id,
+      role: decoded.role,
+      usertype: decoded.usertype
+    });
+
     next();
   } catch (error) {
+    console.error('Token verification error:', error);
     res.status(403).json({ message: 'Invalid token.' });
   }
 };
@@ -35,9 +44,20 @@ exports.isAuthorized = allowedRoles => {
       return res.status(401).json({ message: 'User not authenticated.' });
     }
 
-    const { role } = req.user;
+    // Get role from the token - check multiple possible fields
+    const userRole = req.user.role || req.user.usertype;
 
-    if (allowedRoles.includes(role)) {
+    console.log('Authorization check:', {
+      allowedRoles,
+      userRole,
+      user: req.user
+    });
+
+    // If role is found and is allowed, proceed
+    if (userRole && allowedRoles.includes(userRole)) {
+      next();
+    } else if (req.user.usertype && allowedRoles.includes(req.user.usertype)) {
+      // Double check usertype if role check failed
       next();
     } else {
       res.status(403).json({

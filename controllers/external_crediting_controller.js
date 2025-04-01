@@ -8,6 +8,30 @@ exports.linkForm = async (req, res) => {
   try {
     const { category, formId } = req.body;
 
+    // Log the request for debugging
+    console.log('Form link request:', {
+      category,
+      formId,
+      user: req.user
+        ? {
+            id: req.user.id || req.user._id,
+            role: req.user.role,
+            usertype: req.user.usertype
+          }
+        : 'No user in request'
+    });
+
+    // Additional permission check
+    const userRole = req.user?.role || req.user?.usertype;
+    const allowedRoles = ['Admin', 'ComEx Coordinator'];
+
+    if (!userRole || !allowedRoles.includes(userRole)) {
+      console.log(`Access denied for user with role ${userRole}`);
+      return res.status(403).json({
+        message: 'Access denied. You do not have permission to perform this action.'
+      });
+    }
+
     // Validate inputs
     if (!category || !formId) {
       return res.status(400).json({
@@ -34,6 +58,12 @@ exports.linkForm = async (req, res) => {
     });
 
     await externalCrediting.save();
+
+    console.log('Form linked successfully', {
+      category,
+      formId,
+      externalCreditingId: externalCrediting._id
+    });
 
     res.status(201).json({
       message: 'Form linked successfully',
