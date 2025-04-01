@@ -5,6 +5,7 @@ const cors = require('cors');
 const connectToDatabase = require('./config/mongo_config');
 const Otp = require('./Otp'); // Import Otp
 const bodyParser = require('body-parser');
+const User = require('./models/user_model'); // Add this line to import the User model
 
 const app = express();
 
@@ -62,6 +63,18 @@ app.post('/api/auth/forgot-password', async (req, res) => {
   console.log('[DEBUG] Received forgot-password request for email:', email);
 
   try {
+    // First check if the email exists in the database
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      console.log('[DEBUG] User not found for email:', email);
+      return res.status(404).json({
+        success: false,
+        message: 'No user found with this email address'
+      });
+    }
+
+    // If user exists, proceed with sending OTP
     await Otp.sendOtp(email);
     console.log('[DEBUG] OTP sent successfully to email:', email);
     res.status(200).json({ success: true });
