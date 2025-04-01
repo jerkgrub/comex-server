@@ -1,16 +1,21 @@
 const Project = require('../models/project_model');
 const User = require('../models/user_model');
-const {
-  notifyProjectCreatorAboutWorkplanSigning,
-  notifyProjectCreatorAboutApproval,
-  notifyUserAboutWorkplanAssignment
-} = require('./notification_controller');
+const { notifyProjectCreatorAboutWorkplanSigning, notifyProjectCreatorAboutApproval, notifyUserAboutWorkplanAssignment } = require('./notification_controller');
 
 // const isFullyApproved = doc.isApproved.byExecutiveDirector.approved; //check if the project is fully approved
 
 // 1. Create a new project
 exports.createProject = async (req, res) => {
   try {
+    // Ensure additionalInfo is properly formatted to match schema
+    if (req.body.additionalInfo && Array.isArray(req.body.additionalInfo)) {
+      req.body.additionalInfo = req.body.additionalInfo.map(item => ({
+        id: item.id || '',
+        type: item.type || 'content',
+        value: item.value || ''
+      }));
+    }
+
     const projectData = {
       ...req.body,
       isActivated: true,
@@ -29,6 +34,7 @@ exports.createProject = async (req, res) => {
     const savedProject = await project.save();
     res.status(201).json(savedProject);
   } catch (error) {
+    console.error('Error creating project:', error);
     res.status(500).json({ message: error.message });
   }
 };
@@ -250,9 +256,7 @@ exports.updateProject = async (req, res) => {
 
         // If the project is already approved by the Executive Director, automatically credit new workplan users
         if (updatedProject.isApproved.byExecutiveDirector.approved) {
-          console.log(
-            'Project is already approved by the Executive Director - awarding credits to new workplan users'
-          );
+          console.log('Project is already approved by the Executive Director - awarding credits to new workplan users');
 
           const Credit = require('../models/credit_model');
           let newCreditsCount = 0;
@@ -271,9 +275,7 @@ exports.updateProject = async (req, res) => {
 
               // Skip if credit already exists
               if (existingCredit) {
-                console.log(
-                  `Credit already exists for user ${workplanItem.espUserId} in project ${updatedProject.title}`
-                );
+                console.log(`Credit already exists for user ${workplanItem.espUserId} in project ${updatedProject.title}`);
                 continue;
               }
 
@@ -284,9 +286,7 @@ exports.updateProject = async (req, res) => {
                 project: updatedProject._id,
                 projectId: updatedProject._id.toString(),
                 hours: workplanItem.hoursReceived || 0,
-                description: `Credit for ${updatedProject.title} - Role: ${
-                  workplanItem.role || 'Participant'
-                }`,
+                description: `Credit for ${updatedProject.title} - Role: ${workplanItem.role || 'Participant'}`,
                 source: 'project'
               });
 
@@ -649,9 +649,7 @@ exports.approveProjectByExecutiveDirector = async (req, res) => {
               }
 
               if (!mongoose.Types.ObjectId.isValid(validUserId)) {
-                console.error(
-                  `Cannot create credit: Invalid user ID format even after cleaning: ${validUserId}`
-                );
+                console.error(`Cannot create credit: Invalid user ID format even after cleaning: ${validUserId}`);
                 continue; // Skip this workPlan item
               }
             }
@@ -667,9 +665,7 @@ exports.approveProjectByExecutiveDirector = async (req, res) => {
 
             // Skip if credit already exists
             if (existingCredit) {
-              console.log(
-                `Credit already exists for user ${validUserId} in project ${project.title}`
-              );
+              console.log(`Credit already exists for user ${validUserId} in project ${project.title}`);
               continue;
             }
 
@@ -682,9 +678,7 @@ exports.approveProjectByExecutiveDirector = async (req, res) => {
               project: project._id,
               projectId: project._id.toString(), // For backward compatibility
               hours: workPlanItem.hoursReceived || 0,
-              description: `Credit for ${project.title} - Role: ${
-                workPlanItem.role || 'Participant'
-              }`,
+              description: `Credit for ${project.title} - Role: ${workPlanItem.role || 'Participant'}`,
               source: 'project'
             });
 
@@ -721,11 +715,7 @@ exports.approveProjectByExecutiveDirector = async (req, res) => {
 // 4. Soft-delete operations
 exports.deactivateProject = async (req, res) => {
   try {
-    const project = await Project.findByIdAndUpdate(
-      req.params.id,
-      { isActivated: false },
-      { new: true }
-    );
+    const project = await Project.findByIdAndUpdate(req.params.id, { isActivated: false }, { new: true });
 
     if (!project) {
       return res.status(404).json({ message: 'Project not found' });
@@ -739,11 +729,7 @@ exports.deactivateProject = async (req, res) => {
 
 exports.restoreProject = async (req, res) => {
   try {
-    const project = await Project.findByIdAndUpdate(
-      req.params.id,
-      { isActivated: true },
-      { new: true }
-    );
+    const project = await Project.findByIdAndUpdate(req.params.id, { isActivated: true }, { new: true });
 
     if (!project) {
       return res.status(404).json({ message: 'Project not found' });
@@ -845,12 +831,7 @@ exports.signWorkplanEntry = async (req, res) => {
     await project.save();
 
     // Send notification to project creator
-    await notifyProjectCreatorAboutWorkplanSigning(
-      project,
-      signerName,
-      workPlanEntry.activity,
-      workPlanEntry.role
-    );
+    await notifyProjectCreatorAboutWorkplanSigning(project, signerName, workPlanEntry.activity, workPlanEntry.role);
 
     res.status(200).json(project);
   } catch (error) {
@@ -881,8 +862,7 @@ exports.recalculateProjectCredits = async (req, res) => {
     if (!project.isApproved.byExecutiveDirector.approved) {
       console.log('Project is not approved by Executive Director - cannot create credits');
       return res.status(400).json({
-        message:
-          'Cannot calculate credits for unapproved projects. Project must be approved by Executive Director first.'
+        message: 'Cannot calculate credits for unapproved projects. Project must be approved by Executive Director first.'
       });
     }
 
@@ -933,9 +913,7 @@ exports.recalculateProjectCredits = async (req, res) => {
           }
 
           if (!mongoose.Types.ObjectId.isValid(validUserId)) {
-            console.error(
-              `Cannot create credit: Invalid user ID format even after cleaning: ${validUserId}`
-            );
+            console.error(`Cannot create credit: Invalid user ID format even after cleaning: ${validUserId}`);
             errorCount++;
             continue; // Skip this workPlan item
           }

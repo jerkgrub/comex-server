@@ -158,7 +158,7 @@ const ProjectSchema = new mongoose.Schema(
     additionalInfo: [
       {
         id: String,
-        type: String, // 'heading' or 'content'
+        type: { type: String, enum: ['heading', 'content'] },
         value: String
       }
     ]
