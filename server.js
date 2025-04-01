@@ -34,6 +34,7 @@ const notificationRoutes = require('./routes/notification_routes');
 const contentRoutes = require('./routes/content_routes');
 const formRoutes = require('./routes/form_routes');
 const registrationRoutes = require('./routes/registration_routes');
+const blogRoutes = require('./routes/blog_routes'); // Import blog routes
 const testRoutes = require('./practice/test_controller');
 const externalCreditingRoutes = require('./routes/external_crediting_routes');
 
@@ -53,6 +54,9 @@ app.use('/api/registration', registrationRoutes);
 
 // content
 app.use('/api/content', contentRoutes);
+
+// blogs
+app.use('/api/blogs', blogRoutes);
 
 // External crediting routes
 app.use('/api/external-crediting', externalCreditingRoutes);
