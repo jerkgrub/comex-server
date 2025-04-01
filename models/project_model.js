@@ -154,8 +154,16 @@ const ProjectSchema = new mongoose.Schema(
     thumbnail: String,
     hours: Number,
 
-    // wait muna natin yung wireframe ni ban
+    // Additional information fields for institutional activities
+    additionalInfo: [
+      {
+        id: String,
+        type: String, // 'heading' or 'content'
+        value: String
+      }
+    ]
 
+    // wait muna natin yung wireframe ni ban
   },
 
   { timestamps: true }
@@ -206,12 +214,7 @@ ProjectSchema.statics.updateWithSignaturePreservation = async function (projectI
     );
 
     // If we need to preserve signatures and there's workPlan data
-    if (
-      shouldPreserveSignatures &&
-      projectData.workPlan &&
-      projectData.workPlan.length > 0 &&
-      currentProject.workPlan
-    ) {
+    if (shouldPreserveSignatures && projectData.workPlan && projectData.workPlan.length > 0 && currentProject.workPlan) {
       console.log('Preserving signatures during update...');
 
       // Create a map of workPlan items by espUserId for easy lookup
@@ -257,8 +260,7 @@ ProjectSchema.statics.updateWithSignaturePreservation = async function (projectI
       console.log('Skipping signature preservation - condition not met');
       if (!shouldPreserveSignatures) console.log('Reason: preserveSignatures flag not set');
       if (!projectData.workPlan) console.log('Reason: workPlan is not defined');
-      if (projectData.workPlan && projectData.workPlan.length === 0)
-        console.log('Reason: workPlan is empty');
+      if (projectData.workPlan && projectData.workPlan.length === 0) console.log('Reason: workPlan is empty');
     }
 
     // Instead of using findByIdAndUpdate, we'll directly update the current project object
