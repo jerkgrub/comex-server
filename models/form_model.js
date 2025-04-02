@@ -24,7 +24,9 @@ const questionSchema = new mongoose.Schema({
       'File Upload',
       'Linear Scale',
       'Date',
-      'Time'
+      'Time',
+      'Hours',
+      'Minutes'
     ]
   },
   isRequired: { type: Boolean, default: false },
@@ -58,10 +60,10 @@ const formSchema = new mongoose.Schema(
   {
     isActivated: Boolean,
     projectId: String, //newly added
-    formType: { 
-      type: String, 
-      enum: ['ORIGINAL', 'CLONED'], 
-      default: 'ORIGINAL' 
+    formType: {
+      type: String,
+      enum: ['ORIGINAL', 'CLONED'],
+      default: 'ORIGINAL'
     },
     title: { type: String, required: true },
     description: String,
