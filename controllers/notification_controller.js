@@ -140,9 +140,9 @@ const notifyAdminsAboutFormResponse = async (formResponse, form, user, projectTi
 
     let message = '';
     if (projectTitle) {
-      message = `New form response: ${user.firstName} ${user.lastName} submitted "${form.name}" for project "${projectTitle}"`;
+      message = `New form response: ${user.firstName} ${user.lastName} submitted "${form.title}" for project "${projectTitle}"`;
     } else {
-      message = `New form response: ${user.firstName} ${user.lastName} submitted "${form.name}"`;
+      message = `New form response: ${user.firstName} ${user.lastName} submitted "${form.title}"`;
     }
 
     // Create notifications for each admin/coordinator
@@ -153,7 +153,7 @@ const notifyAdminsAboutFormResponse = async (formResponse, form, user, projectTi
       data: {
         responseId: formResponse._id,
         formId: form._id,
-        formName: form.name,
+        formName: form.title,
         userId: user._id,
         userName: `${user.firstName} ${user.lastName}`,
         projectId: formResponse.projectId || null,
