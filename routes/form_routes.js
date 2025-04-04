@@ -52,4 +52,7 @@ router.post('/responses/:responseId/auto-approve', formController.autoApproveRes
 // New route for form cloning
 router.post('/clone-for-project', formController.cloneFormForProject);
 
+// Test auto-approval conditions
+router.get('/:formId/test-auto-approval', formController.testAutoApprovalConditions);
+
 module.exports = router;

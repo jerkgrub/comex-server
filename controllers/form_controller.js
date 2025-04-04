@@ -177,7 +177,7 @@ const uploadFormFile = async (req, res) => {
   }
 };
 
-// Form submission handling
+// Submit a form response
 const submitForm = async (req, res) => {
   try {
     const { formId } = req.params;
@@ -263,64 +263,54 @@ const submitForm = async (req, res) => {
 
         // For non-file questions, just return the answer
         return {
-          ...answer,
-          questionId
+          questionId,
+          value: answer.value,
+          fileUrl: answer.fileUrl
         };
       })
     );
 
-    // Create response and include projectId if the form has one
-    const responseData = {
+    // Create the response
+    const response = new Response({
       form: formId,
+      respondent: {
+        name: respondent?.name || 'Anonymous',
+        email: respondent?.email || '',
+        user: respondent?.userId // Link to user if provided
+      },
       answers: processedAnswers,
-      respondent,
       metadata: {
         ipAddress: req.ip,
-        userAgent: req.headers['user-agent']
-      }
-    };
+        userAgent: req.headers['user-agent'],
+        completionDate: new Date()
+      },
+      status: 'pending' // Default status
+    });
 
-    // Add projectId to the response if the form has one
-    if (form.projectId) {
-      responseData.projectId = form.projectId;
-    }
-
-    const response = new Response(responseData);
     await response.save();
+    console.log(`Form response saved: ${response._id}`);
 
-    // Send notification to admins and coordinators
+    // Try to notify admins if this form has notifications enabled
     try {
-      let user = null;
-      let projectTitle = null;
-
-      // Try to get user info
-      if (respondent && respondent.user) {
-        user = await User.findById(respondent.user);
-      } else if (respondent && respondent.email) {
-        user = await User.findOne({ email: respondent.email });
-      }
-
-      // Try to get project info if this form is linked to a project
-      if (form.projectId) {
-        const project = await Project.findById(form.projectId);
-        if (project) {
-          projectTitle = project.title;
-        }
-      }
-
-      if (user) {
-        await notifyAdminsAboutFormResponse(response, form, user, projectTitle);
+      if (form.settings?.notifyAdmins) {
+        await notifyAdminsAboutFormResponse(form, response);
       }
     } catch (notificationError) {
-      console.error('Error sending form response notification:', notificationError);
-      // Continue processing - don't fail because of notification issue
+      console.error('Error sending admin notifications:', notificationError);
+      // Don't fail the submission if notifications fail
     }
 
-    res.status(201).json({
-      message: form.settings?.confirmationMessage || 'Your response has been recorded.',
-      responseId: response._id
+    // Return the full response object with _id for auto-approval
+    return res.status(201).json({
+      message: form.settings?.confirmationMessage || 'Form submitted successfully',
+      response: {
+        _id: response._id,
+        formId: response.form,
+        status: response.status
+      }
     });
   } catch (error) {
+    console.error('Error submitting form:', error);
     res.status(500).json({ message: 'Error submitting form', error: error.message });
   }
 };
@@ -1308,16 +1298,21 @@ const cloneFormForProject = async (req, res) => {
 const getFormProjectInfo = async (req, res) => {
   try {
     const { formId } = req.params;
+    console.log(`Getting project info for form: ${formId}`);
 
     // Find the form
     const form = await Form.findById(formId);
     if (!form) {
+      console.log(`Form not found: ${formId}`);
       return res.status(404).json({ message: 'Form not found' });
     }
+
+    console.log(`Found form: ${form.title}`);
 
     // Find project forms to get the project ID
     const projectForm = await ProjectForm.findOne({ formId });
     if (!projectForm) {
+      console.log(`No project form found for form: ${formId}`);
       return res.json({
         formId,
         formType: form.formType || 'evaluation',
@@ -1327,9 +1322,12 @@ const getFormProjectInfo = async (req, res) => {
       });
     }
 
+    console.log(`Found project form: ${projectForm._id}, projectId: ${projectForm.projectId}, formType: ${projectForm.formType}`);
+
     // Get the project
     const project = await Project.findById(projectForm.projectId);
     if (!project) {
+      console.log(`Project not found for projectId: ${projectForm.projectId}`);
       return res.json({
         formId,
         formType: projectForm.formType || 'evaluation',
@@ -1339,14 +1337,21 @@ const getFormProjectInfo = async (req, res) => {
       });
     }
 
+    console.log(`Found project: ${project.title}, engagementType: ${project.engagementType}`);
+
+    const isInstitutional = project.engagementType === 'Institutional';
+
     // Return the combined information
-    return res.json({
+    const response = {
       formId,
       formType: projectForm.formType || 'evaluation',
       projectId: project._id,
       projectType: project.engagementType,
-      isInstitutional: project.engagementType === 'Institutional'
-    });
+      isInstitutional
+    };
+
+    console.log(`Returning project info response:`, response);
+    return res.json(response);
   } catch (error) {
     console.error('Error getting form project info:', error);
     return res.status(500).json({ message: 'Server error', error: error.message });
@@ -1359,44 +1364,58 @@ const autoApproveResponse = async (req, res) => {
     const { responseId } = req.params;
     const { formId, projectId, formType = 'evaluation' } = req.body;
 
+    console.log(`Auto-approving response ${responseId} for project ${projectId}, formType: ${formType}`);
+
     // Find the response
     const response = await Response.findById(responseId);
     if (!response) {
+      console.log(`Response not found: ${responseId}`);
       return res.status(404).json({ message: 'Response not found' });
     }
 
+    console.log(`Found response from: ${response.respondent?.email || 'unknown'}`);
+
     // Get user information
     let userId = response.respondent?.user || response.respondent?.userId;
+    console.log(`Initial userId from response: ${userId || 'none'}`);
 
     // If no user ID but we have an email, try to find the user
     if (!userId && response.respondent?.email) {
+      console.log(`Looking up user by email: ${response.respondent.email}`);
       const user = await User.findOne({ email: response.respondent.email });
       if (user) {
         userId = user._id;
+        console.log(`Found user by email: ${userId}`);
       } else {
+        console.log(`User not found by email: ${response.respondent.email}`);
         return res.status(400).json({ message: 'Cannot auto-approve: User not found' });
       }
     }
 
     if (!userId) {
+      console.log(`No user ID available for auto-approval`);
       return res.status(400).json({ message: 'Cannot auto-approve: No user ID available' });
     }
 
     // Update response status to approved
+    console.log(`Updating response status to approved`);
     response.status = 'approved';
     response.reviewedAt = new Date();
     response.reviewedBy = 'auto-approval-system';
     await response.save();
+    console.log(`Response status updated to approved`);
 
     // Default hours for credit
     const defaultHours = 1;
 
     // If it's a registration form, create or update registration
     if (formType === 'registration') {
+      console.log(`Processing as registration form`);
       // Check if registration already exists
       const existingRegistration = await Registration.findOne({ user: userId, project: projectId });
 
       if (existingRegistration) {
+        console.log(`Found existing registration: ${existingRegistration._id}`);
         // Update existing registration
         existingRegistration.status = 'active';
         existingRegistration.response = responseId;
@@ -1404,6 +1423,7 @@ const autoApproveResponse = async (req, res) => {
 
         console.log(`Updated existing registration: ${existingRegistration._id}`);
       } else {
+        console.log(`No existing registration found, creating new one`);
         // Create new registration
         const newRegistration = new Registration({
           user: userId,
@@ -1416,9 +1436,12 @@ const autoApproveResponse = async (req, res) => {
 
         console.log(`Created new registration: ${newRegistration._id}`);
       }
+    } else {
+      console.log(`Processing as regular (non-registration) form`);
     }
 
     // For all form types, create a credit record
+    console.log(`Creating credit record for user: ${userId}`);
     const newCredit = new Credit({
       type: 'Institutional',
       user: userId,
@@ -1447,6 +1470,73 @@ const autoApproveResponse = async (req, res) => {
   } catch (error) {
     console.error('Error auto-approving response:', error);
     return res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// Test auto-approval conditions for a form
+const testAutoApprovalConditions = async (req, res) => {
+  try {
+    const { formId } = req.params;
+    console.log(`Testing auto-approval conditions for form: ${formId}`);
+
+    // Get the form
+    const form = await Form.findById(formId);
+    if (!form) {
+      return res.status(404).json({
+        success: false,
+        message: 'Form not found',
+        formId
+      });
+    }
+
+    // Check if there's a project form linking
+    const projectForm = await ProjectForm.findOne({ formId });
+    if (!projectForm) {
+      return res.json({
+        success: false,
+        message: 'Form is not linked to any project',
+        formId,
+        formTitle: form.title
+      });
+    }
+
+    // Check the project
+    const project = await Project.findById(projectForm.projectId);
+    if (!project) {
+      return res.json({
+        success: false,
+        message: 'Linked project not found',
+        formId,
+        formTitle: form.title,
+        projectFormId: projectForm._id,
+        projectId: projectForm.projectId
+      });
+    }
+
+    // Check if it's an institutional project
+    const isInstitutional = project.engagementType === 'Institutional';
+
+    return res.json({
+      success: true,
+      message: isInstitutional
+        ? 'Form is linked to an institutional project and eligible for auto-approval'
+        : 'Form is linked to a non-institutional project (not eligible for auto-approval)',
+      formId,
+      formTitle: form.title,
+      projectId: project._id,
+      projectTitle: project.title,
+      projectEngagementType: project.engagementType,
+      formType: projectForm.formType || 'evaluation',
+      isInstitutional,
+      autoApprovalEligible: isInstitutional
+    });
+  } catch (error) {
+    console.error('Error testing auto-approval conditions:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Server error while testing auto-approval conditions',
+      error: error.message
+    });
   }
 };
 
@@ -1499,5 +1589,8 @@ module.exports = {
   getFormProjectInfo,
 
   // Auto-approve form response
-  autoApproveResponse
+  autoApproveResponse,
+
+  // Test auto-approval conditions for a form
+  testAutoApprovalConditions
 };
