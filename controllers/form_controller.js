@@ -1410,7 +1410,7 @@ const autoApproveResponse = async (req, res) => {
         $set: {
           status: 'approved',
           reviewedAt: new Date(),
-          reviewedBy: mongoose.Types.ObjectId(superuserId) // Use the superuser ObjectId
+          reviewedBy: new mongoose.Types.ObjectId(superuserId) // Use new keyword for ObjectId
         }
       }
     );
