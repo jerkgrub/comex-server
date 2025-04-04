@@ -1400,19 +1400,22 @@ const autoApproveResponse = async (req, res) => {
     // Update response status to approved
     console.log(`Updating response status to approved`);
 
-    // Use updateOne instead of modifying the model and saving to avoid validation issues
+    // Use the superuser account ID for reviewedBy
+    const superuserId = '66fe9b3bfd0079f9f590327b';
+
+    // Update the response using updateOne to avoid validation errors
     await Response.updateOne(
       { _id: responseId },
       {
         $set: {
           status: 'approved',
           reviewedAt: new Date(),
-          reviewedBy: 'auto-approval-system' // Keep as string without trying to convert to ObjectId
+          reviewedBy: mongoose.Types.ObjectId(superuserId) // Use the superuser ObjectId
         }
       }
     );
 
-    console.log(`Response status updated to approved`);
+    console.log(`Response status updated to approved, reviewedBy superuser: ${superuserId}`);
 
     // Default hours for credit
     const defaultHours = 1;
