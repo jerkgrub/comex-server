@@ -42,6 +42,8 @@ router.get('/linked-form/:projectFormId/responses', formController.getLinkedForm
 router.post('/responses/:responseId/approve', formController.approveResponse);
 router.post('/responses/:responseId/deny', formController.denyResponse);
 router.post('/responses/:responseId/revoke', formController.revokeResponse);
+// New route for auto-approving responses
+router.post('/responses/:responseId/auto-approve', formController.autoApproveResponse);
 
 // Form-project info route
 router.get('/:formId/project-info', formController.getFormProjectInfo);
