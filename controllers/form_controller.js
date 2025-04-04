@@ -810,6 +810,30 @@ const approveResponse = async (req, res) => {
       projectId: response.projectId
     });
 
+    // Get projectId from response or projectForm
+    let projectId = response.projectId;
+    let formType;
+    let creditHours = hours;
+
+    // If no hours specified, and we have a project ID, try to get hours from project
+    if (!creditHours && projectId) {
+      try {
+        const project = await Project.findById(projectId);
+        if (project && project.hours) {
+          creditHours = project.hours;
+          console.log(`[DEBUG] Using project hours value: ${creditHours} for credit`);
+        }
+      } catch (error) {
+        console.error(`[DEBUG] Error fetching project hours: ${error.message}`);
+      }
+    }
+
+    // Default to 1 hour if still not defined
+    if (!creditHours) {
+      creditHours = 1;
+      console.log(`[DEBUG] Using default hours value: 1`);
+    }
+
     // Make sure the response has a project context
     if (!response.projectForm) {
       console.log('[DEBUG] Response is not linked to a project, but proceeding anyway');
@@ -848,7 +872,7 @@ const approveResponse = async (req, res) => {
       const creditData = {
         user: userId,
         response: responseId,
-        hours: hours || 1, // Default to 1 hour if not provided
+        hours: creditHours,
         description: description || `Credit for form submission`,
         source: 'form'
       };
@@ -890,7 +914,7 @@ const approveResponse = async (req, res) => {
       try {
         await Response.findByIdAndUpdate(responseId, {
           status: 'approved',
-          hours: hours || 1 // Store hours in the response too
+          hours: creditHours
         });
         console.log('[DEBUG] Response status updated to approved');
       } catch (updateError) {
@@ -935,7 +959,7 @@ const approveResponse = async (req, res) => {
       const creditData = {
         user: userId,
         response: responseId,
-        hours: hours || 1,
+        hours: creditHours,
         description: description || `Credit for form submission`,
         source: 'form'
       };
@@ -975,7 +999,7 @@ const approveResponse = async (req, res) => {
       try {
         await Response.findByIdAndUpdate(responseId, {
           status: 'approved',
-          hours: hours || 1
+          hours: creditHours
         });
         console.log('[DEBUG] Response status updated to approved');
       } catch (updateError) {
@@ -1021,12 +1045,34 @@ const approveResponse = async (req, res) => {
     console.log('[DEBUG] Creating credit with project context');
 
     // Get the project ID either from the response or from projectForm
-    const projectId = response.projectId || projectForm.projectId;
+    projectId = response.projectId || projectForm.projectId;
+    formType = projectForm.formType;
+
+    // If no hours specified and it's an evaluation form, try to get hours from project
+    if (!creditHours && formType === 'evaluation' && projectId) {
+      try {
+        const project = await Project.findById(projectId);
+        if (project && project.hours) {
+          creditHours = project.hours;
+          console.log(
+            `[DEBUG] Using project hours value: ${creditHours} for evaluation form credit`
+          );
+        }
+      } catch (error) {
+        console.error(`[DEBUG] Error fetching project hours: ${error.message}`);
+      }
+    }
+
+    // Default to 1 hour if still not defined
+    if (!creditHours) {
+      creditHours = 1;
+      console.log(`[DEBUG] Using default hours value: 1`);
+    }
 
     const creditData = {
       user: userId,
       response: responseId,
-      hours: hours || 1, // Default to 1 hour if not provided
+      hours: creditHours,
       description: description || `Credit for ${projectForm.formType} form submission`,
       source: 'form'
     };
@@ -1081,7 +1127,7 @@ const approveResponse = async (req, res) => {
     try {
       await Response.findByIdAndUpdate(responseId, {
         status: 'approved',
-        hours: hours || 1
+        hours: creditHours
       });
       console.log('[DEBUG] Response status updated to approved');
     } catch (updateError) {
@@ -1462,7 +1508,23 @@ const autoApproveResponse = async (req, res) => {
     console.log(`Response status updated to approved, reviewedBy superuser: ${superuserId}`);
 
     // Default hours for credit
-    const defaultHours = 1;
+    let creditHours = 1;
+
+    // Fetch project to get its hours value if this is an evaluation form
+    if (formType === 'evaluation' && projectId) {
+      try {
+        const project = await Project.findById(projectId);
+        if (project && project.hours) {
+          creditHours = project.hours;
+          console.log(`Using project hours value: ${creditHours} for credit`);
+        } else {
+          console.log(`Project hours not found, using default value of ${creditHours}`);
+        }
+      } catch (error) {
+        console.error(`Error fetching project hours: ${error.message}`);
+        console.log(`Using default hours value: ${creditHours}`);
+      }
+    }
 
     // If it's a registration form, create or update registration
     // but do NOT create a credit record
@@ -1506,19 +1568,19 @@ const autoApproveResponse = async (req, res) => {
     }
 
     // Only create credit record for evaluation forms
-    console.log(`Processing as evaluation form, creating credit record`);
+    console.log(`Processing as evaluation form, creating credit record with ${creditHours} hours`);
     const newCredit = new Credit({
       type: 'Institutional',
       user: userId,
       project: projectId,
       response: responseId,
-      hours: defaultHours,
+      hours: creditHours,
       description: 'Auto-approved form submission',
       source: 'form'
     });
     await newCredit.save();
 
-    console.log(`Created new credit record: ${newCredit._id} with ${defaultHours} hours`);
+    console.log(`Created new credit record: ${newCredit._id} with ${creditHours} hours`);
 
     // Get the updated response for returning the correct status
     const updatedResponse = await Response.findById(responseId);
