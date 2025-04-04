@@ -43,6 +43,12 @@ router.post('/responses/:responseId/approve', formController.approveResponse);
 router.post('/responses/:responseId/deny', formController.denyResponse);
 router.post('/responses/:responseId/revoke', formController.revokeResponse);
 
+// Form-project info route
+router.get('/:formId/project-info', formController.getFormProjectInfo);
+
+// Auto-approve form response
+router.post('/responses/:responseId/auto-approve', formController.autoApproveResponse);
+
 // New route for form cloning
 router.post('/clone-for-project', formController.cloneFormForProject);
 

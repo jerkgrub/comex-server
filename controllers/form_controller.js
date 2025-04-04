@@ -27,13 +27,7 @@ const upload = multer({
 // Form CRUD operations
 const createForm = async (req, res) => {
   try {
-    const {
-      title,
-      description,
-      questions = [],
-      isActivated = true,
-      formType = 'ORIGINAL'
-    } = req.body;
+    const { title, description, questions = [], isActivated = true, formType = 'ORIGINAL' } = req.body;
 
     // No need to generate IDs for questions as MongoDB will do it
     const form = new Form({
@@ -54,9 +48,7 @@ const createForm = async (req, res) => {
 
 const getAllForms = async (req, res) => {
   try {
-    const forms = await Form.find()
-      .select('title description isPublished isActivated formType createdAt updatedAt')
-      .sort({ updatedAt: -1 });
+    const forms = await Form.find().select('title description isPublished isActivated formType createdAt updatedAt').sort({ updatedAt: -1 });
 
     res.status(200).json(forms);
   } catch (error) {
@@ -81,8 +73,7 @@ const getFormById = async (req, res) => {
 
 const updateForm = async (req, res) => {
   try {
-    const { title, description, questions, settings, isPublished, credits, isActivated, formType } =
-      req.body;
+    const { title, description, questions, settings, isPublished, credits, isActivated, formType } = req.body;
 
     const form = await Form.findById(req.params.formId);
 
@@ -206,9 +197,7 @@ const submitForm = async (req, res) => {
     if (form.settings?.maxResponses > 0) {
       const responseCount = await Response.countDocuments({ form: formId });
       if (responseCount >= form.settings.maxResponses) {
-        return res
-          .status(403)
-          .json({ message: 'This form has reached its maximum response limit' });
+        return res.status(403).json({ message: 'This form has reached its maximum response limit' });
       }
     }
 
@@ -218,9 +207,7 @@ const submitForm = async (req, res) => {
     // Convert string questionIds to ObjectIds for validation
     const answeredQuestions = answers.map(a => a.questionId);
 
-    const missingRequiredQuestions = requiredQuestions.filter(
-      qId => !answeredQuestions.includes(qId)
-    );
+    const missingRequiredQuestions = requiredQuestions.filter(qId => !answeredQuestions.includes(qId));
 
     if (missingRequiredQuestions.length > 0) {
       return res.status(400).json({
@@ -542,11 +529,7 @@ const exportFormData = async (req, res) => {
       });
 
       const rows = responses.map(resp => {
-        const row = [
-          resp._id.toString(),
-          resp.createdAt.toISOString(),
-          resp.respondent?.email || ''
-        ];
+        const row = [resp._id.toString(), resp.createdAt.toISOString(), resp.respondent?.email || ''];
 
         // Add question answers
         form.questions.forEach(q => {
@@ -720,9 +703,7 @@ const linkFormToProject = async (req, res) => {
     });
 
     if (existingLink) {
-      return res
-        .status(400)
-        .json({ message: 'This form is already linked to the project with this type' });
+      return res.status(400).json({ message: 'This form is already linked to the project with this type' });
     }
 
     // Update the form's projectId if it's not already set
@@ -748,9 +729,7 @@ const linkFormToProject = async (req, res) => {
 // Get all forms linked to a project
 const getProjectForms = async (req, res) => {
   try {
-    const projectForms = await ProjectForm.find({ projectId: req.params.projectId })
-      .populate('formId', 'title description')
-      .sort({ createdAt: -1 });
+    const projectForms = await ProjectForm.find({ projectId: req.params.projectId }).populate('formId', 'title description').sort({ createdAt: -1 });
 
     res.status(200).json(projectForms);
   } catch (error) {
@@ -869,14 +848,9 @@ const approveResponse = async (req, res) => {
         // Try to convert projectId string to ObjectId for the 'project' field
         try {
           creditData.project = new mongoose.Types.ObjectId(response.projectId);
-          console.log(
-            `[DEBUG] Added projectId as ObjectId to project field: ${response.projectId}`
-          );
+          console.log(`[DEBUG] Added projectId as ObjectId to project field: ${response.projectId}`);
         } catch (err) {
-          console.log(
-            `[DEBUG] Could not convert projectId to ObjectId: ${response.projectId}`,
-            err
-          );
+          console.log(`[DEBUG] Could not convert projectId to ObjectId: ${response.projectId}`, err);
         }
         console.log(`[DEBUG] Adding projectId ${response.projectId} to credit`);
       }
@@ -956,14 +930,9 @@ const approveResponse = async (req, res) => {
         // Try to convert projectId string to ObjectId for the 'project' field
         try {
           creditData.project = new mongoose.Types.ObjectId(response.projectId);
-          console.log(
-            `[DEBUG] Added projectId as ObjectId to project field: ${response.projectId}`
-          );
+          console.log(`[DEBUG] Added projectId as ObjectId to project field: ${response.projectId}`);
         } catch (err) {
-          console.log(
-            `[DEBUG] Could not convert projectId to ObjectId: ${response.projectId}`,
-            err
-          );
+          console.log(`[DEBUG] Could not convert projectId to ObjectId: ${response.projectId}`, err);
         }
         console.log(`[DEBUG] Adding projectId ${response.projectId} to credit`);
       }
@@ -1061,14 +1030,9 @@ const approveResponse = async (req, res) => {
     if (projectForm && projectForm.projectId) {
       try {
         creditData.project = new mongoose.Types.ObjectId(projectForm.projectId);
-        console.log(
-          `[DEBUG] Using projectForm.projectId for project field: ${projectForm.projectId}`
-        );
+        console.log(`[DEBUG] Using projectForm.projectId for project field: ${projectForm.projectId}`);
       } catch (err) {
-        console.log(
-          `[DEBUG] Could not convert projectForm.projectId to ObjectId: ${projectForm.projectId}`,
-          err
-        );
+        console.log(`[DEBUG] Could not convert projectForm.projectId to ObjectId: ${projectForm.projectId}`, err);
       }
     }
 
@@ -1229,9 +1193,7 @@ const revokeResponse = async (req, res) => {
               console.error(`Error in registration deletion: ${err.message}`);
             }
           } else {
-            console.log(
-              `Cannot delete registration: missing user (${userId}) or project (${projectId}) information`
-            );
+            console.log(`Cannot delete registration: missing user (${userId}) or project (${projectId}) information`);
           }
         }
       } else {
@@ -1266,9 +1228,7 @@ const revokeResponse = async (req, res) => {
                   project: projectObjectId
                 });
 
-                console.log(
-                  `Found ${registrations.length} registration(s) to delete by user/project`
-                );
+                console.log(`Found ${registrations.length} registration(s) to delete by user/project`);
 
                 for (const reg of registrations) {
                   console.log(`Deleting registration with ID: ${reg._id}`);
@@ -1344,6 +1304,152 @@ const cloneFormForProject = async (req, res) => {
   }
 };
 
+// Get form project info
+const getFormProjectInfo = async (req, res) => {
+  try {
+    const { formId } = req.params;
+
+    // Find the form
+    const form = await Form.findById(formId);
+    if (!form) {
+      return res.status(404).json({ message: 'Form not found' });
+    }
+
+    // Find project forms to get the project ID
+    const projectForm = await ProjectForm.findOne({ formId });
+    if (!projectForm) {
+      return res.json({
+        formId,
+        formType: form.formType || 'evaluation',
+        projectId: null,
+        projectType: null,
+        isInstitutional: false
+      });
+    }
+
+    // Get the project
+    const project = await Project.findById(projectForm.projectId);
+    if (!project) {
+      return res.json({
+        formId,
+        formType: projectForm.formType || 'evaluation',
+        projectId: projectForm.projectId,
+        projectType: null,
+        isInstitutional: false
+      });
+    }
+
+    // Return the combined information
+    return res.json({
+      formId,
+      formType: projectForm.formType || 'evaluation',
+      projectId: project._id,
+      projectType: project.engagementType,
+      isInstitutional: project.engagementType === 'Institutional'
+    });
+  } catch (error) {
+    console.error('Error getting form project info:', error);
+    return res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// Auto-approve form response
+const autoApproveResponse = async (req, res) => {
+  try {
+    const { responseId } = req.params;
+    const { formId, projectId, formType = 'evaluation' } = req.body;
+
+    // Find the response
+    const response = await Response.findById(responseId);
+    if (!response) {
+      return res.status(404).json({ message: 'Response not found' });
+    }
+
+    // Get user information
+    let userId = response.respondent?.user || response.respondent?.userId;
+
+    // If no user ID but we have an email, try to find the user
+    if (!userId && response.respondent?.email) {
+      const user = await User.findOne({ email: response.respondent.email });
+      if (user) {
+        userId = user._id;
+      } else {
+        return res.status(400).json({ message: 'Cannot auto-approve: User not found' });
+      }
+    }
+
+    if (!userId) {
+      return res.status(400).json({ message: 'Cannot auto-approve: No user ID available' });
+    }
+
+    // Update response status to approved
+    response.status = 'approved';
+    response.reviewedAt = new Date();
+    response.reviewedBy = 'auto-approval-system';
+    await response.save();
+
+    // Default hours for credit
+    const defaultHours = 1;
+
+    // If it's a registration form, create or update registration
+    if (formType === 'registration') {
+      // Check if registration already exists
+      const existingRegistration = await Registration.findOne({ user: userId, project: projectId });
+
+      if (existingRegistration) {
+        // Update existing registration
+        existingRegistration.status = 'active';
+        existingRegistration.response = responseId;
+        await existingRegistration.save();
+
+        console.log(`Updated existing registration: ${existingRegistration._id}`);
+      } else {
+        // Create new registration
+        const newRegistration = new Registration({
+          user: userId,
+          project: projectId,
+          response: responseId,
+          role: 'Participant',
+          status: 'active'
+        });
+        await newRegistration.save();
+
+        console.log(`Created new registration: ${newRegistration._id}`);
+      }
+    }
+
+    // For all form types, create a credit record
+    const newCredit = new Credit({
+      type: 'Institutional',
+      user: userId,
+      project: projectId,
+      response: responseId,
+      hours: defaultHours,
+      description: 'Auto-approved form submission',
+      source: 'form'
+    });
+    await newCredit.save();
+
+    console.log(`Created new credit record: ${newCredit._id} with ${defaultHours} hours`);
+
+    return res.json({
+      success: true,
+      message: 'Response auto-approved successfully',
+      response: {
+        _id: response._id,
+        status: response.status
+      },
+      credit: {
+        _id: newCredit._id,
+        hours: newCredit.hours
+      }
+    });
+  } catch (error) {
+    console.error('Error auto-approving response:', error);
+    return res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
 module.exports = {
   // Form CRUD operations
   createForm,
@@ -1387,5 +1493,11 @@ module.exports = {
   revokeResponse,
 
   // Clone a form specifically for a project
-  cloneFormForProject
+  cloneFormForProject,
+
+  // Get form project info
+  getFormProjectInfo,
+
+  // Auto-approve form response
+  autoApproveResponse
 };
