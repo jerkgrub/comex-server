@@ -977,7 +977,7 @@ exports.recalculateProjectCredits = async (req, res) => {
 
 // Set up Multer to store files in memory temporarily
 const storage = multer.memoryStorage();
-const upload = multer({
+exports.upload = multer({
   storage: storage,
   limits: { fileSize: 5000000 }, // 5MB limit
   fileFilter: (req, file, cb) => {
@@ -989,7 +989,7 @@ const upload = multer({
 });
 
 // Controller to handle thumbnail upload
-const uploadThumbnail = async (req, res) => {
+exports.uploadThumbnail = async (req, res) => {
   const thumbnailFile = req.file; // Multer provides the file as req.file
   const projectId = req.params.id; // Project ID from URL params
 
@@ -1021,33 +1021,4 @@ const uploadThumbnail = async (req, res) => {
     console.error('Error uploading thumbnail:', error);
     res.status(500).json({ message: 'Error uploading thumbnail', error });
   }
-};
-
-module.exports = {
-  createProject,
-  getAllProjects,
-  getProjectById,
-  getProjectsByProgram,
-  getApprovedProjectsByProgram,
-  getPendingProjectsByProgram,
-  getDeactivatedProjectsByProgram,
-  getApprovedProjects,
-  getPendingProjects,
-  getDeactivatedProjects,
-  updateProject,
-  deactivateProject,
-  restoreProject,
-  approveProjectByRepresentative,
-  approveProjectByDean,
-  approveProjectByComexCoordinator,
-  approveProjectByGeneralAccountingSupervisor,
-  approveProjectByAcademicServicesDirector,
-  approveProjectByAcademicDirector,
-  approveProjectByExecutiveDirector,
-  getPendingWorkplanApprovals,
-  getSignedWorkplanApprovals,
-  signWorkplanEntry,
-  recalculateProjectCredits,
-  upload,
-  uploadThumbnail
 };
