@@ -48,9 +48,6 @@ router.post('/responses/:responseId/auto-approve', formController.autoApproveRes
 // Form-project info route
 router.get('/:formId/project-info', formController.getFormProjectInfo);
 
-// Auto-approve form response
-router.post('/responses/:responseId/auto-approve', formController.autoApproveResponse);
-
 // New route for form cloning
 router.post('/clone-for-project', formController.cloneFormForProject);
 
