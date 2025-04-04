@@ -31,19 +31,10 @@ router.put('/:id', projectController.updateProject);
 router.put('/approve/by-representative/:id', projectController.approveProjectByRepresentative);
 router.put('/approve/by-dean/:id', projectController.approveProjectByDean);
 router.put('/approve/by-comex-coordinator/:id', projectController.approveProjectByComexCoordinator);
-router.put(
-  '/approve/by-general-accounting-supervisor/:id',
-  projectController.approveProjectByGeneralAccountingSupervisor
-);
-router.put(
-  '/approve/by-academic-services-director/:id',
-  projectController.approveProjectByAcademicServicesDirector
-);
+router.put('/approve/by-general-accounting-supervisor/:id', projectController.approveProjectByGeneralAccountingSupervisor);
+router.put('/approve/by-academic-services-director/:id', projectController.approveProjectByAcademicServicesDirector);
 router.put('/approve/by-academic-director/:id', projectController.approveProjectByAcademicDirector);
-router.put(
-  '/approve/by-executive-director/:id',
-  projectController.approveProjectByExecutiveDirector
-);
+router.put('/approve/by-executive-director/:id', projectController.approveProjectByExecutiveDirector);
 
 // 4. Soft-delete a project
 router.put('/deactivate/:id', projectController.deactivateProject);
@@ -51,5 +42,8 @@ router.put('/restore/:id', projectController.restoreProject);
 
 // 5. Credits
 router.post('/recalculate-credits/:id', projectController.recalculateProjectCredits);
+
+// 6. Thumbnail upload
+router.put('/upload-thumbnail/:id', projectController.upload.single('thumbnail'), projectController.uploadThumbnail);
 
 module.exports = router;

@@ -1,6 +1,8 @@
 const Project = require('../models/project_model');
 const User = require('../models/user_model');
 const { notifyProjectCreatorAboutWorkplanSigning, notifyProjectCreatorAboutApproval, notifyUserAboutWorkplanAssignment } = require('./notification_controller');
+const { put } = require('@vercel/blob');
+const multer = require('multer');
 
 // const isFullyApproved = doc.isApproved.byExecutiveDirector.approved; //check if the project is fully approved
 
@@ -971,4 +973,81 @@ exports.recalculateProjectCredits = async (req, res) => {
     console.error('Error recalculating project credits:', error);
     res.status(500).json({ message: error.message });
   }
+};
+
+// Set up Multer to store files in memory temporarily
+const storage = multer.memoryStorage();
+const upload = multer({
+  storage: storage,
+  limits: { fileSize: 5000000 }, // 5MB limit
+  fileFilter: (req, file, cb) => {
+    if (!file.originalname.match(/\.(jpg|jpeg|png)$/)) {
+      return cb(new Error('Only image files are allowed!'), false);
+    }
+    cb(null, true);
+  }
+});
+
+// Controller to handle thumbnail upload
+const uploadThumbnail = async (req, res) => {
+  const thumbnailFile = req.file; // Multer provides the file as req.file
+  const projectId = req.params.id; // Project ID from URL params
+
+  if (!thumbnailFile) {
+    return res.status(400).json({ message: 'No file uploaded' });
+  }
+
+  try {
+    console.log('Uploading thumbnail for project:', projectId);
+
+    // Upload the image to Vercel Blob
+    const { url } = await put(`project-thumbnails/${projectId}-${Date.now()}.png`, thumbnailFile.buffer, {
+      access: 'public'
+    });
+
+    // Update MongoDB with the new thumbnail URL without modifying other project fields
+    const project = await Project.findByIdAndUpdate(projectId, { thumbnail: url }, { new: true });
+
+    if (!project) {
+      return res.status(404).json({ message: 'Project not found' });
+    }
+
+    res.status(200).json({
+      message: 'Thumbnail uploaded successfully',
+      thumbnailUrl: url,
+      project
+    });
+  } catch (error) {
+    console.error('Error uploading thumbnail:', error);
+    res.status(500).json({ message: 'Error uploading thumbnail', error });
+  }
+};
+
+module.exports = {
+  createProject,
+  getAllProjects,
+  getProjectById,
+  getProjectsByProgram,
+  getApprovedProjectsByProgram,
+  getPendingProjectsByProgram,
+  getDeactivatedProjectsByProgram,
+  getApprovedProjects,
+  getPendingProjects,
+  getDeactivatedProjects,
+  updateProject,
+  deactivateProject,
+  restoreProject,
+  approveProjectByRepresentative,
+  approveProjectByDean,
+  approveProjectByComexCoordinator,
+  approveProjectByGeneralAccountingSupervisor,
+  approveProjectByAcademicServicesDirector,
+  approveProjectByAcademicDirector,
+  approveProjectByExecutiveDirector,
+  getPendingWorkplanApprovals,
+  getSignedWorkplanApprovals,
+  signWorkplanEntry,
+  recalculateProjectCredits,
+  upload,
+  uploadThumbnail
 };
