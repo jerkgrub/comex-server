@@ -1399,10 +1399,19 @@ const autoApproveResponse = async (req, res) => {
 
     // Update response status to approved
     console.log(`Updating response status to approved`);
-    response.status = 'approved';
-    response.reviewedAt = new Date();
-    response.reviewedBy = 'auto-approval-system';
-    await response.save();
+
+    // Use updateOne instead of modifying the model and saving to avoid validation issues
+    await Response.updateOne(
+      { _id: responseId },
+      {
+        $set: {
+          status: 'approved',
+          reviewedAt: new Date(),
+          reviewedBy: 'auto-approval-system' // Keep as string without trying to convert to ObjectId
+        }
+      }
+    );
+
     console.log(`Response status updated to approved`);
 
     // Default hours for credit
@@ -1455,12 +1464,15 @@ const autoApproveResponse = async (req, res) => {
 
     console.log(`Created new credit record: ${newCredit._id} with ${defaultHours} hours`);
 
+    // Get the updated response for returning the correct status
+    const updatedResponse = await Response.findById(responseId);
+
     return res.json({
       success: true,
       message: 'Response auto-approved successfully',
       response: {
-        _id: response._id,
-        status: response.status
+        _id: responseId,
+        status: updatedResponse ? updatedResponse.status : 'approved'
       },
       credit: {
         _id: newCredit._id,
