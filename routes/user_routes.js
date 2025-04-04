@@ -19,6 +19,9 @@ router.get('/users/:id', isAuthenticated, userController.findOneUser);
 router.get('/users/email/:email', userController.findOneUserByEmail);
 router.put('/users/update/:id', isAuthenticated, userController.updateUser);
 
+// New route for changing password
+router.post('/users/change-password', isAuthenticated, userController.changePassword);
+
 // New routes for user activation management
 router.put('/users/deactivate/:id', userController.deactivateUser);
 router.put('/users/restore/:id', userController.restoreUser);

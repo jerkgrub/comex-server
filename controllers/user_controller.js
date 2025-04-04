@@ -484,6 +484,45 @@ const login = async (req, res) => {
   }
 };
 
+// New function to change password for an authenticated user
+const changePassword = async (req, res) => {
+  try {
+    const userId = req.user.id; // Get user ID from auth middleware
+    const { currentPassword, newPassword } = req.body;
+
+    // Validate inputs
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({
+        message: 'Current password and new password are required'
+      });
+    }
+
+    // Find the user by ID
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Verify current password
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ message: 'Current password is incorrect' });
+    }
+
+    // Update password
+    user.password = newPassword; // Password will be hashed by pre-save hook
+    await user.save();
+
+    return res.status(200).json({ message: 'Password changed successfully' });
+  } catch (error) {
+    console.error('Error changing password:', error);
+    return res.status(500).json({
+      message: 'Error changing password',
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   resetPassword, // Reset Password
   newAcc, // Create
@@ -502,5 +541,6 @@ module.exports = {
   deactivateUser, // Deactivate user
   restoreUser, // Restore user
   getDeactivatedUsers, // Get deactivated users
-  searchUsers // Search users
+  searchUsers, // Search users
+  changePassword // Add new function to exports
 };
