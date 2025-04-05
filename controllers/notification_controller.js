@@ -96,6 +96,28 @@ const turnNotificationAsRead = async (req, res) => {
   }
 };
 
+// Mark a notification as unread
+const turnNotificationAsUnread = async (req, res) => {
+  try {
+    const notificationId = req.params.notificationId;
+
+    const notification = await Notification.findByIdAndUpdate(
+      notificationId,
+      { read: false },
+      { new: true }
+    );
+
+    if (!notification) {
+      return res.status(404).json({ message: 'Notification not found' });
+    }
+
+    res.status(200).json({ message: 'Notification marked as unread', notification });
+  } catch (error) {
+    console.error('Error updating notification:', error);
+    res.status(500).json({ message: 'Error updating notification', error: error.message });
+  }
+};
+
 // Notify existing users with a usertype of "Admin" & "ComEx Coordinator" about newly created user
 const notifyAdminsAboutNewUser = async newUser => {
   try {
@@ -275,6 +297,7 @@ module.exports = {
   getUnreadNotificationsForUser,
   getUnreadNotificationsCountForUser,
   turnNotificationAsRead,
+  turnNotificationAsUnread,
   notifyProjectCreatorAboutWorkplanSigning,
   notifyProjectCreatorAboutApproval
 };

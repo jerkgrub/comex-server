@@ -14,4 +14,7 @@ router.get('/:userId/unread/count', notificationController.getUnreadNotification
 // Turn notification as read
 router.put('/:notificationId', notificationController.turnNotificationAsRead);
 
+// Turn notification as unread
+router.put('/:notificationId/unread', notificationController.turnNotificationAsUnread);
+
 module.exports = router;
