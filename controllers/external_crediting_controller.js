@@ -274,12 +274,45 @@ exports.reviewFormResponse = async (req, res) => {
           });
         }
 
-        // Get the user ID from the response
-        const userId = response.respondent?.user || response.userId;
+        // Get the user ID from the response - EXPANDED USER ID DETECTION
+        let userId = null;
+
+        // Check respondent.user field
+        if (response.respondent?.user) {
+          userId = response.respondent.user;
+        }
+        // Check userId field
+        else if (response.userId) {
+          userId = response.userId;
+        }
+        // Try to find a user by email if respondent.email exists
+        else if (response.respondent?.email) {
+          const User = require('../models/user_model');
+          const user = await User.findOne({ email: response.respondent.email });
+          if (user) {
+            userId = user._id;
+            console.log('Found user by email:', response.respondent.email, 'user ID:', userId);
+
+            // Update response with the userId for future reference
+            response.userId = userId;
+            await response.save();
+          }
+        }
+
+        // Log the response object for debugging
+        console.log('Response object for debugging:', {
+          responseId,
+          hasRespondent: !!response.respondent,
+          respondentUser: response.respondent?.user,
+          respondentEmail: response.respondent?.email,
+          userId: response.userId
+        });
+
         if (!userId) {
           console.error('User ID not found in response:', responseId);
           return res.status(400).json({
-            message: 'User ID not found in the response'
+            message:
+              'User ID not found in the response. Please ensure the respondent has a user account.'
           });
         }
 
@@ -324,6 +357,52 @@ exports.reviewFormResponse = async (req, res) => {
               }
             }
           }
+
+          // Try to find hours in the form response if admin didn't specify them
+          // or if we want to always use the hours from the response
+          let hoursFromResponse = 0;
+          const hoursKeywords = ['hours', 'hour', 'time', 'duration', 'rendered'];
+
+          for (const keyword of hoursKeywords) {
+            const hoursAnswer = response.answers.find(a =>
+              form.questions.find(
+                q =>
+                  q._id.toString() === a.questionId.toString() &&
+                  q.title.toLowerCase().includes(keyword)
+              )
+            );
+
+            if (hoursAnswer) {
+              // If the value is a string, try to parse it as a number
+              if (typeof hoursAnswer.value === 'string') {
+                // Extract numeric value from the string (in case it has "hours" or other text)
+                const numericValue = hoursAnswer.value.replace(/[^0-9.]/g, '');
+                if (numericValue) {
+                  hoursFromResponse = parseFloat(numericValue);
+                  console.log('Found hours in response:', hoursFromResponse);
+                }
+              }
+              // If the value is already a number, use it directly
+              else if (typeof hoursAnswer.value === 'number') {
+                hoursFromResponse = hoursAnswer.value;
+                console.log('Found hours in response (numeric):', hoursFromResponse);
+              }
+
+              if (hoursFromResponse > 0) {
+                break;
+              }
+            }
+          }
+
+          // Use hours from the response if found, otherwise use the admin-provided credits
+          const finalHours = hoursFromResponse > 0 ? hoursFromResponse : credits;
+
+          // Update the response with the hours from the form (if found)
+          if (hoursFromResponse > 0 && hoursFromResponse !== credits) {
+            response.creditsAwarded = hoursFromResponse;
+            await response.save();
+            console.log('Updated response with hours from form:', hoursFromResponse);
+          }
         }
 
         // Create the credit
@@ -332,7 +411,7 @@ exports.reviewFormResponse = async (req, res) => {
           type: creditType,
           user: userId,
           response: responseId,
-          hours: credits,
+          hours: response.creditsAwarded, // Use the response's creditsAwarded field which may have been updated
           description: title,
           source: 'form'
         });
@@ -343,7 +422,7 @@ exports.reviewFormResponse = async (req, res) => {
           userId,
           creditId: credit._id,
           type: creditType,
-          hours: credits
+          hours: response.creditsAwarded
         });
       } catch (creditError) {
         console.error('Error creating credit for approved response:', creditError);
